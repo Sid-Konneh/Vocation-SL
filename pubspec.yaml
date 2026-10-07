@@ -2,7 +2,7 @@ name: vocation_sl
 description: "Vocation SL — job discovery and applications for Sierra Leone."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.13.4
@@ -22,6 +22,8 @@ dependencies:
   share_plus: ^13.3.1
   intl: ^0.20.3
   uuid: ^4.6.0
+  url_launcher: ^6.3.3
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:

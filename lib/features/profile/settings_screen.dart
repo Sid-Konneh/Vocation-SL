@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,6 +12,7 @@ import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/vocation_logo.dart';
+import 'sign_out.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -132,27 +134,29 @@ class SettingsScreen extends ConsumerWidget {
           header('About'),
           ListTile(
             leading: const VocationMark(size: 28),
-            title: const Text('${AppConfig.appName} 1.0.0'),
-            subtitle: Text('Backend: ${backend.name}${isDemoBackend(backend) ? ' · employers and jobs are fictional examples' : ''}'),
+            title: const Text('About Vocation SL'),
+            subtitle: Text('Version ${AppConfig.version}${isDemoBackend(backend) ? ' · demo mode' : ''}'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/about'),
           ),
           ListTile(
             leading: const Icon(Icons.support_agent_outlined),
             title: const Text('Help & support'),
             subtitle: const SelectableText(AppConfig.supportEmail),
+            trailing: IconButton(
+              tooltip: 'Copy email address',
+              icon: const Icon(Icons.copy_rounded),
+              onPressed: () async {
+                await Clipboard.setData(const ClipboardData(text: AppConfig.supportEmail));
+                if (context.mounted) showSnack(context, 'Email address copied');
+              },
+            ),
           ),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton.icon(
-              onPressed: () async {
-                final ok = await confirmDialog(context,
-                    title: 'Sign out?',
-                    message: pending > 0 ? 'You have $pending unsynced changes. They will be lost if you sign out now.' : 'You can sign back in at any time.',
-                    confirmLabel: 'Sign out',
-                    destructive: pending > 0);
-                if (!ok) return;
-                await ref.read(sessionProvider.notifier).signOut();
-              },
+              onPressed: () => confirmAndSignOut(context, ref),
               icon: const Icon(Icons.logout_rounded),
               label: const Text('Sign out'),
             ),

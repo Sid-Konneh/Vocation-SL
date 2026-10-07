@@ -80,11 +80,18 @@ class VocationLogo extends StatelessWidget {
         VocationMark(size: size),
         if (showWordmark) ...[
           SizedBox(width: size * 0.25),
-          Text.rich(
-            TextSpan(children: [
-              TextSpan(text: 'Vocation', style: style),
-              TextSpan(text: ' SL', style: style?.copyWith(color: context.colors.primary)),
-            ]),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: 'Vocation', style: style),
+                  TextSpan(text: ' SL', style: style?.copyWith(color: context.colors.primary)),
+                ]),
+                maxLines: 1,
+              ),
+            ),
           ),
         ],
       ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/about/about_screen.dart';
 import '../../features/applications/application_detail_screen.dart';
 import '../../features/applications/applications_screen.dart';
 import '../../features/apply/apply_flow_screen.dart';
@@ -110,6 +111,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (c, s) => _page(s, EditProfileScreen(section: s.uri.queryParameters['section'])),
       ),
+      GoRoute(path: '/about', parentNavigatorKey: rootNavigatorKey, pageBuilder: (c, s) => _page(s, const AboutScreen())),
       GoRoute(path: '/settings', parentNavigatorKey: rootNavigatorKey, pageBuilder: (c, s) => _page(s, const SettingsScreen())),
       GoRoute(
         path: '/settings/password',

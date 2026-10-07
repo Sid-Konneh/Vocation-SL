@@ -11,7 +11,7 @@ Job seekers can search and filter jobs, save jobs and searches, apply with a CV 
 | | |
 |---|---|
 | Demo login | `demo@vocationsl.app` / `Demo@2026` (or tap **Continue with demo account**) |
-| Android | Install `release/vocation-sl-v1.0.0.apk` (sideload; enable "Install unknown apps") |
+| Android | Install `release/vocation-sl-v1.0.1.apk` (sideload; enable "Install unknown apps") |
 | Web | https://vocation-sl.vercel.app |
 
 In demo mode, an application you submit moves through the pipeline by itself so you can see tracking and notifications work: viewed after ~40 seconds, shortlisted after ~2 minutes, interview invitation after ~4 minutes.
@@ -116,6 +116,10 @@ dart run flutter_native_splash:create
 ```
 
 To use the original logo file instead, replace `assets/images/app_icon.png` (1024×1024, white background), `app_icon_foreground.png` and `splash_logo.png` (transparent), then run the two commands above.
+
+## Help & support
+
+Email **vocationxsl@gmail.com**.
 
 ## Licences
 
