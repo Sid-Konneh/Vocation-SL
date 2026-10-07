@@ -21,7 +21,7 @@ class UserRepository extends CachedRepository {
   Stream<String?> get authChanges => backend.authChanges;
   bool get supportsGoogleSignIn => backend.supportsGoogleSignIn;
 
-  Future<void> signInWithGoogle() => backend.signInWithGoogle();
+  Future<void> signInWithGoogle({UserRole? intent}) => backend.signInWithGoogle(intent: intent);
   Stream<void> get passwordRecovery => backend.passwordRecovery;
 
   Future<void> updatePassword(String password, String confirm) {

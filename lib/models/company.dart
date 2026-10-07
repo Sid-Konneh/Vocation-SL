@@ -28,6 +28,7 @@ class Company {
     this.address = '',
     this.tin = '',
     this.ownerId,
+    this.logoUrl,
   });
 
   final String id;
@@ -53,6 +54,9 @@ class Company {
   final String tin;
   final String? ownerId;
 
+  /// Uploaded logo image (public URL, or a data: URI in demo mode).
+  final String? logoUrl;
+
   bool get isApproved => status == CompanyStatus.approved;
 
   String get initials {
@@ -75,6 +79,7 @@ class Company {
     String? phone,
     String? address,
     String? tin,
+    String? Function()? logoUrl,
   }) =>
       Company(
         id: id,
@@ -93,6 +98,7 @@ class Company {
         address: address ?? this.address,
         tin: tin ?? this.tin,
         ownerId: ownerId,
+        logoUrl: logoUrl != null ? logoUrl() : this.logoUrl,
       );
 
   factory Company.fromJson(Map<String, dynamic> j) => Company(
@@ -112,6 +118,7 @@ class Company {
         address: j['address'] as String? ?? '',
         tin: j['tin'] as String? ?? '',
         ownerId: j['owner_id'] as String?,
+        logoUrl: j['logo_url'] as String?,
       );
 
   /// Catalogue fields only (what job seekers and the seed script use).
@@ -126,6 +133,7 @@ class Company {
         'website': website,
         'brand_color': brandColor,
         'verified': verified,
+        if (logoUrl != null) 'logo_url': logoUrl,
       };
 
   /// Fields an employer may write. Status, verification and ownership are
@@ -142,5 +150,6 @@ class Company {
         'email': email,
         'phone': phone,
         'address': address,
+        // logo_url is written separately by uploadLogo().
       };
 }

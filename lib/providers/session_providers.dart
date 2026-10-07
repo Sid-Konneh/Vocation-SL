@@ -25,7 +25,7 @@ class SessionNotifier extends Notifier<String?> {
     return repo.currentUserId;
   }
 
-  Future<void> signInWithGoogle() => ref.read(userRepositoryProvider).signInWithGoogle();
+  Future<void> signInWithGoogle({UserRole? intent}) => ref.read(userRepositoryProvider).signInWithGoogle(intent: intent);
 
   Future<void> signIn(String email, String password) async {
     state = await ref.read(userRepositoryProvider).signIn(email, password);

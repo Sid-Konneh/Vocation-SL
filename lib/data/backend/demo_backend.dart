@@ -101,7 +101,7 @@ class DemoBackend implements VocationBackend {
   }
 
   @override
-  Future<void> signInWithGoogle() async =>
+  Future<void> signInWithGoogle({UserRole? intent}) async =>
       throw const AuthException('Google sign-in is available when the app is connected to Supabase.');
 
   @override

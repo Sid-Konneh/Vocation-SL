@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../core/errors.dart';
@@ -34,6 +36,18 @@ class SupabaseEmployerBackend implements EmployerBackend {
   @override
   Future<Company> updateCompany(Company company) => guardSupabase(() async {
         final row = await _client.from('companies').update(company.toEmployerJson()).eq('id', company.id).select().single();
+        return Company.fromJson(row);
+      });
+
+  @override
+  Future<Company> uploadLogo(Company company, Uint8List bytes, String fileName) => guardSupabase(() async {
+        final ext = fileName.split('.').last.toLowerCase();
+        final type = switch (ext) { 'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg' };
+        // A new file name each time so browsers and CDNs never show a stale logo.
+        final path = '${company.id}/logo-${DateTime.now().millisecondsSinceEpoch}.${ext == 'jpeg' ? 'jpg' : ext}';
+        await _client.storage.from('logos').uploadBinary(path, bytes, fileOptions: sb.FileOptions(contentType: type, upsert: true));
+        final url = _client.storage.from('logos').getPublicUrl(path);
+        final row = await _client.from('companies').update({'logo_url': url}).eq('id', company.id).select().single();
         return Company.fromJson(row);
       });
 

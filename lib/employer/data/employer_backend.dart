@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../models/models.dart';
 
 /// Data operations for the employer app. Access is enforced by row-level
@@ -8,6 +10,9 @@ abstract interface class EmployerBackend {
   Future<Company?> myCompany();
   Future<Company> registerCompany(Company draft);
   Future<Company> updateCompany(Company company);
+
+  /// Uploads a logo image (PNG/JPG/WebP, max 2 MB) and saves its URL on the company.
+  Future<Company> uploadLogo(Company company, Uint8List bytes, String fileName);
 
   /// All of the company's jobs, any status.
   Future<List<Job>> myJobs(String companyId);

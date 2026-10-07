@@ -82,8 +82,9 @@ class SupabaseBackend implements VocationBackend {
       });
 
   @override
-  Future<void> signInWithGoogle() => _run(() async {
-        final launched = await _client.auth.signInWithOAuth(sb.OAuthProvider.google, redirectTo: _redirect);
+  Future<void> signInWithGoogle({UserRole? intent}) => _run(() async {
+        final redirect = kIsWeb && intent != null ? '$_redirect?role=${intent.name}' : _redirect;
+        final launched = await _client.auth.signInWithOAuth(sb.OAuthProvider.google, redirectTo: redirect);
         if (!launched) throw const AuthException('Couldn\'t open Google sign-in. Try again.');
       });
 

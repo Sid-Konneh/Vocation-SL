@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,12 +15,21 @@ import 'employer/data/demo_employer_backend.dart';
 import 'employer/data/employer_backend.dart';
 import 'employer/data/supabase_employer_backend.dart';
 import 'employer/providers.dart';
+import 'models/models.dart';
 import 'providers/core_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final store = await LocalStore.open();
+
+  // Returning from Google sign-in on the web: the login choice arrives in the
+  // URL (?role=seeker|employer). Save it before Supabase finishes sign-in.
+  final returnedRole = Uri.base.queryParameters['role'];
+  final freshSignIn = Uri.base.queryParameters.containsKey('code');
+  if (kIsWeb && freshSignIn && UserRole.values.any((r) => r.name == returnedRole)) {
+    await store.setSetting('pending_role', returnedRole);
+  }
   final connectivity = ConnectivityService();
   await connectivity.init(simulateOffline: DevSettings.load(store).simulateOffline);
 

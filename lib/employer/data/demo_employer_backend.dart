@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import '../../core/errors.dart';
 import '../../models/models.dart';
 import 'employer_backend.dart';
@@ -40,6 +43,12 @@ class DemoEmployerBackend implements EmployerBackend {
 
   @override
   Future<Company> updateCompany(Company c) async => company = c;
+
+  @override
+  Future<Company> uploadLogo(Company c, Uint8List bytes, String fileName) async {
+    final type = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    return company = c.copyWith(logoUrl: () => 'data:$type;base64,${base64Encode(bytes)}');
+  }
 
   @override
   Future<List<Job>> myJobs(String companyId) async => List.of(jobs);

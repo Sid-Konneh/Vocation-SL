@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
+import '../../../core/errors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/models.dart';
+import '../../../services/file_service.dart';
+import '../../../widgets/common.dart';
 import '../../../widgets/company_logo.dart';
 
 const _sizes = ['1–10 employees', '11–50 employees', '51–200 employees', '201–500 employees', '501–1,000 employees', '1,000+ employees'];
@@ -30,6 +35,23 @@ class CompanyFormState extends State<CompanyForm> {
   late String _location = sierraLeoneLocations.contains(widget.initial?.location) ? widget.initial!.location : 'Freetown';
   late String _size = _sizes.contains(widget.initial?.size) ? widget.initial!.size : _sizes[1];
   late int _color = widget.initial?.brandColor ?? _brandColors.first;
+
+  /// A newly chosen logo, uploaded by the parent screen after saving.
+  PickedFile? pickedLogo;
+
+  Future<void> _pickLogo() async {
+    try {
+      final f = await FileService().pickPhoto();
+      if (f == null) return;
+      final ext = f.name.split('.').last.toLowerCase();
+      if (!['png', 'jpg', 'jpeg', 'webp'].contains(ext)) {
+        throw const ValidationException('Choose a PNG, JPG or WebP image.');
+      }
+      setState(() => pickedLogo = f);
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
 
   @override
   void dispose() {
@@ -73,6 +95,9 @@ class CompanyFormState extends State<CompanyForm> {
       founded: 0,
       website: '',
       brandColor: _color,
+      logoUrl: pickedLogo != null
+          ? 'data:image/png;base64,${base64Encode(pickedLogo!.bytes)}'
+          : widget.initial?.logoUrl,
     );
     Widget gap() => const SizedBox(height: 14);
     Widget heading(String t) => Padding(
@@ -83,9 +108,31 @@ class CompanyFormState extends State<CompanyForm> {
     return Form(
       key: _key,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('Logo', style: context.text.titleMedium),
+        const SizedBox(height: 10),
         Row(children: [
-          CompanyLogo(company: preview, size: 56),
-          const SizedBox(width: 14),
+          CompanyLogo(company: preview, size: 72),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              OutlinedButton.icon(
+                onPressed: _pickLogo,
+                icon: const Icon(Icons.upload_rounded, size: 18),
+                label: Text(preview.logoUrl == null ? 'Upload logo' : 'Change logo'),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                pickedLogo != null ? '${pickedLogo!.name} · saved when you save the profile' : 'PNG, JPG or WebP, up to 2 MB. Square images look best.',
+                style: context.text.bodySmall?.copyWith(color: context.palette.muted),
+              ),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 14),
+        Text('Without a logo, your initials are shown on this colour:', style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+        const SizedBox(height: 8),
+        Row(children: [
           Expanded(
             child: Wrap(spacing: 8, runSpacing: 8, children: [
               for (final c in _brandColors)

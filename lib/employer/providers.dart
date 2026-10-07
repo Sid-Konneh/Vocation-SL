@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/errors.dart';
@@ -43,6 +45,14 @@ class CompanyController extends CacheFirstNotifier<Company?> {
   Future<Company> save(Company company) async {
     final c = await ref.read(employerBackendProvider).updateCompany(company);
     setData(c);
+    return c;
+  }
+
+  Future<Company> uploadLogo(Company company, Uint8List bytes, String fileName) async {
+    final c = await ref.read(employerBackendProvider).uploadLogo(company, bytes, fileName);
+    setData(c);
+    // Job lists embed the company, so refresh them to show the new logo.
+    ref.invalidate(employerJobsProvider);
     return c;
   }
 }

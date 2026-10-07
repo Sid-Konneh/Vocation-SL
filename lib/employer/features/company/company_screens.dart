@@ -26,9 +26,20 @@ class _CompanySetupScreenState extends ConsumerState<CompanySetupScreen> {
   Future<void> _submit() async {
     final draft = _form.currentState?.result();
     if (draft == null) return;
+    final logo = _form.currentState?.pickedLogo;
+    final notifier = ref.read(companyProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _saving = true);
     try {
-      await ref.read(companyProvider.notifier).register(draft);
+      final company = await notifier.register(draft);
+      if (logo != null) {
+        try {
+          await notifier.uploadLogo(company, logo.bytes, logo.name);
+        } catch (e) {
+          // The company exists; the logo can be added later from Company profile.
+          messenger.showSnackBar(SnackBar(content: Text('Company created, but the logo didn\'t upload: ${AppException.describe(e)}')));
+        }
+      }
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -76,10 +87,12 @@ class _CompanyProfileScreenState extends ConsumerState<CompanyProfileScreen> {
   Future<void> _save() async {
     final updated = _form.currentState?.result();
     if (updated == null) return;
+    final logo = _form.currentState?.pickedLogo;
     setState(() => _saving = true);
     try {
-      await ref.read(companyProvider.notifier).save(updated);
-      if (mounted) showSnack(context, 'Company profile saved');
+      final saved = await ref.read(companyProvider.notifier).save(updated);
+      if (logo != null) await ref.read(companyProvider.notifier).uploadLogo(saved, logo.bytes, logo.name);
+      if (mounted) showSnack(context, logo != null ? 'Company profile and logo saved' : 'Company profile saved');
     } on NetworkException {
       if (mounted) showSnack(context, 'You\'re offline. Connect to save changes.', error: true);
     } catch (e) {

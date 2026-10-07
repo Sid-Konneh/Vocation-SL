@@ -56,7 +56,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
   }
 
-  Future<void> _google() => _run(() => ref.read(sessionProvider.notifier).signInWithGoogle());
+  Future<void> _google() => _run(() => ref.read(sessionProvider.notifier).signInWithGoogle(intent: _intent));
 
   Future<void> _forgotPassword() => _run(() async {
         await ref.read(userRepositoryProvider).sendPasswordReset(_email.text);

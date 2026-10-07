@@ -26,7 +26,9 @@ abstract interface class VocationBackend {
   Future<String> signUp({required String fullName, required String email, required String password});
 
   /// Opens Google sign-in. The session arrives later through [authChanges].
-  Future<void> signInWithGoogle();
+  /// On the web, [intent] travels in the return URL (`?role=`) because a
+  /// browser may drop storage writes when the page navigates to Google.
+  Future<void> signInWithGoogle({UserRole? intent});
   Future<void> sendPasswordReset(String email);
 
   /// Fires when the user opens a password-reset link and should choose a new password.

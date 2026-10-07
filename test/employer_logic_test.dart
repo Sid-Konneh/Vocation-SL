@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocation_sl/employer/insights.dart';
 import 'package:vocation_sl/models/models.dart';
@@ -149,6 +151,15 @@ void main() {
       await b.registerCompany(const Company(id: '', name: 'Acme', industry: Industry.ngo, location: 'Bo', about: '', size: '', founded: 0, website: '', brandColor: 0));
       expect((await b.saveJob(_job('').copyWithCompany('co-1'), status: JobStatus.published)).status, JobStatus.published);
       expect((await b.saveJob(_job('').copyWithCompany('co-1'), status: JobStatus.draft)).status, JobStatus.draft);
+    });
+
+    test('logo upload is stored on the company and never sent with profile saves', () async {
+      final b = DemoEmployerBackend(approveOnRegister: true);
+      final c = await b.registerCompany(const Company(id: '', name: 'Acme', industry: Industry.ngo, location: 'Bo', about: '', size: '', founded: 0, website: '', brandColor: 0));
+      final withLogo = await b.uploadLogo(c, Uint8List.fromList([137, 80, 78, 71]), 'logo.png');
+      expect(withLogo.logoUrl, startsWith('data:image/png;base64,'));
+      expect(withLogo.toEmployerJson().containsKey('logo_url'), isFalse, reason: 'saved separately so profile saves work without the logo column');
+      expect(Company.fromJson({...withLogo.toJson(), 'id': 'x'}).logoUrl, withLogo.logoUrl, reason: 'survives the cache');
     });
 
     test('employers cannot set a candidate to withdrawn', () async {
