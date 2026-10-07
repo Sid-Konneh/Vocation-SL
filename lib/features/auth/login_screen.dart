@@ -11,7 +11,8 @@ import '../../widgets/common.dart';
 import '../../widgets/vocation_logo.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.forEmployers = false});
+  final bool forEmployers;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -97,12 +98,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   const Align(alignment: Alignment.centerLeft, child: VocationMark(size: 56)),
                   const SizedBox(height: 28),
-                  Text(_signUp ? 'Create your account' : 'Welcome back', style: context.text.headlineMedium),
+                  Text(_signUp ? (widget.forEmployers ? 'Create an employer account' : 'Create your account') : (widget.forEmployers ? 'Employer sign in' : 'Welcome back'), style: context.text.headlineMedium),
                   const SizedBox(height: 8),
                   Text(
-                    _signUp
-                        ? 'Find and apply for jobs across Sierra Leone.'
-                        : 'Sign in to find jobs, track applications and get alerts.',
+                    widget.forEmployers
+                        ? 'Post jobs and review candidates for your company.'
+                        : _signUp
+                            ? 'Find and apply for jobs across Sierra Leone.'
+                            : 'Sign in to find jobs, track applications and get alerts.',
                     style: context.text.bodyLarge?.copyWith(color: context.palette.muted),
                   ),
                   const SizedBox(height: 28),

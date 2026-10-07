@@ -7,7 +7,9 @@ import '../../providers/session_providers.dart';
 import '../../widgets/vocation_logo.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({super.key, this.signedInPath = '/jobs', this.tagline = 'Find work that moves Salone forward'});
+  final String signedInPath;
+  final String tagline;
 
   @override
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
@@ -25,7 +27,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   void _continue() {
     if (!mounted) return;
     final signedIn = ref.read(sessionProvider) != null;
-    context.go(signedIn ? '/jobs' : '/login');
+    context.go(signedIn ? widget.signedInPath : '/login');
   }
 
   @override
@@ -60,7 +62,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                       style: context.text.headlineMedium,
                     ),
                     const SizedBox(height: 6),
-                    Text('Find work that moves Salone forward',
+                    Text(widget.tagline,
                         style: context.text.bodyMedium?.copyWith(color: context.palette.muted)),
                   ]),
                 ),

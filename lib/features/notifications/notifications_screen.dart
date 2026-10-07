@@ -21,6 +21,7 @@ IconData notificationIcon(NotificationType t) => switch (t) {
       NotificationType.statusChange => Icons.sync_alt_rounded,
       NotificationType.message => Icons.mail_rounded,
       NotificationType.deadline => Icons.timer_rounded,
+      NotificationType.newApplicant => Icons.person_add_alt_1_rounded,
     };
 
 Color notificationColor(NotificationType t) => switch (t) {
@@ -31,6 +32,7 @@ Color notificationColor(NotificationType t) => switch (t) {
       NotificationType.statusChange => const Color(0xFF4F6BD8),
       NotificationType.message => const Color(0xFF16808F),
       NotificationType.deadline => AppColors.warning,
+      NotificationType.newApplicant => AppColors.green,
     };
 
 class NotificationsScreen extends ConsumerStatefulWidget {

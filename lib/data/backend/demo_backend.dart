@@ -176,6 +176,9 @@ class DemoBackend implements VocationBackend {
     return _withCompany(j);
   }
 
+  @override
+  Future<void> recordJobView(String jobId) async {}
+
   // ---- Profile ---------------------------------------------------------------
 
   @override

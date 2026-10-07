@@ -26,26 +26,7 @@ class SupabaseBackend implements VocationBackend {
   @override
   String get name => 'Supabase';
 
-  Future<T> _run<T>(Future<T> Function() body) async {
-    try {
-      return await body();
-    } on sb.AuthException catch (e) {
-      throw AuthException(e.message);
-    } on sb.PostgrestException catch (e) {
-      if (e.code == 'PGRST116') throw const NotFoundException();
-      throw ServerException(e.message);
-    } on sb.StorageException catch (e) {
-      throw ServerException(e.message);
-    } on AppException {
-      rethrow;
-    } catch (e) {
-      final s = e.toString();
-      if (s.contains('SocketException') || s.contains('ClientException') || s.contains('Failed host lookup') || s.contains('XMLHttpRequest')) {
-        throw const NetworkException();
-      }
-      throw ServerException(s);
-    }
-  }
+  Future<T> _run<T>(Future<T> Function() body) => guardSupabase(body);
 
   String _uid() {
     final id = _client.auth.currentUser?.id;
@@ -152,6 +133,15 @@ class SupabaseBackend implements VocationBackend {
         final row = await _client.from('jobs').select(_jobSelect).eq('id', id).single();
         return Job.fromJson(row);
       });
+
+  @override
+  Future<void> recordJobView(String jobId) async {
+    try {
+      await _client.rpc('record_job_view', params: {'p_job': jobId});
+    } catch (_) {
+      // Analytics only: never block or fail the job page.
+    }
+  }
 
   // ---- Profile ---------------------------------------------------------------
 
@@ -311,4 +301,26 @@ class SupabaseBackend implements VocationBackend {
   Future<void> deleteAlert(String id) => _run(() async {
         await _client.from('job_alerts').delete().eq('id', id);
       });
+}
+
+/// Runs a Supabase call and maps its errors to [AppException]s.
+Future<T> guardSupabase<T>(Future<T> Function() body) async {
+  try {
+    return await body();
+  } on sb.AuthException catch (e) {
+    throw AuthException(e.message);
+  } on sb.PostgrestException catch (e) {
+    if (e.code == 'PGRST116') throw const NotFoundException();
+    throw ServerException(e.message);
+  } on sb.StorageException catch (e) {
+    throw ServerException(e.message);
+  } on AppException {
+    rethrow;
+  } catch (e) {
+    final s = e.toString();
+    if (s.contains('SocketException') || s.contains('ClientException') || s.contains('Failed host lookup') || s.contains('XMLHttpRequest')) {
+      throw const NetworkException();
+    }
+    throw ServerException(s);
+  }
 }

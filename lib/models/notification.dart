@@ -7,7 +7,8 @@ enum NotificationType {
   interview('Interview'),
   statusChange('Status update'),
   message('Employer message'),
-  deadline('Deadline reminder');
+  deadline('Deadline reminder'),
+  newApplicant('New applicant');
 
   const NotificationType(this.label);
   final String label;

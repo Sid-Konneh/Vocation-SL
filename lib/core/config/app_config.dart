@@ -13,12 +13,16 @@ class AppConfig {
   /// Deep link the mobile apps receive after Google sign-in, email
   /// confirmation and password reset. Must be listed in Supabase
   /// Authentication → URL Configuration → Redirect URLs.
-  static const mobileAuthRedirect = 'org.vocationsl.app://login-callback';
+  static String mobileAuthRedirect = 'org.vocationsl.app://login-callback';
+  static const employerAuthRedirect = 'org.vocationsl.employer://login-callback';
+
+  /// True in the employer app (set by main_employer.dart).
+  static bool isEmployerApp = false;
 
   static const appName = 'Vocation SL';
   static const pageSize = 10;
   static const supportEmail = 'vocationxsl@gmail.com';
-  static const version = '1.0.1';
+  static const version = '1.0.2';
 }
 
 /// How long cached data counts as fresh before a background refresh.

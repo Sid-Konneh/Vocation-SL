@@ -1,6 +1,16 @@
 import 'company.dart';
 import 'enums.dart';
 
+enum JobStatus {
+  draft('Draft'),
+  pending('Awaiting approval'),
+  published('Live'),
+  closed('Closed');
+
+  const JobStatus(this.label);
+  final String label;
+}
+
 class Job {
   const Job({
     required this.id,
@@ -27,6 +37,8 @@ class Job {
     this.applicants = 0,
     this.featured = false,
     this.company,
+    this.status = JobStatus.published,
+    this.views = 0,
   });
 
   final String id;
@@ -52,6 +64,8 @@ class Job {
   final List<String> benefits;
   final int applicants;
   final bool featured;
+  final JobStatus status;
+  final int views;
 
   /// Populated by repositories so the UI never has to join data itself.
   final Company? company;
@@ -85,6 +99,8 @@ class Job {
         applicants: applicants,
         featured: featured,
         company: c,
+        status: status,
+        views: views,
       );
 
   factory Job.fromJson(Map<String, dynamic> j) => Job(
@@ -111,6 +127,8 @@ class Job {
         benefits: _list(j['benefits']),
         applicants: (j['applicants'] as num?)?.toInt() ?? 0,
         featured: j['featured'] as bool? ?? false,
+        status: enumByName(JobStatus.values, j['status'], JobStatus.published),
+        views: (j['views'] as num?)?.toInt() ?? 0,
         company: j['company'] is Map<String, dynamic> ? Company.fromJson(j['company'] as Map<String, dynamic>) : null,
       );
 
@@ -138,6 +156,8 @@ class Job {
         'benefits': benefits,
         'applicants': applicants,
         'featured': featured,
+        'status': status.name,
+        'views': views,
         if (includeCompany && company != null) 'company': company!.toJson(),
       };
 }

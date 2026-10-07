@@ -60,7 +60,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
                 child: Text('Notify me about', style: context.text.titleMedium),
               ),
-              for (final t in NotificationType.values)
+              for (final t in NotificationType.values.where(_descriptions.containsKey))
                 SwitchListTile(
                   secondary: Icon(notificationIcon(t), color: notificationColor(t)),
                   title: Text(t.label),

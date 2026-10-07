@@ -35,6 +35,9 @@ abstract interface class VocationBackend {
   Future<PageResult<Job>> searchJobs(JobFilter filter, {required int page, required int pageSize});
   Future<Job> fetchJob(String id);
 
+  /// Counts a job-detail view for employer insights. Best effort.
+  Future<void> recordJobView(String jobId);
+
   // Profile
   Future<AppUser> fetchUser(String userId);
   Future<AppUser> updateUser(AppUser user);

@@ -80,6 +80,33 @@ Employer-side status changes (viewed, shortlisted, interview…) are made by upd
 
 > The Supabase backend is implemented and compiles, but it has not yet been run against a live Supabase project. Test it with your project before launch.
 
+## Employer app (Vocation SL for Employers)
+
+A second app from the same codebase (`lib/main_employer.dart`) for companies that hire:
+
+- **Dashboard:** live jobs, applicants, new this week, applications to review, upcoming interviews, recent applicants, hiring funnel, jobs closing soon.
+- **Insights:** job views, view-to-apply rate, average first response time, applications per day, hiring funnel, per-job performance table.
+- **My jobs:** table of every job with status (draft, awaiting approval, live, closed), applicants, views and deadline; post, edit, close, reopen and delete drafts.
+- **Candidates:** an applicant tracking system in table form. Filter by job, stage or name; change a candidate's stage inline; open their CV. The candidate page shows the profile, documents and history, and lets you schedule an interview, send a message, shortlist, make an offer, hire or reject. Every change notifies the candidate in the job-seeker app.
+- **Company profile:** name, industry, office, size, about, website, contact details.
+
+Posting jobs is free.
+
+**Setup:** run `supabase/employer_schema.sql` in the SQL editor after `schema.sql` and `seed.sql`. New companies start as **pending**: their jobs are saved as "Awaiting approval" and go live automatically when you approve the company in **Table Editor → companies → status = `approved`**. To feature a job on the job seekers' home screen, set `jobs.featured = true`.
+
+Employers only ever see their own company's jobs, applicants, applicant profiles and CVs; the database enforces this with row-level security.
+
+Add `org.vocationsl.employer://login-callback` and the employer web address to Supabase's **Redirect URLs**.
+
+```bash
+# Web
+flutter build web --release -t lib/main_employer.dart --dart-define=SUPABASE_URL=… --dart-define=SUPABASE_PUBLISHABLE_KEY=…
+# Android (installs alongside the job-seeker app)
+flutter build apk --release --flavor employer -t lib/main_employer.dart --dart-define=…
+# The job-seeker app now needs its flavor too:
+flutter build apk --release --flavor seeker --dart-define=…
+```
+
 ## Deploy the web app to Vercel
 
 The repo includes a prebuilt web app in `deploy/web` and a `vercel.json` that serves it as-is, so Vercel doesn't need Flutter installed.

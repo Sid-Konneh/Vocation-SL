@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/config/app_config.dart';
@@ -199,6 +201,12 @@ final companyJobsProvider = NotifierProvider.autoDispose.family<JobSearchControl
 class JobDetailController extends CacheFirstNotifier<Job> {
   JobDetailController(this.jobId);
   final String jobId;
+
+  @override
+  Future<Loaded<Job>> build() {
+    if (ref.read(onlineProvider)) unawaited(ref.read(backendProvider).recordJobView(jobId));
+    return super.build();
+  }
 
   @override
   Loaded<Job>? readCache() => ref.read(jobRepositoryProvider).peekJob(jobId);

@@ -23,8 +23,9 @@ void main() {
     ..writeln('-- Fictional demo employers and jobs. Safe to re-run (upserts).')
     ..writeln();
 
+  b.writeln('-- Run after schema.sql AND employer_schema.sql.');
   for (final c in demoCompanies) {
-    final j = c.toJson();
+    final j = {...c.toJson(), 'status': 'approved'};
     final cols = j.keys.join(', ');
     final vals = j.values.map(q).join(', ');
     final updates = j.keys.where((k) => k != 'id').map((k) => '$k = excluded.$k').join(', ');

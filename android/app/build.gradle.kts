@@ -29,6 +29,24 @@ android {
         versionName = flutter.versionName
     }
 
+    // Two apps from one codebase. Build with --flavor seeker (lib/main.dart)
+    // or --flavor employer -t lib/main_employer.dart.
+    flavorDimensions += "app"
+    productFlavors {
+        create("seeker") {
+            dimension = "app"
+            applicationId = "org.vocationsl.vocation_sl"
+            manifestPlaceholders["appLabel"] = "Vocation SL"
+            manifestPlaceholders["authScheme"] = "org.vocationsl.app"
+        }
+        create("employer") {
+            dimension = "app"
+            applicationId = "org.vocationsl.employer"
+            manifestPlaceholders["appLabel"] = "VSL Employers"
+            manifestPlaceholders["authScheme"] = "org.vocationsl.employer"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

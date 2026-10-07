@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo No install needed",
+  "buildCommand": "echo Using the prebuilt Flutter web app in web/",
+  "outputDirectory": "web",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "headers": [
+    {
+      "source": "/(index.html|flutter_service_worker.js|flutter_bootstrap.js|version.json)",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ]
+}
