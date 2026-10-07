@@ -8,6 +8,9 @@ import '../../models/models.dart';
 import '../../providers/user_data_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/company_logo.dart';
+import '../../widgets/document_viewer.dart';
+import '../../widgets/message_thread.dart';
+import '../../providers/core_providers.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
 
@@ -142,17 +145,17 @@ class _DetailState extends ConsumerState<_Detail> {
                     body: Fmt.dateTime(a.nextStepDeadline!),
                   ),
                 ],
-                if (a.employerMessage != null) ...[
-                  const SizedBox(height: 16),
+                if (!a.pendingSync)
                   _Section(
-                    title: 'Message from ${job?.companyName ?? 'the employer'}',
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: context.palette.surface, borderRadius: BorderRadius.circular(AppSpacing.radius)),
-                      child: Text(a.employerMessage!, style: context.text.bodyLarge),
+                    title: 'Messages',
+                    child: MessageThread(
+                      applicationId: a.id,
+                      asEmployer: false,
+                      otherName: (job?.companyName ?? '').isEmpty ? 'the employer' : job!.companyName,
+                      legacyEmployerMessage: a.employerMessage,
+                      enabled: a.status != ApplicationStatus.withdrawn,
                     ),
                   ),
-                ],
                 _Section(title: 'Progress', child: ApplicationTimeline(application: a)),
                 _Section(
                   title: 'Status history',
@@ -173,7 +176,13 @@ class _DetailState extends ConsumerState<_Detail> {
                     _DocTile(
                       icon: Icons.picture_as_pdf_outlined,
                       title: a.resume.fileName,
-                      subtitle: 'CV · ${a.resume.format.label} · ${Fmt.fileSize(a.resume.sizeBytes)}',
+                      subtitle: 'CV · ${a.resume.format.label} · ${Fmt.fileSize(a.resume.sizeBytes)} · tap to view',
+                      onTap: () => viewDocument(context,
+                          title: 'Your CV',
+                          fileName: a.resume.fileName,
+                          format: a.resume.format,
+                          storagePath: a.resume.storagePath,
+                          loadUrl: ref.read(backendProvider).documentUrl),
                     ),
                     if (a.coverLetter != null)
                       _DocTile(
@@ -181,8 +190,15 @@ class _DetailState extends ConsumerState<_Detail> {
                         title: a.coverLetter!.displayName,
                         subtitle: a.coverLetter!.kind == CoverLetterKind.written
                             ? 'Cover letter · tap to read'
-                            : 'Cover letter · ${a.coverLetter!.format?.label ?? ''} · ${Fmt.fileSize(a.coverLetter!.sizeBytes ?? 0)}',
-                        onTap: a.coverLetter!.text == null ? null : () => _showCoverLetter(a.coverLetter!.text!),
+                            : 'Cover letter · ${a.coverLetter!.format?.label ?? ''} · ${Fmt.fileSize(a.coverLetter!.sizeBytes ?? 0)} · tap to view',
+                        onTap: a.coverLetter!.kind == CoverLetterKind.written
+                            ? (a.coverLetter!.text == null ? null : () => _showCoverLetter(a.coverLetter!.text!))
+                            : () => viewDocument(context,
+                                title: 'Your cover letter',
+                                fileName: a.coverLetter!.fileName ?? 'Cover letter',
+                                format: a.coverLetter!.format,
+                                storagePath: a.coverLetter!.storagePath,
+                                loadUrl: ref.read(backendProvider).documentUrl),
                       )
                     else
                       Padding(

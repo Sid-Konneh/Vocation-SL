@@ -197,6 +197,8 @@ class JobStatusPill extends StatelessWidget {
       JobStatus.pending => (AppColors.warning, Icons.hourglass_top_rounded),
       JobStatus.draft => (context.palette.muted, Icons.edit_outlined),
       JobStatus.closed => (context.palette.muted, Icons.lock_outline_rounded),
+      JobStatus.declined => (AppColors.warning, Icons.edit_note_rounded),
+      JobStatus.rejected => (AppColors.danger, Icons.block_outlined),
     };
     return TagChip(status.label, dense: true, icon: icon, color: color, background: color.withValues(alpha: 0.12));
   }

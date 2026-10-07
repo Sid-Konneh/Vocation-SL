@@ -165,11 +165,15 @@ void main() {
     await settle(tester, 400);
     expect(fake.apps.single.status, ApplicationStatus.shortlisted);
 
-    // Send a message.
-    await tester.enterText(find.widgetWithText(TextField, 'Message to candidate'), 'Thanks for applying. We will be in touch this week.');
+    // Send a message: it appears in the conversation and on the application.
+    final box = find.widgetWithText(TextField, 'Message to Fatmata');
+    await tester.ensureVisible(box);
+    await tester.enterText(box, 'Thanks for applying. We will be in touch this week.');
+    await tester.ensureVisible(find.text('Send message'));
     await tester.tap(find.text('Send message'));
     await settle(tester, 400);
     expect(fake.apps.single.employerMessage, startsWith('Thanks for applying'));
+    expect(find.textContaining('We will be in touch'), findsWidgets);
 
     // Dashboard reflects the pipeline.
     await tester.pageBack();

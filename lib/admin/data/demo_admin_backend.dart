@@ -59,7 +59,18 @@ class DemoAdminBackend implements AdminBackend {
     ));
     final user = buildDemoUser(now);
     _users.addAll([
-      AdminUser(id: user.id, email: user.email, name: user.fullName, role: 'seeker', createdAt: now.subtract(const Duration(days: 60)), lastSeenAt: now),
+      AdminUser(
+        id: user.id,
+        email: user.email,
+        name: user.fullName,
+        role: 'seeker',
+        createdAt: now.subtract(const Duration(days: 60)),
+        lastSeenAt: now,
+        headline: user.headline,
+        location: user.location,
+        phone: user.phone,
+        profileData: user.toJson(),
+      ),
       AdminUser(id: 'u-2', email: 'mohamed.bangura@example.com', name: 'Mohamed Bangura', role: 'seeker', createdAt: now.subtract(const Duration(days: 3))),
       AdminUser(id: 'u-3', email: 'hr@waterloo-builders.example', name: 'Isatu Conteh', role: 'employer', createdAt: now.subtract(const Duration(days: 1))),
     ]);
@@ -76,6 +87,29 @@ class DemoAdminBackend implements AdminBackend {
       createdAt: now.subtract(const Duration(hours: 5)),
     ));
     _team.add(AdminMember(userId: this.myUserId, role: role, createdAt: now.subtract(const Duration(days: 30)), email: this.myEmail, name: user.fullName));
+    for (final j in _jobs.where((j) => j.status == JobStatus.published)) {
+      _invoiceFor(j, at: j.postedAt);
+    }
+    // A couple of sample invoices further along, so every state shows.
+    if (_invoices.length >= 2) {
+      final paid = _invoices[_invoices.length - 1];
+      _invoices[_invoices.length - 1] = paid.copyWith(
+        unitPrice: 500,
+        status: InvoiceStatus.paid,
+        issueDate: () => now.subtract(const Duration(days: 20)),
+        dueDate: () => now.subtract(const Duration(days: 6)),
+        paidAt: () => now.subtract(const Duration(days: 10)),
+        paymentMethod: 'Orange Money',
+        paymentReference: 'OM-48213',
+      );
+      final issued = _invoices[_invoices.length - 2];
+      _invoices[_invoices.length - 2] = issued.copyWith(
+        unitPrice: 500,
+        status: InvoiceStatus.issued,
+        issueDate: () => now.subtract(const Duration(days: 3)),
+        dueDate: () => now.add(const Duration(days: 11)),
+      );
+    }
     _pages.addAll(const [
       SitePage(slug: 'help', title: 'Help & FAQs'),
       SitePage(slug: 'privacy', title: 'Privacy Policy'),
@@ -95,9 +129,37 @@ class DemoAdminBackend implements AdminBackend {
   final _announcements = <Announcement>[];
   final _pages = <SitePage>[];
   final _team = <AdminMember>[];
+  final _invoices = <Invoice>[];
   final log = <AuditEntry>[];
   PlatformSettings _settings = const PlatformSettings();
   var _seq = 0;
+  var _invoiceSeq = 0;
+
+  /// Draft invoice for a job going live, unless it already has an open one
+  /// (as the database trigger does).
+  Invoice? _invoiceFor(Job j, {DateTime? at}) {
+    if (_invoices.any((i) => i.jobId == j.id && i.status != InvoiceStatus.voided)) return null;
+    final c = j.company;
+    final created = at ?? DateTime.now();
+    final inv = Invoice(
+      id: 'inv-${++_invoiceSeq}',
+      number: 'VSL-${created.year}-${'$_invoiceSeq'.padLeft(5, '0')}',
+      createdAt: created,
+      jobId: j.id,
+      companyId: j.companyId,
+      jobTitle: j.title,
+      billToName: c?.name ?? j.companyName,
+      billToEmail: c?.email ?? '',
+      billToAddress: [c?.address ?? '', c?.location ?? ''].where((s) => s.isNotEmpty).join(', '),
+    );
+    _invoices.insert(0, inv);
+    return inv;
+  }
+
+  void _publishedNow(Job j) {
+    final inv = _invoiceFor(j);
+    if (inv != null) _log('insert', 'invoices', inv.id, inv.number, {'job_title': j.title});
+  }
 
   void _need(AdminRole r) {
     if (!role.can(r)) throw AuthException('Your admin role (${role.label}) can\'t do that.');
@@ -115,7 +177,7 @@ class DemoAdminBackend implements AdminBackend {
     ));
   }
 
-  Job _jobWith(Job j, {JobStatus? status, bool? featured}) => Job(
+  Job _jobWith(Job j, {JobStatus? status, bool? featured, String? reviewNote}) => Job(
         id: j.id,
         title: j.title,
         companyId: j.companyId,
@@ -140,6 +202,7 @@ class DemoAdminBackend implements AdminBackend {
         company: j.company,
         status: status ?? j.status,
         views: j.views,
+        reviewNote: reviewNote ?? j.reviewNote,
       );
 
   Company _companyWith(Company c, {CompanyStatus? status, bool? verified}) => Company(
@@ -245,11 +308,14 @@ class DemoAdminBackend implements AdminBackend {
   Future<List<Job>> jobs() async => List.of(_jobs);
 
   @override
-  Future<void> setJobStatus(String jobId, JobStatus status) async {
+  Future<void> setJobStatus(String jobId, JobStatus status, {String note = ''}) async {
     _need(AdminRole.moderator);
     final i = _jobs.indexWhere((j) => j.id == jobId);
-    _jobs[i] = _jobWith(_jobs[i], status: status);
-    _log('update', 'jobs', jobId, _jobs[i].title, {'status': status.name});
+    final was = _jobs[i].status;
+    final reviewNote = switch (status) { JobStatus.declined || JobStatus.rejected => note, JobStatus.published => '', _ => null };
+    _jobs[i] = _jobWith(_jobs[i], status: status, reviewNote: reviewNote);
+    _log('update', 'jobs', jobId, _jobs[i].title, {'status': status.name, if (note.isNotEmpty) 'review_note': note});
+    if (status == JobStatus.published && was != JobStatus.published) _publishedNow(_jobs[i]);
   }
 
   @override
@@ -279,14 +345,21 @@ class DemoAdminBackend implements AdminBackend {
     _need(AdminRole.moderator);
     final i = _companies.indexWhere((c) => c.company.id == companyId);
     final c = _companies[i];
-    _companies[i] = AdminCompany(company: _companyWith(c.company, status: status), members: c.members, createdAt: c.createdAt);
-    // Approval publishes the company's waiting jobs (as the database does).
-    if (status == CompanyStatus.approved) {
+    // Approving gives the verified check mark; rejecting or suspending removes it.
+    final verified = status == c.company.status ? null : status == CompanyStatus.approved;
+    _companies[i] = AdminCompany(company: _companyWith(c.company, status: status, verified: verified), members: c.members, createdAt: c.createdAt);
+    // With job review off, approval publishes the company's waiting jobs (as the database does).
+    if (status == CompanyStatus.approved && !_settings.requireJobApproval) {
       for (var k = 0; k < _jobs.length; k++) {
         if (_jobs[k].companyId == companyId && _jobs[k].status == JobStatus.pending) _jobs[k] = _jobWith(_jobs[k], status: JobStatus.published);
       }
     }
     _log('update', 'companies', companyId, c.company.name, {'status': status.name});
+    if (status == CompanyStatus.approved) {
+      for (final j in _jobs.where((j) => j.companyId == companyId && j.status == JobStatus.published).toList()) {
+        _publishedNow(j);
+      }
+    }
   }
 
   @override
@@ -320,7 +393,44 @@ class DemoAdminBackend implements AdminBackend {
   }
 
   @override
+  Future<UserLoginInfo?> userLogin(String userId) async {
+    _need(AdminRole.admin);
+    final u = _users.where((u) => u.id == userId).firstOrNull;
+    if (u == null) return null;
+    _log('view', 'users', userId, u.email, {'viewed': 'sign-in details'});
+    final google = u.email.endsWith('@gmail.com');
+    return UserLoginInfo(
+      email: u.email,
+      phone: u.phone,
+      providers: [google ? 'google' : 'email'],
+      createdAt: u.createdAt,
+      lastSignInAt: u.lastSeenAt,
+      emailConfirmedAt: u.createdAt,
+      identities: [(provider: google ? 'google' : 'email', email: u.email, createdAt: u.createdAt, lastSignInAt: u.lastSeenAt)],
+      sessions: [
+        if (u.lastSeenAt != null)
+          (
+            createdAt: u.lastSeenAt,
+            lastActiveAt: u.lastSeenAt,
+            userAgent: 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/126.0 Mobile Safari/537.36',
+            ip: '',
+          ),
+      ],
+      companies: [
+        for (final c in _companies.where((c) => c.company.email == u.email))
+          (id: c.company.id, name: c.company.name, role: 'owner', status: c.company.status.name),
+      ],
+      adminRole: _team.where((m) => m.userId == userId).firstOrNull?.role,
+      applications: _apps.where((a) => a.userId == userId).length,
+    );
+  }
+
+  @override
   Future<List<JobApplication>> applications() async => List.of(_apps);
+
+  @override
+  Future<String> documentUrl(String storagePath) async =>
+      throw const ValidationException('Files in demo mode stay on the applicant\'s device and can\'t be opened.');
 
   @override
   Future<List<Report>> reports() async => List.of(_reports);
@@ -386,6 +496,7 @@ class DemoAdminBackend implements AdminBackend {
     _settings = s;
     _log('update', 'platform_settings', 'settings', 'Platform settings', {
       'require_company_approval': s.requireCompanyApproval,
+      'require_job_approval': s.requireJobApproval,
       'maintenance': s.maintenanceEnabled,
     });
   }
@@ -427,6 +538,37 @@ class DemoAdminBackend implements AdminBackend {
     final m = _team.firstWhere((m) => m.userId == userId);
     _team.remove(m);
     _log('delete', 'admins', userId, m.email);
+  }
+
+  @override
+  Future<List<Invoice>> invoices() async => List.of(_invoices);
+
+  @override
+  Future<void> saveInvoice(Invoice invoice) async {
+    _need(AdminRole.admin);
+    final i = _invoices.indexWhere((x) => x.id == invoice.id);
+    final old = _invoices[i];
+    // Same date rules as the database trigger.
+    var inv = invoice;
+    final today = DateTime.now();
+    if (inv.status == InvoiceStatus.issued && inv.issueDate == null) inv = inv.copyWith(issueDate: () => DateTime(today.year, today.month, today.day));
+    if (inv.status == InvoiceStatus.issued && inv.dueDate == null) inv = inv.copyWith(dueDate: () => inv.issueDate!.add(const Duration(days: 14)));
+    if (inv.status == InvoiceStatus.paid && inv.paidAt == null) inv = inv.copyWith(paidAt: () => today);
+    if (inv.status != InvoiceStatus.paid) inv = inv.copyWith(paidAt: () => null);
+    _invoices[i] = inv;
+    _log('update', 'invoices', inv.id, inv.number, {
+      if (old.status != inv.status) 'status': inv.status.dbName,
+      if (old.unitPrice != inv.unitPrice) 'unit_price': inv.unitPrice,
+      if (old.total != inv.total) 'total': inv.total,
+    });
+  }
+
+  @override
+  Future<void> deleteInvoice(String id) async {
+    _need(AdminRole.admin);
+    final inv = _invoices.firstWhere((x) => x.id == id);
+    _invoices.remove(inv);
+    _log('delete', 'invoices', id, inv.number);
   }
 
   @override

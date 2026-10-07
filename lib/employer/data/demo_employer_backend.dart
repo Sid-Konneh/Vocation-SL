@@ -93,7 +93,8 @@ class DemoEmployerBackend implements EmployerBackend {
   }
 
   @override
-  Future<void> deleteDraft(String jobId) async => jobs.removeWhere((j) => j.id == jobId && j.status == JobStatus.draft);
+  Future<void> deleteDraft(String jobId) async =>
+      jobs.removeWhere((j) => j.id == jobId && const {JobStatus.draft, JobStatus.declined, JobStatus.rejected}.contains(j.status));
 
   @override
   Future<List<JobApplication>> applications(String companyId) async => List.of(apps);

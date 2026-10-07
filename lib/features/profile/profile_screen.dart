@@ -12,6 +12,7 @@ import '../../models/models.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/document_viewer.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
 
@@ -164,6 +165,13 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                     leading: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.danger),
                     title: Text(u.resume!.fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
                     subtitle: Text('${u.resume!.format.label} · ${Fmt.fileSize(u.resume!.sizeBytes)} · Updated ${Fmt.dateShort(u.resume!.uploadedAt)}'),
+                    trailing: const Icon(Icons.visibility_outlined),
+                    onTap: () => viewDocument(context,
+                        title: 'Your CV',
+                        fileName: u.resume!.fileName,
+                        format: u.resume!.format,
+                        storagePath: u.resume!.storagePath,
+                        loadUrl: ref.read(backendProvider).documentUrl),
                   ),
                 ),
               const SizedBox(height: 8),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../admin/admin_providers.dart';
 import '../../admin/admin_shell.dart';
+import '../../admin/features/invoices.dart';
 import '../../admin/features/moderation.dart';
 import '../../admin/features/overview_insights.dart';
 import '../../admin/features/people.dart';
@@ -95,7 +96,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final role = ref.read(roleProvider);
       final loc = state.matchedLocation;
       if (loc == '/') return null; // splash decides
-      if (!signedIn) return loc == '/login' ? null : '/login';
+      // Terms, Privacy and Help can be read before signing in.
+      if (!signedIn) return loc == '/login' || loc.startsWith('/pages/') ? null : '/login';
       if (loc == '/login') return homeFor(role);
       final suspended = ref.read(suspendedProvider).value ?? false;
       if (suspended && !loc.startsWith('/suspended') && !loc.startsWith('/pages/') && !loc.startsWith('/account/delete')) return '/suspended';
@@ -176,6 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/admin/content', pageBuilder: (c, s) => _page(s, const AdminContentScreen())),
           GoRoute(path: '/admin/settings', pageBuilder: (c, s) => _page(s, const AdminSettingsScreen())),
           GoRoute(path: '/admin/team', pageBuilder: (c, s) => _page(s, const AdminTeamScreen())),
+          GoRoute(path: '/admin/invoices', pageBuilder: (c, s) => _page(s, const AdminInvoicesScreen())),
           GoRoute(path: '/admin/activity', pageBuilder: (c, s) => _page(s, const AdminActivityScreen())),
         ],
       ),

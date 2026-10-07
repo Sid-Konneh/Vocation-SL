@@ -27,6 +27,7 @@ const adminSections = [
   AdminSection('/admin/users', 'Users', Icons.people_outline_rounded),
   AdminSection('/admin/applications', 'Applications', Icons.assignment_outlined),
   AdminSection('/admin/reports', 'Reports', Icons.flag_outlined),
+  AdminSection('/admin/invoices', 'Invoices', Icons.receipt_long_outlined),
   AdminSection('/admin/content', 'Content', Icons.campaign_outlined),
   AdminSection('/admin/settings', 'Platform settings', Icons.tune_rounded),
   AdminSection('/admin/team', 'Admin team', Icons.admin_panel_settings_outlined),
@@ -42,7 +43,7 @@ class AdminShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final role = ref.watch(adminRoleProvider);
-    if (role.isLoading && !role.hasValue) return const Scaffold(body: Center(child: VocationMark(size: 64)));
+    if (role.isLoading && !role.hasValue) return const ShellSkeleton();
     if (role.value == null) {
       return Scaffold(
         appBar: AppBar(),
@@ -171,15 +172,18 @@ class _NavRow extends StatelessWidget {
 
 /// Shows loading / error / data for an admin list, with retry.
 class AdminAsync<T> extends StatelessWidget {
-  const AdminAsync({super.key, required this.value, required this.onRetry, required this.builder});
+  const AdminAsync({super.key, required this.value, required this.onRetry, required this.builder, this.skeleton});
   final AsyncValue<T> value;
   final VoidCallback onRetry;
   final Widget Function(T data) builder;
 
+  /// Loading placeholder; defaults to a shimmering list.
+  final Widget? skeleton;
+
   @override
   Widget build(BuildContext context) => value.when(
         skipLoadingOnRefresh: true,
-        loading: () => const Skeleton(child: Column(children: [ListTileSkeleton(trailing: true), ListTileSkeleton(trailing: true), ListTileSkeleton(trailing: true), ListTileSkeleton(trailing: true)])),
+        loading: () => skeleton ?? const Skeleton(child: Column(children: [ListTileSkeleton(trailing: true), ListTileSkeleton(trailing: true), ListTileSkeleton(trailing: true), ListTileSkeleton(trailing: true)])),
         error: (e, _) => ErrorState(error: e, onRetry: onRetry),
         data: builder,
       );

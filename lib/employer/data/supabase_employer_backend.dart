@@ -97,7 +97,7 @@ class SupabaseEmployerBackend implements EmployerBackend {
 
   @override
   Future<void> deleteDraft(String jobId) => guardSupabase(() async {
-        await _client.from('jobs').delete().eq('id', jobId).eq('status', 'draft');
+        await _client.from('jobs').delete().eq('id', jobId).inFilter('status', ['draft', 'declined', 'rejected']);
       });
 
   JobApplication _appFromRow(Map<String, dynamic> row) {

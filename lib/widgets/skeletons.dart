@@ -238,3 +238,120 @@ class ProfileSkeleton extends StatelessWidget {
         ),
       );
 }
+
+/// Stat tiles, a chart and a table: for dashboards and insights.
+class DashboardSkeleton extends StatelessWidget {
+  const DashboardSkeleton({super.key, this.padding = EdgeInsets.zero});
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) => Skeleton(
+        child: Padding(
+          padding: padding,
+          child: LayoutBuilder(builder: (context, c) {
+            final perRow = c.maxWidth >= 900 ? 4 : (c.maxWidth >= 560 ? 3 : 2);
+            final tileWidth = (c.maxWidth - 12 * (perRow - 1)) / perRow;
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const SkeletonBox(width: 180, height: 20),
+              const SizedBox(height: 14),
+              Wrap(spacing: 12, runSpacing: 12, children: [
+                for (var i = 0; i < perRow * 2; i++) SkeletonBox(width: tileWidth, height: 96, radius: 16),
+              ]),
+              const SizedBox(height: 24),
+              const SkeletonBox(width: 220, height: 18),
+              const SizedBox(height: 12),
+              const SkeletonBox(height: 220, radius: 16),
+              const SizedBox(height: 24),
+              const SkeletonBox(width: 160, height: 18),
+              const SizedBox(height: 4),
+              for (var i = 0; i < 4; i++) const ListTileSkeleton(trailing: true),
+            ]);
+          }),
+        ),
+      );
+}
+
+/// Alternating message bubbles.
+class MessageThreadSkeleton extends StatelessWidget {
+  const MessageThreadSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) => Skeleton(
+        child: Column(children: [
+          for (final (mine, w) in const [(false, 240.0), (true, 200.0), (false, 280.0)])
+            Align(
+              alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+              child: Padding(padding: const EdgeInsets.only(bottom: 8), child: SkeletonBox(width: w, height: 56, radius: 16)),
+            ),
+        ]),
+      );
+}
+
+/// A document page with text lines, while a CV or cover letter loads.
+class DocumentSkeleton extends StatelessWidget {
+  const DocumentSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) => Skeleton(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: const Padding(
+              padding: EdgeInsets.all(AppSpacing.gutter),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SkeletonBox(width: 220, height: 26),
+                SizedBox(height: 10),
+                SkeletonBox(width: 300, height: 14),
+                SizedBox(height: 28),
+                SkeletonBox(width: 140, height: 18),
+                SizedBox(height: 12),
+                SkeletonBox(height: 12),
+                SizedBox(height: 8),
+                SkeletonBox(height: 12),
+                SizedBox(height: 8),
+                SkeletonBox(width: 260, height: 12),
+                SizedBox(height: 28),
+                SkeletonBox(width: 160, height: 18),
+                SizedBox(height: 12),
+                SkeletonBox(height: 12),
+                SizedBox(height: 8),
+                SkeletonBox(height: 12),
+                SizedBox(height: 8),
+                SkeletonBox(width: 200, height: 12),
+              ]),
+            ),
+          ),
+        ),
+      );
+}
+
+/// Sidebar and dashboard, while the employer or admin area starts up.
+class ShellSkeleton extends StatelessWidget {
+  const ShellSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+    const body = SingleChildScrollView(child: DashboardSkeleton(padding: EdgeInsets.all(AppSpacing.gutter)));
+    if (!wide) return const Scaffold(body: SafeArea(child: body));
+    return Scaffold(
+      body: Row(children: [
+        Skeleton(
+          child: SizedBox(
+            width: 264,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const SkeletonBox(width: 120, height: 30),
+                const SizedBox(height: 28),
+                for (var i = 0; i < 8; i++) ...[const SkeletonBox(height: 20), const SizedBox(height: 18)],
+              ]),
+            ),
+          ),
+        ),
+        const VerticalDivider(width: 1),
+        const Expanded(child: body),
+      ]),
+    );
+  }
+}

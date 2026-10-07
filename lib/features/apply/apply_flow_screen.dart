@@ -406,6 +406,7 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
           ),
           const SizedBox(height: 14),
           DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: _location,
             decoration: const InputDecoration(labelText: 'Where you live', prefixIcon: Icon(Icons.place_outlined)),
             items: [for (final l in sierraLeoneLocations) DropdownMenuItem(value: l, child: Text(l))],

@@ -7,6 +7,7 @@ import '../core/theme/app_theme.dart';
 import '../features/auth/role_choice_screen.dart';
 import '../features/profile/sign_out.dart';
 import '../models/models.dart';
+import '../widgets/skeletons.dart';
 import '../widgets/states.dart';
 import '../widgets/vocation_logo.dart';
 import 'features/company/company_screens.dart';
@@ -45,7 +46,7 @@ class EmployerShell extends ConsumerWidget {
       if (companyAsync.hasError) {
         return Scaffold(body: ErrorState(error: companyAsync.error!, onRetry: () => ref.invalidate(companyProvider)));
       }
-      return const Scaffold(body: Center(child: VocationMark(size: 64)));
+      return const ShellSkeleton();
     }
     if (companyAsync.value!.data == null) return const CompanySetupScreen();
 

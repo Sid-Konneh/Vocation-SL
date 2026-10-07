@@ -169,6 +169,7 @@ class _EditorState extends ConsumerState<_Editor> {
         ),
         const SizedBox(height: 14),
         DropdownButtonFormField<String>(
+          isExpanded: true,
           initialValue: sierraLeoneLocations.contains(_draft.location) ? _draft.location : null,
           decoration: const InputDecoration(labelText: 'Location'),
           items: [for (final l in sierraLeoneLocations) DropdownMenuItem(value: l, child: Text(l))],
@@ -536,6 +537,7 @@ class _ExperienceDialogState extends State<_ExperienceDialog> {
               TextFormField(controller: _company, decoration: const InputDecoration(labelText: 'Employer'), validator: (v) => (v ?? '').trim().isEmpty ? 'Required' : null),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: sierraLeoneLocations.contains(_location) ? _location : null,
                 decoration: const InputDecoration(labelText: 'Location'),
                 items: [for (final l in sierraLeoneLocations) DropdownMenuItem(value: l, child: Text(l))],
@@ -610,6 +612,7 @@ class _LanguageDialogState extends State<_LanguageDialog> {
         title: const Text('Add language'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: _name,
             decoration: const InputDecoration(labelText: 'Language'),
             items: [for (final l in _common) DropdownMenuItem(value: l, child: Text(l))],
@@ -617,6 +620,7 @@ class _LanguageDialogState extends State<_LanguageDialog> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: _level,
             decoration: const InputDecoration(labelText: 'Level'),
             items: [for (final l in _levels) DropdownMenuItem(value: l, child: Text(l))],

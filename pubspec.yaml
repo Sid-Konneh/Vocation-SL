@@ -24,6 +24,7 @@ dependencies:
   uuid: ^4.6.0
   url_launcher: ^6.3.3
   flutter_svg: ^2.3.0
+  pdfrx: ^2.6.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

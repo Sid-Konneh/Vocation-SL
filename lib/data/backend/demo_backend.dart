@@ -262,6 +262,10 @@ class DemoBackend implements VocationBackend {
   }
 
   @override
+  Future<String> documentUrl(String storagePath) async =>
+      throw const ValidationException('Files in demo mode stay on this device and can\'t be previewed.');
+
+  @override
   Future<String> uploadDocument({required String userId, required String fileName, required Uint8List bytes}) async {
     await _call();
     // Simulate upload time proportional to file size (capped).

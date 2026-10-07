@@ -9,6 +9,7 @@ import '../../models/models.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/legal_links.dart';
 import '../../widgets/vocation_logo.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -241,6 +242,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                   const SizedBox(height: 20),
                   PrimaryButton(label: _signUp ? 'Create account' : 'Sign in', loading: _busy, onPressed: () => _submit()),
+                  const SizedBox(height: 12),
+                  LegalNotice(action: _signUp ? 'creating an account' : 'signing in'),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: _busy ? null : () => setState(() {

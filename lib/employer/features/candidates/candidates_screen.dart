@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/models.dart';
+import '../../../providers/message_providers.dart';
 import '../../../widgets/common.dart';
+import '../../../widgets/document_viewer.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/states.dart';
 import '../../providers.dart';
@@ -24,19 +25,16 @@ const employerStatuses = [
   ApplicationStatus.rejected,
 ];
 
-Future<void> openDocument(BuildContext context, WidgetRef ref, String? storagePath) async {
-  if (storagePath == null || storagePath.isEmpty) {
-    showSnack(context, 'This file was attached in demo mode and has no download.', error: true);
-    return;
-  }
-  try {
-    final url = await ref.read(employerBackendProvider).documentUrl(storagePath);
-    final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    if (!ok && context.mounted) showSnack(context, 'Couldn\'t open the file.', error: true);
-  } catch (e) {
-    if (context.mounted) showError(context, e);
-  }
-}
+/// Opens an applicant's CV or cover letter in the in-app viewer.
+Future<void> openDocument(BuildContext context, WidgetRef ref, String? storagePath, {required String fileName, DocumentFormat? format, String title = 'CV'}) =>
+    viewDocument(
+      context,
+      title: title,
+      fileName: fileName,
+      format: format,
+      storagePath: storagePath,
+      loadUrl: ref.read(employerBackendProvider).documentUrl,
+    );
 
 class CandidatesScreen extends ConsumerStatefulWidget {
   const CandidatesScreen({super.key, this.jobId});
@@ -80,6 +78,7 @@ class _CandidatesScreenState extends ConsumerState<CandidatesScreen> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(candidatesProvider);
+    final unread = ref.watch(unreadRepliesProvider).value ?? const <String, int>{};
     final jobs = ref.watch(employerJobsProvider).value?.data ?? const <Job>[];
     final all = async.value?.data ?? const <JobApplication>[];
     final q = _query.trim().toLowerCase();
@@ -213,9 +212,14 @@ class _CandidatesScreenState extends ConsumerState<CandidatesScreen> {
                     DataCell(IconButton(
                       tooltip: 'Open CV: ${a.resume.fileName}',
                       icon: const Icon(Icons.description_outlined),
-                      onPressed: () => openDocument(context, ref, a.resume.storagePath),
+                      onPressed: () => openDocument(context, ref, a.resume.storagePath, fileName: a.resume.fileName, format: a.resume.format, title: '${a.applicant.fullName} · CV'),
                     )),
-                    DataCell(const Icon(Icons.chevron_right_rounded)),
+                    DataCell((unread[a.id] ?? 0) > 0
+                        ? Tooltip(
+                            message: '${unread[a.id]} new ${unread[a.id] == 1 ? 'reply' : 'replies'}',
+                            child: Badge(label: Text('${unread[a.id]}'), child: const Icon(Icons.chat_bubble_outline_rounded)),
+                          )
+                        : const Icon(Icons.chevron_right_rounded)),
                   ],
                 ),
             ],

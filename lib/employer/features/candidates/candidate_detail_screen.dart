@@ -5,8 +5,10 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../features/applications/application_detail_screen.dart' show ApplicationTimeline;
 import '../../../models/models.dart';
+import '../../../providers/message_providers.dart';
 import '../../../widgets/common.dart';
 import '../../../widgets/skeletons.dart';
+import '../../../widgets/message_thread.dart';
 import '../../../widgets/states.dart';
 import '../../providers.dart';
 import '../../widgets.dart';
@@ -21,15 +23,8 @@ class CandidateDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
-  final _message = TextEditingController();
   bool _busy = false;
   bool _markedViewed = false;
-
-  @override
-  void dispose() {
-    _message.dispose();
-    super.dispose();
-  }
 
   JobApplication? get _app =>
       ref.read(candidatesProvider).value?.data.where((a) => a.id == widget.applicationId).firstOrNull;
@@ -71,21 +66,15 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
     final time = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 10, minute: 0), helpText: 'Interview time');
     if (time == null) return;
     final at = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-    final note = _message.text.trim().isEmpty
-        ? 'We would like to invite you to an interview on ${Fmt.dateTime(at)}. Please reply to confirm.'
-        : _message.text.trim();
-    await _run(
-      () => ref.read(candidatesProvider.notifier).updateCandidate(a, status: ApplicationStatus.interview, interviewAt: at, message: note),
-      'Interview scheduled. ${a.applicant.fullName} has been notified.',
-    );
-    _message.clear();
-  }
-
-  Future<void> _send(JobApplication a) async {
-    final text = _message.text.trim();
-    if (text.isEmpty) return;
-    await _run(() => ref.read(candidatesProvider.notifier).updateCandidate(a, message: text), 'Message sent');
-    _message.clear();
+    final note = 'We would like to invite you to an interview on ${Fmt.dateTime(at)}. Please reply here to confirm.';
+    await _run(() async {
+      await ref.read(candidatesProvider.notifier).updateCandidate(a, status: ApplicationStatus.interview, interviewAt: at, message: note);
+      // Also post it in the conversation so the candidate can reply.
+      try {
+        await ref.read(messageBackendProvider).send(a.id, note, asEmployer: true);
+        ref.invalidate(messageThreadProvider(a.id));
+      } catch (_) {}
+    }, 'Interview scheduled. ${a.applicant.fullName} has been notified.');
   }
 
   @override
@@ -167,30 +156,20 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
                 const SizedBox(height: 12),
                 InfoRow(icon: Icons.event_available_rounded, label: 'Interview', value: '${Fmt.dateTime(a.interviewAt!)} (${Fmt.countdown(a.interviewAt!)})'),
               ],
-              const SizedBox(height: 16),
-              TextField(
-                controller: _message,
-                minLines: 2,
-                maxLines: 6,
-                maxLength: 1000,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(labelText: 'Message to candidate', hintText: 'They\'ll get a notification in the app.', alignLabelWithHint: true),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.tonalIcon(
-                  onPressed: _busy ? null : () => _send(a),
-                  icon: const Icon(Icons.send_rounded, size: 18),
-                  label: const Text('Send message'),
-                ),
-              ),
-              if (a.employerMessage != null) ...[
-                const SizedBox(height: 8),
-                Text('Last message sent', style: context.text.labelMedium?.copyWith(color: context.palette.muted)),
-                const SizedBox(height: 4),
-                Text(a.employerMessage!, style: context.text.bodyMedium),
-              ],
             ]),
+    );
+
+    final messages = SectionCard(
+      title: 'Messages',
+      child: MessageThread(
+        applicationId: a.id,
+        asEmployer: true,
+        otherName: a.applicant.fullName.split(' ').first,
+        legacyEmployerMessage: a.employerMessage,
+        enabled: canAct,
+        // Keep the latest message on the application for list previews.
+        onSent: (text) => ref.read(candidatesProvider.notifier).updateCandidate(a, message: text).ignore(),
+      ),
     );
 
     final documents = SectionCard(
@@ -201,8 +180,8 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
           leading: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.danger),
           title: Text(a.resume.fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text('CV · ${a.resume.format.label} · ${Fmt.fileSize(a.resume.sizeBytes)}'),
-          trailing: const Icon(Icons.open_in_new_rounded),
-          onTap: () => openDocument(context, ref, a.resume.storagePath),
+          trailing: const Icon(Icons.visibility_outlined),
+          onTap: () => openDocument(context, ref, a.resume.storagePath, fileName: a.resume.fileName, format: a.resume.format, title: '${a.applicant.fullName} · CV'),
         ),
         if (a.coverLetter?.kind == CoverLetterKind.uploaded)
           ListTile(
@@ -210,8 +189,9 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
             leading: const Icon(Icons.description_outlined),
             title: Text(a.coverLetter!.fileName ?? 'Cover letter'),
             subtitle: const Text('Cover letter'),
-            trailing: const Icon(Icons.open_in_new_rounded),
-            onTap: () => openDocument(context, ref, a.coverLetter!.storagePath),
+            trailing: const Icon(Icons.visibility_outlined),
+            onTap: () => openDocument(context, ref, a.coverLetter!.storagePath,
+                fileName: a.coverLetter!.fileName ?? 'Cover letter', format: a.coverLetter!.format, title: '${a.applicant.fullName} · Cover letter'),
           ),
         if (a.coverLetter?.kind == CoverLetterKind.written) ...[
           const Divider(),
@@ -295,12 +275,14 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
           const SizedBox(height: 16),
           if (wide)
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(flex: 3, child: Column(children: [actions, const SizedBox(height: 16), profileCard])),
+              Expanded(flex: 3, child: Column(children: [actions, const SizedBox(height: 16), messages, const SizedBox(height: 16), profileCard])),
               const SizedBox(width: 16),
               Expanded(flex: 2, child: Column(children: [documents, const SizedBox(height: 16), history])),
             ])
           else ...[
             actions,
+            const SizedBox(height: 16),
+            messages,
             const SizedBox(height: 16),
             documents,
             const SizedBox(height: 16),

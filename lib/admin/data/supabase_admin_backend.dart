@@ -45,8 +45,10 @@ class SupabaseAdminBackend implements AdminBackend {
       });
 
   @override
-  Future<void> setJobStatus(String jobId, JobStatus status) =>
-      guardSupabase(() async => _client.from('jobs').update({'status': status.name}).eq('id', jobId));
+  Future<void> setJobStatus(String jobId, JobStatus status, {String note = ''}) => guardSupabase(() async => _client.from('jobs').update({
+        'status': status.name,
+        if (status == JobStatus.declined || status == JobStatus.rejected) 'review_note': note,
+      }).eq('id', jobId));
 
   @override
   Future<void> setJobFeatured(String jobId, bool featured) =>
@@ -91,6 +93,12 @@ class SupabaseAdminBackend implements AdminBackend {
   @override
   Future<void> deleteUser(String userId) => guardSupabase(() async => _client.rpc('admin_delete_user', params: {'target': userId}));
 
+  @override
+  Future<UserLoginInfo?> userLogin(String userId) => guardSupabase(() async {
+        final r = await _client.rpc('admin_user_login', params: {'target': userId});
+        return r == null ? null : UserLoginInfo.fromJson(Map<String, dynamic>.from(r as Map));
+      });
+
   // ---- Applications ---------------------------------------------------------------
 
   @override
@@ -114,6 +122,10 @@ class SupabaseAdminBackend implements AdminBackend {
           return job is Map ? app.copyWith(job: () => Job.fromJson(Map<String, dynamic>.from(job))) : app;
         }).toList();
       });
+
+  @override
+  Future<String> documentUrl(String storagePath) =>
+      guardSupabase(() => _client.storage.from('documents').createSignedUrl(storagePath, 60 * 30));
 
   // ---- Reports -------------------------------------------------------------------
 
@@ -211,6 +223,21 @@ class SupabaseAdminBackend implements AdminBackend {
 
   @override
   Future<void> removeMember(String userId) => guardSupabase(() async => _client.from('admins').delete().eq('user_id', userId));
+
+  // ---- Invoices ------------------------------------------------------------------
+
+  @override
+  Future<List<Invoice>> invoices() => guardSupabase(() async {
+        final rows = await _client.from('invoices').select().order('created_at', ascending: false).limit(_cap);
+        return rows.map(Invoice.fromJson).toList();
+      });
+
+  @override
+  Future<void> saveInvoice(Invoice invoice) =>
+      guardSupabase(() async => _client.from('invoices').update(invoice.toJson()).eq('id', invoice.id));
+
+  @override
+  Future<void> deleteInvoice(String id) => guardSupabase(() async => _client.from('invoices').delete().eq('id', id));
 
   // ---- Activity ------------------------------------------------------------------
 

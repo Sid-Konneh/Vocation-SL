@@ -5,6 +5,7 @@ export 'documents.dart';
 export 'enums.dart';
 export 'job.dart';
 export 'job_filter.dart';
+export 'message.dart';
 export 'notification.dart';
 export 'saved.dart';
 export 'user.dart';

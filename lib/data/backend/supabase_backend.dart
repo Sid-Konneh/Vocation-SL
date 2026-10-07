@@ -284,6 +284,9 @@ class SupabaseBackend implements VocationBackend {
       });
 
   @override
+  Future<String> documentUrl(String storagePath) => _run(() => _client.storage.from(_bucket).createSignedUrl(storagePath, 60 * 30));
+
+  @override
   Future<String> uploadDocument({required String userId, required String fileName, required Uint8List bytes}) => _run(() async {
         final path = '$userId/${_uuid.v4()}-$fileName';
         await _client.storage.from(_bucket).uploadBinary(path, bytes);

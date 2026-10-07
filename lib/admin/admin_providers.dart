@@ -30,6 +30,9 @@ final adminAnnouncementsProvider =
 final adminPagesProvider = FutureProvider.autoDispose<List<SitePage>>((ref) => ref.watch(adminBackendProvider).pages());
 final adminSettingsProvider = FutureProvider.autoDispose<PlatformSettings>((ref) => ref.watch(adminBackendProvider).settings());
 final adminTeamProvider = FutureProvider.autoDispose<List<AdminMember>>((ref) => ref.watch(adminBackendProvider).team());
+final adminUserLoginProvider =
+    FutureProvider.autoDispose.family<UserLoginInfo?, String>((ref, userId) => ref.watch(adminBackendProvider).userLogin(userId));
+final adminInvoicesProvider = FutureProvider.autoDispose<List<Invoice>>((ref) => ref.watch(adminBackendProvider).invoices());
 final adminActivityProvider = FutureProvider.autoDispose<List<AuditEntry>>((ref) => ref.watch(adminBackendProvider).activity());
 
 /// Runs an admin action, then refreshes whatever it affected (and the

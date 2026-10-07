@@ -77,7 +77,10 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
     _deadline = j.deadline;
   }
 
-  bool get _posted => _original != null && _original!.status != JobStatus.draft;
+  /// Already submitted, live or closed (declined jobs are edited and resubmitted).
+  bool get _posted => _original != null && const {JobStatus.pending, JobStatus.published, JobStatus.closed}.contains(_original!.status);
+  bool get _declined => _original?.status == JobStatus.declined;
+  bool get _rejected => _original?.status == JobStatus.rejected;
 
   List<String> _lines(TextEditingController c) =>
       c.text.split('\n').map((l) => l.replaceFirst(RegExp(r'^\s*[-•*]\s*'), '').trim()).where((l) => l.isNotEmpty).toList();
@@ -118,7 +121,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
       final ok = await confirmDialog(
         context,
         title: 'Submit this job?',
-        message: 'Your company is awaiting approval. The job will be saved as "Awaiting approval" and goes live automatically once your company is approved.',
+        message: 'Your company is awaiting approval. The job will be saved as "Awaiting approval" and reviewed once your company is approved.',
         confirmLabel: 'Submit job',
       );
       if (!ok) return;
@@ -135,7 +138,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
             : _posted
                 ? 'Job updated'
                 : saved.status == JobStatus.pending
-                    ? 'Job submitted. It goes live when your company is approved.'
+                    ? 'Job submitted for review. It goes live once Vocation SL approves it.'
                     : 'Job posted and live',
       );
       context.pop();
@@ -174,16 +177,16 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
       appBar: AppBar(
         title: Text(_original == null ? 'Post a job' : 'Edit job'),
         actions: [
-          if (!_posted)
+          if (!_posted && !_rejected)
             TextButton(onPressed: _saving ? null : () => _save(company, post: false), child: const Text('Save draft')),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: FilledButton(
-              onPressed: _saving ? null : () => _save(company, post: true),
+              onPressed: _saving || _rejected ? null : () => _save(company, post: true),
               style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
               child: _saving
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(_posted ? 'Save changes' : 'Post job'),
+                  : Text(_posted ? 'Save changes' : _declined ? 'Resubmit for review' : 'Post job'),
             ),
           ),
         ],
@@ -193,6 +196,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
         child: ResponsiveCenter(
           maxWidth: 860,
           child: ListView(padding: const EdgeInsets.all(AppSpacing.gutter), children: [
+            if (_declined || _rejected) _ReviewNotice(job: _original!),
             section('Basics', [
               TextFormField(
                 controller: _title,
@@ -304,4 +308,40 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
           },
         ),
       );
+}
+
+/// Explains why an admin declined or rejected the job.
+class _ReviewNotice extends StatelessWidget {
+  const _ReviewNotice({required this.job});
+  final Job job;
+
+  @override
+  Widget build(BuildContext context) {
+    final rejected = job.status == JobStatus.rejected;
+    final color = rejected ? AppColors.danger : AppColors.warning;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppSpacing.radius)),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(rejected ? Icons.block_outlined : Icons.edit_note_rounded, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(rejected ? 'This job was rejected' : 'Changes needed before this job can go live', style: context.text.titleSmall),
+              if (job.reviewNote.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(job.reviewNote, style: context.text.bodyMedium)),
+              const SizedBox(height: 4),
+              Text(
+                rejected
+                    ? 'Rejected jobs can\'t be resubmitted. Contact support if you think this is a mistake.'
+                    : 'Make the changes below, then tap "Resubmit for review".',
+                style: context.text.bodySmall,
+              ),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
 }

@@ -87,13 +87,24 @@ enum JobSort {
   final String label;
 }
 
-const sierraLeoneLocations = <String>[
+/// Sierra Leone's 16 districts, by province (2017 boundaries).
+const sierraLeoneDistricts = <String, List<String>>{
+  'Western Area': ['Western Area Urban', 'Western Area Rural'],
+  'Eastern Province': ['Kailahun', 'Kenema', 'Kono'],
+  'Northern Province': ['Bombali', 'Falaba', 'Koinadugu', 'Tonkolili'],
+  'North West Province': ['Kambia', 'Karene', 'Port Loko'],
+  'Southern Province': ['Bo', 'Bonthe', 'Moyamba', 'Pujehun'],
+};
+
+/// Main towns people search by. Bo, Kenema and Port Loko share their
+/// district's name, so they appear once.
+const sierraLeoneTowns = <String>['Freetown', 'Makeni', 'Koidu', 'Lunsar', 'Waterloo'];
+
+/// Every location in pickers and filters: Freetown first, then the 16
+/// districts A–Z, then the other main towns. Existing jobs and profiles
+/// that use a town name keep matching.
+final sierraLeoneLocations = <String>[
   'Freetown',
-  'Bo',
-  'Kenema',
-  'Makeni',
-  'Port Loko',
-  'Koidu',
-  'Lunsar',
-  'Waterloo',
+  ...([for (final d in sierraLeoneDistricts.values) ...d]..sort()),
+  ...sierraLeoneTowns.where((t) => t != 'Freetown'),
 ];

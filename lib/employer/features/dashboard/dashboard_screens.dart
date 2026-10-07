@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/models.dart';
+import '../../../widgets/skeletons.dart';
 import '../../../widgets/announcement_banner.dart';
 import '../../../widgets/common.dart';
 import '../../../widgets/states.dart';
@@ -39,10 +40,12 @@ class DashboardScreen extends ConsumerWidget {
       title: 'Recent applicants',
       trailing: TextButton(onPressed: () => context.go('/employer/candidates'), child: const Text('View all')),
       child: apps.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(loading ? 'Loading…' : 'No applicants yet. Share your job links to get started.', style: context.text.bodyMedium),
-            )
+          ? loading
+              ? const Skeleton(child: Column(children: [ListTileSkeleton(leadingCircle: true), ListTileSkeleton(leadingCircle: true), ListTileSkeleton(leadingCircle: true)]))
+              : Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text('No applicants yet. Share your job links to get started.', style: context.text.bodyMedium),
+                )
           : Column(children: [
               for (final a in apps.take(6))
                 ListTile(

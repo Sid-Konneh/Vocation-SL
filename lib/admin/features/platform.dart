@@ -162,6 +162,7 @@ class _AnnouncementDialogState extends State<_AnnouncementDialog> {
               TextField(controller: _title, maxLength: 80, decoration: const InputDecoration(labelText: 'Title')),
               TextField(controller: _body, minLines: 2, maxLines: 5, maxLength: 300, decoration: const InputDecoration(labelText: 'Message')),
               DropdownButtonFormField<AnnouncementAudience>(
+                isExpanded: true,
                 initialValue: _audience,
                 decoration: const InputDecoration(labelText: 'Show to'),
                 items: [for (final a in AnnouncementAudience.values) DropdownMenuItem(value: a, child: Text(a.label))],
@@ -169,6 +170,7 @@ class _AnnouncementDialogState extends State<_AnnouncementDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<AnnouncementLevel>(
+                isExpanded: true,
                 initialValue: _level,
                 decoration: const InputDecoration(labelText: 'Style'),
                 items: [for (final l in AnnouncementLevel.values) DropdownMenuItem(value: l, child: Text(l.label))],
@@ -332,14 +334,24 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               constraints: const BoxConstraints(maxWidth: 760),
               child: Column(children: [
                 SectionCard(
-                  title: 'Employers',
-                  child: SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Approve new companies before their jobs go live'),
-                    subtitle: const Text('Recommended. When off, new companies are approved automatically and their jobs publish immediately.'),
-                    value: d.requireCompanyApproval,
-                    onChanged: canEdit ? (v) => setState(() => _draft = d.copyWith(requireCompanyApproval: v)) : null,
-                  ),
+                  title: 'Employers and jobs',
+                  child: Column(children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Approve new companies'),
+                      subtitle: const Text('Recommended. When off, new companies are approved automatically (without the verified check mark).'),
+                      value: d.requireCompanyApproval,
+                      onChanged: canEdit ? (v) => setState(() => _draft = d.copyWith(requireCompanyApproval: v)) : null,
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Review every job before it goes live'),
+                      subtitle: const Text('Recommended. New and resubmitted jobs wait in Job moderation for approve, decline or reject. '
+                          'When off, jobs from approved companies publish immediately.'),
+                      value: d.requireJobApproval,
+                      onChanged: canEdit ? (v) => setState(() => _draft = d.copyWith(requireJobApproval: v)) : null,
+                    ),
+                  ]),
                 ),
                 const SizedBox(height: 16),
                 SectionCard(

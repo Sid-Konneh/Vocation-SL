@@ -5,7 +5,13 @@ enum JobStatus {
   draft('Draft'),
   pending('Awaiting approval'),
   published('Live'),
-  closed('Closed');
+  closed('Closed'),
+
+  /// Sent back by an admin; the employer can edit and resubmit.
+  declined('Changes needed'),
+
+  /// Refused by an admin; final.
+  rejected('Rejected');
 
   const JobStatus(this.label);
   final String label;
@@ -39,6 +45,7 @@ class Job {
     this.company,
     this.status = JobStatus.published,
     this.views = 0,
+    this.reviewNote = '',
   });
 
   final String id;
@@ -66,6 +73,9 @@ class Job {
   final bool featured;
   final JobStatus status;
   final int views;
+
+  /// The admin's reason when a job is declined or rejected.
+  final String reviewNote;
 
   /// Populated by repositories so the UI never has to join data itself.
   final Company? company;
@@ -101,6 +111,7 @@ class Job {
         company: c,
         status: status,
         views: views,
+        reviewNote: reviewNote,
       );
 
   factory Job.fromJson(Map<String, dynamic> j) => Job(
@@ -129,6 +140,7 @@ class Job {
         featured: j['featured'] as bool? ?? false,
         status: enumByName(JobStatus.values, j['status'], JobStatus.published),
         views: (j['views'] as num?)?.toInt() ?? 0,
+        reviewNote: j['review_note'] as String? ?? '',
         company: j['company'] is Map<String, dynamic> ? Company.fromJson(j['company'] as Map<String, dynamic>) : null,
       );
 
@@ -158,6 +170,7 @@ class Job {
         'featured': featured,
         'status': status.name,
         'views': views,
+        'review_note': reviewNote,
         if (includeCompany && company != null) 'company': company!.toJson(),
       };
 }

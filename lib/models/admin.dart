@@ -4,6 +4,7 @@ library;
 
 import 'company.dart';
 import 'job.dart';
+import 'user.dart';
 
 enum AdminRole {
   viewer('Viewer', 1, 'Can view everything, change nothing'),
@@ -54,11 +55,25 @@ class AdminUser {
     this.headline = '',
     this.location = '',
     this.phone = '',
+    this.profileData = const {},
   });
 
   final String id;
   final String email;
   final String name;
+
+  /// The profile the user filled in (CV, experience, skills, preferences).
+  final Map<String, dynamic> profileData;
+
+  /// The parsed profile, or null if the stored data can't be read.
+  AppUser? get profile {
+    try {
+      return AppUser.fromJson({...profileData, 'id': id, 'email': email, 'full_name': name});
+    } catch (_) {
+      return null;
+    }
+  }
+
   final String? role;
   final DateTime createdAt;
   final DateTime? lastSeenAt;
@@ -82,6 +97,7 @@ class AdminUser {
         headline: headline,
         location: location,
         phone: phone,
+        profileData: profileData,
       );
 
   factory AdminUser.fromJson(Map<String, dynamic> j) {
@@ -98,8 +114,102 @@ class AdminUser {
       headline: data['headline'] as String? ?? '',
       location: data['location'] as String? ?? '',
       phone: data['phone'] as String? ?? '',
+      profileData: data,
     );
   }
+}
+
+/// How and when a user signs in, read from the auth system (admins only).
+class UserLoginInfo {
+  const UserLoginInfo({
+    this.email = '',
+    this.phone = '',
+    this.providers = const [],
+    this.createdAt,
+    this.lastSignInAt,
+    this.emailConfirmedAt,
+    this.bannedUntil,
+    this.identities = const [],
+    this.sessions = const [],
+    this.companies = const [],
+    this.adminRole,
+    this.applications = 0,
+  });
+
+  final String email;
+  final String phone;
+
+  /// e.g. ['email', 'google'].
+  final List<String> providers;
+  final DateTime? createdAt;
+  final DateTime? lastSignInAt;
+  final DateTime? emailConfirmedAt;
+  final DateTime? bannedUntil;
+  final List<({String provider, String email, DateTime? createdAt, DateTime? lastSignInAt})> identities;
+
+  /// Most recent first.
+  final List<({DateTime? createdAt, DateTime? lastActiveAt, String userAgent, String ip})> sessions;
+  final List<({String id, String name, String role, String status})> companies;
+  final AdminRole? adminRole;
+  final int applications;
+
+  static String providerLabel(String p) => switch (p) { 'email' => 'Email and password', 'google' => 'Google', _ => p };
+
+  factory UserLoginInfo.fromJson(Map<String, dynamic> j) {
+    DateTime? d(Object? v) => v == null ? null : DateTime.tryParse('$v');
+    List<Map<String, dynamic>> maps(Object? v) => [for (final e in (v as List? ?? const [])) Map<String, dynamic>.from(e as Map)];
+    return UserLoginInfo(
+      email: j['email'] as String? ?? '',
+      phone: j['phone'] as String? ?? '',
+      providers: [for (final p in (j['providers'] as List? ?? const [])) if (p != null) '$p'],
+      createdAt: d(j['created_at']),
+      lastSignInAt: d(j['last_sign_in_at']),
+      emailConfirmedAt: d(j['email_confirmed_at']),
+      bannedUntil: d(j['banned_until']),
+      identities: [
+        for (final i in maps(j['identities']))
+          (provider: '${i['provider'] ?? ''}', email: '${i['email'] ?? ''}', createdAt: d(i['created_at']), lastSignInAt: d(i['last_sign_in_at'])),
+      ],
+      sessions: [
+        for (final s in maps(j['sessions']))
+          (createdAt: d(s['created_at']), lastActiveAt: d(s['updated_at']), userAgent: '${s['user_agent'] ?? ''}', ip: '${s['ip'] ?? ''}'),
+      ],
+      companies: [
+        for (final c in maps(j['companies'])) (id: '${c['id']}', name: '${c['name'] ?? ''}', role: '${c['role'] ?? ''}', status: '${c['status'] ?? ''}'),
+      ],
+      adminRole: AdminRole.fromName(j['admin_role'] as String?),
+      applications: (j['applications'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+/// A short, readable device name from a browser user-agent string.
+String describeUserAgent(String ua) {
+  if (ua.isEmpty) return 'Unknown device';
+  final os = ua.contains('Android')
+      ? 'Android'
+      : ua.contains('iPhone') || ua.contains('iPad')
+          ? 'iOS'
+          : ua.contains('Windows')
+              ? 'Windows'
+              : ua.contains('Mac OS')
+                  ? 'Mac'
+                  : ua.contains('Linux')
+                      ? 'Linux'
+                      : null;
+  final app = ua.contains('Dart/')
+      ? 'Vocation SL app'
+      : ua.contains('Edg/')
+          ? 'Edge'
+          : ua.contains('Chrome/')
+              ? 'Chrome'
+              : ua.contains('Firefox/')
+                  ? 'Firefox'
+                  : ua.contains('Safari/')
+                      ? 'Safari'
+                      : null;
+  if (os == null && app == null) return ua.length > 60 ? '${ua.substring(0, 60)}…' : ua;
+  return [app, os].whereType<String>().join(' on ');
 }
 
 /// A company as admins see it (with team size).
@@ -293,19 +403,24 @@ class SitePage {
 class PlatformSettings {
   const PlatformSettings({
     this.requireCompanyApproval = true,
+    this.requireJobApproval = true,
     this.maintenanceEnabled = false,
     this.maintenanceMessage = '',
     this.supportEmail = 'vocationxsl@gmail.com',
   });
 
   final bool requireCompanyApproval;
+
+  /// Every new or resubmitted job waits for an admin before going live.
+  final bool requireJobApproval;
   final bool maintenanceEnabled;
   final String maintenanceMessage;
   final String supportEmail;
 
-  PlatformSettings copyWith({bool? requireCompanyApproval, bool? maintenanceEnabled, String? maintenanceMessage, String? supportEmail}) =>
+  PlatformSettings copyWith({bool? requireCompanyApproval, bool? requireJobApproval, bool? maintenanceEnabled, String? maintenanceMessage, String? supportEmail}) =>
       PlatformSettings(
         requireCompanyApproval: requireCompanyApproval ?? this.requireCompanyApproval,
+        requireJobApproval: requireJobApproval ?? this.requireJobApproval,
         maintenanceEnabled: maintenanceEnabled ?? this.maintenanceEnabled,
         maintenanceMessage: maintenanceMessage ?? this.maintenanceMessage,
         supportEmail: supportEmail ?? this.supportEmail,
@@ -317,6 +432,7 @@ class PlatformSettings {
     final maint = m['maintenance'] is Map ? Map<String, dynamic>.from(m['maintenance'] as Map) : const <String, dynamic>{};
     return PlatformSettings(
       requireCompanyApproval: m['require_company_approval'] as bool? ?? true,
+      requireJobApproval: m['require_job_approval'] as bool? ?? true,
       maintenanceEnabled: maint['enabled'] as bool? ?? false,
       maintenanceMessage: maint['message'] as String? ?? '',
       supportEmail: m['support_email'] as String? ?? 'vocationxsl@gmail.com',
@@ -325,6 +441,7 @@ class PlatformSettings {
 
   List<Map<String, dynamic>> toRows() => [
         {'key': 'require_company_approval', 'value': requireCompanyApproval},
+        {'key': 'require_job_approval', 'value': requireJobApproval},
         {'key': 'maintenance', 'value': {'enabled': maintenanceEnabled, 'message': maintenanceMessage}},
         {'key': 'support_email', 'value': supportEmail},
       ];
@@ -363,9 +480,11 @@ class AuditEntry {
       'site_pages' => 'page',
       'platform_settings' => 'setting',
       'admins' => 'admin team member',
+      'invoices' => 'invoice',
       _ => targetType,
     };
     final changes = details.entries.where((e) => e.key != 'label' && e.key != 'id').map((e) => '${e.key} → ${e.value}').take(3).join(', ');
+    if (action == 'view') return 'Viewed $what${label.isEmpty ? '' : ' "$label"'} ${details['viewed'] ?? ''}'.trimRight();
     final verb = switch (action) { 'insert' => 'Created', 'delete' => 'Deleted', _ => 'Updated' };
     return '$verb $what${label.isEmpty ? '' : ' "$label"'}${action == 'update' && changes.isNotEmpty ? ': $changes' : ''}';
   }
@@ -514,3 +633,176 @@ class AdminStats {
 
 /// Moderation view of a job (with its company).
 typedef AdminJob = Job;
+
+enum InvoiceStatus {
+  draft('Draft', 'draft'),
+  issued('Issued', 'issued'),
+  paid('Paid', 'paid'),
+  voided('Void', 'void');
+
+  const InvoiceStatus(this.label, this.dbName);
+  final String label;
+  final String dbName;
+
+  static InvoiceStatus fromName(String? n) => values.firstWhere((s) => s.dbName == n, orElse: () => draft);
+}
+
+/// An invoice for a job listing. Totals are calculated the same way as the
+/// database's generated columns: tax applies after the discount.
+class Invoice {
+  const Invoice({
+    required this.id,
+    required this.number,
+    required this.createdAt,
+    this.jobId,
+    this.companyId,
+    this.jobTitle = '',
+    this.billToName = '',
+    this.billToEmail = '',
+    this.billToAddress = '',
+    this.description = 'Job listing on Vocation SL',
+    this.quantity = 1,
+    this.unitPrice = 0,
+    this.discount = 0,
+    this.taxRate = 15,
+    this.currency = 'SLE',
+    this.status = InvoiceStatus.draft,
+    this.issueDate,
+    this.dueDate,
+    this.paidAt,
+    this.paymentMethod = '',
+    this.paymentReference = '',
+    this.notes = '',
+  });
+
+  final String id;
+  final String number;
+  final String? jobId;
+  final String? companyId;
+  final String jobTitle;
+  final String billToName;
+  final String billToEmail;
+  final String billToAddress;
+  final String description;
+  final int quantity;
+  final double unitPrice;
+  final double discount;
+
+  /// Percent, e.g. 15 for 15%.
+  final double taxRate;
+  final String currency;
+  final InvoiceStatus status;
+  final DateTime? issueDate;
+  final DateTime? dueDate;
+  final DateTime? paidAt;
+  final String paymentMethod;
+  final String paymentReference;
+  final String notes;
+  final DateTime createdAt;
+
+  static double _round2(double v) => (v * 100).roundToDouble() / 100;
+
+  double get subtotal => _round2(quantity * unitPrice);
+  double get taxable => (subtotal - discount).clamp(0, double.infinity).toDouble();
+  double get taxAmount => _round2(taxable * taxRate / 100);
+  double get total => _round2(taxable + taxAmount);
+
+  /// A draft with no cost entered yet.
+  bool get needsPricing => status == InvoiceStatus.draft && unitPrice == 0;
+
+  bool isOverdueAt(DateTime now) =>
+      status == InvoiceStatus.issued && dueDate != null && DateTime(now.year, now.month, now.day).isAfter(dueDate!);
+
+  Invoice copyWith({
+    String? billToName,
+    String? billToEmail,
+    String? billToAddress,
+    String? description,
+    int? quantity,
+    double? unitPrice,
+    double? discount,
+    double? taxRate,
+    String? currency,
+    InvoiceStatus? status,
+    DateTime? Function()? issueDate,
+    DateTime? Function()? dueDate,
+    DateTime? Function()? paidAt,
+    String? paymentMethod,
+    String? paymentReference,
+    String? notes,
+  }) =>
+      Invoice(
+        id: id,
+        number: number,
+        createdAt: createdAt,
+        jobId: jobId,
+        companyId: companyId,
+        jobTitle: jobTitle,
+        billToName: billToName ?? this.billToName,
+        billToEmail: billToEmail ?? this.billToEmail,
+        billToAddress: billToAddress ?? this.billToAddress,
+        description: description ?? this.description,
+        quantity: quantity ?? this.quantity,
+        unitPrice: unitPrice ?? this.unitPrice,
+        discount: discount ?? this.discount,
+        taxRate: taxRate ?? this.taxRate,
+        currency: currency ?? this.currency,
+        status: status ?? this.status,
+        issueDate: issueDate == null ? this.issueDate : issueDate(),
+        dueDate: dueDate == null ? this.dueDate : dueDate(),
+        paidAt: paidAt == null ? this.paidAt : paidAt(),
+        paymentMethod: paymentMethod ?? this.paymentMethod,
+        paymentReference: paymentReference ?? this.paymentReference,
+        notes: notes ?? this.notes,
+      );
+
+  static DateTime? _date(Object? v) => v == null ? null : DateTime.tryParse('$v');
+  static String? _day(DateTime? d) => d == null
+      ? null
+      : '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  factory Invoice.fromJson(Map<String, dynamic> j) => Invoice(
+        id: j['id'] as String,
+        number: j['number'] as String? ?? '',
+        jobId: j['job_id'] as String?,
+        companyId: j['company_id'] as String?,
+        jobTitle: j['job_title'] as String? ?? '',
+        billToName: j['bill_to_name'] as String? ?? '',
+        billToEmail: j['bill_to_email'] as String? ?? '',
+        billToAddress: j['bill_to_address'] as String? ?? '',
+        description: j['description'] as String? ?? '',
+        quantity: (j['quantity'] as num?)?.toInt() ?? 1,
+        unitPrice: (j['unit_price'] as num?)?.toDouble() ?? 0,
+        discount: (j['discount'] as num?)?.toDouble() ?? 0,
+        taxRate: (j['tax_rate'] as num?)?.toDouble() ?? 15,
+        currency: j['currency'] as String? ?? 'SLE',
+        status: InvoiceStatus.fromName(j['status'] as String?),
+        issueDate: _date(j['issue_date']),
+        dueDate: _date(j['due_date']),
+        paidAt: _date(j['paid_at']),
+        paymentMethod: j['payment_method'] as String? ?? '',
+        paymentReference: j['payment_reference'] as String? ?? '',
+        notes: j['notes'] as String? ?? '',
+        createdAt: _date(j['created_at']) ?? DateTime.now(),
+      );
+
+  /// Editable columns only (number, totals and job link are set by the database).
+  Map<String, dynamic> toJson() => {
+        'bill_to_name': billToName,
+        'bill_to_email': billToEmail,
+        'bill_to_address': billToAddress,
+        'description': description,
+        'quantity': quantity,
+        'unit_price': unitPrice,
+        'discount': discount,
+        'tax_rate': taxRate,
+        'currency': currency,
+        'status': status.dbName,
+        'issue_date': _day(issueDate),
+        'due_date': _day(dueDate),
+        'paid_at': paidAt?.toUtc().toIso8601String(),
+        'payment_method': paymentMethod,
+        'payment_reference': paymentReference,
+        'notes': notes,
+      };
+}

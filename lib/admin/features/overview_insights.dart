@@ -8,6 +8,7 @@ import '../../core/utils/formatters.dart';
 import '../../employer/charts.dart';
 import '../../employer/widgets.dart';
 import '../../models/models.dart';
+import '../../widgets/skeletons.dart';
 import '../admin_providers.dart';
 import '../admin_shell.dart';
 
@@ -81,6 +82,7 @@ class AdminOverviewScreen extends ConsumerWidget {
       },
       children: [
         AdminAsync<AdminStats>(
+          skeleton: const DashboardSkeleton(),
           value: stats,
           onRetry: () => ref.invalidate(adminStatsProvider),
           builder: (s) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -194,6 +196,7 @@ class AdminInsightsScreen extends ConsumerWidget {
       },
       children: [
         AdminAsync<AdminStats>(
+          skeleton: const DashboardSkeleton(),
           value: stats,
           onRetry: () => ref.invalidate(adminStatsProvider),
           builder: (s) {

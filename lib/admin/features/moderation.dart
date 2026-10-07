@@ -40,10 +40,17 @@ class _AdminJobsScreenState extends ConsumerState<AdminJobsScreen> {
 
   Future<void> _do(Job j, String action) async {
     final a = ref.read(adminActionsProvider);
-    final refresh = [adminJobsProvider];
+    final refresh = [adminJobsProvider, adminInvoicesProvider];
     switch (action) {
       case 'approve':
-        await _act(context, ref, '"${j.title}" is live', () => a.run((b) => b.setJobStatus(j.id, JobStatus.published), refresh: refresh));
+        await _act(context, ref, '"${j.title}" approved and live. Its invoice is in Invoices.',
+            () => a.run((b) => b.setJobStatus(j.id, JobStatus.published), refresh: refresh));
+      case 'decline' || 'reject':
+        final status = action == 'decline' ? JobStatus.declined : JobStatus.rejected;
+        final note = await showDialog<String>(context: context, builder: (_) => _JobReviewDialog(job: j, status: status));
+        if (note == null || !mounted) return;
+        await _act(context, ref, action == 'decline' ? '"${j.title}" sent back to the employer' : '"${j.title}" rejected',
+            () => a.run((b) => b.setJobStatus(j.id, status, note: note), refresh: refresh));
       case 'close':
         if (await confirmDialog(context, title: 'Take this job down?', message: '"${j.title}" will stop showing to job seekers.', confirmLabel: 'Close job')) {
           if (!mounted) return;
@@ -97,7 +104,7 @@ class _AdminJobsScreenState extends ConsumerState<AdminJobsScreen> {
                 empty: EmptyState(
                   icon: Icons.task_alt_rounded,
                   title: _status == JobStatus.pending ? 'Nothing to review' : 'No jobs match',
-                  message: _status == JobStatus.pending ? 'New jobs from unapproved companies appear here.' : 'Try another filter.',
+                  message: _status == JobStatus.pending ? 'New and resubmitted jobs appear here for approval.' : 'Try another filter.',
                 ),
                 columns: const [
                   DataColumn(label: Text('Job')),
@@ -129,7 +136,10 @@ class _AdminJobsScreenState extends ConsumerState<AdminJobsScreen> {
                         onSelected: (a) => _do(j, a),
                         itemBuilder: (_) => [
                           const PopupMenuItem(value: 'view', child: Text('View details')),
-                          if (j.status == JobStatus.pending) const PopupMenuItem(value: 'approve', child: Text('Approve and publish')),
+                          if (j.status == JobStatus.pending || j.status == JobStatus.declined)
+                            const PopupMenuItem(value: 'approve', child: Text('Approve and publish')),
+                          if (j.status == JobStatus.pending) const PopupMenuItem(value: 'decline', child: Text('Decline (send back for changes)')),
+                          if (j.status == JobStatus.pending || j.status == JobStatus.declined) const PopupMenuItem(value: 'reject', child: Text('Reject')),
                           if (j.status == JobStatus.published) const PopupMenuItem(value: 'close', child: Text('Take down (close)')),
                           if (j.status == JobStatus.closed) const PopupMenuItem(value: 'reopen', child: Text('Reopen')),
                           if (j.status == JobStatus.published) PopupMenuItem(value: 'feature', child: Text(j.featured ? 'Remove from featured' : 'Feature on home screen')),
@@ -161,6 +171,10 @@ class _JobDialog extends StatelessWidget {
               Text('${job.companyName} · ${job.location} · ${job.employmentType.label} · ${Fmt.salary(job)}', style: context.text.bodyMedium),
               const SizedBox(height: 8),
               Wrap(spacing: 8, children: [JobStatusPill(job.status), TagChip('Closes ${Fmt.date(job.deadline)}', dense: true)]),
+              if (job.reviewNote.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text('Review note: ${job.reviewNote}', style: context.text.bodySmall),
+              ],
               const SizedBox(height: 16),
               Text(job.about, style: context.text.titleSmall),
               const SizedBox(height: 8),
@@ -174,6 +188,66 @@ class _JobDialog extends StatelessWidget {
           ),
         ),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      );
+}
+
+/// Asks for the reason shown to the employer when declining or rejecting a job.
+class _JobReviewDialog extends StatefulWidget {
+  const _JobReviewDialog({required this.job, required this.status});
+  final Job job;
+  final JobStatus status;
+
+  @override
+  State<_JobReviewDialog> createState() => _JobReviewDialogState();
+}
+
+class _JobReviewDialogState extends State<_JobReviewDialog> {
+  final _c = TextEditingController();
+  String? _error;
+
+  bool get _decline => widget.status == JobStatus.declined;
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: Text(_decline ? 'Decline "${widget.job.title}"?' : 'Reject "${widget.job.title}"?'),
+        content: SizedBox(
+          width: 480,
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(_decline
+                ? 'The employer sees your note, can edit the job and send it back for review.'
+                : 'Rejection is final: the job can\'t be resubmitted. Use Decline if the employer can fix it.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _c,
+              minLines: 2,
+              maxLines: 5,
+              decoration: InputDecoration(
+                labelText: _decline ? 'What needs to change? (shown to the employer)' : 'Reason (shown to the employer)',
+                errorText: _error,
+              ),
+            ),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              if (_c.text.trim().isEmpty) {
+                setState(() => _error = 'Tell the employer why');
+                return;
+              }
+              Navigator.pop(context, _c.text.trim());
+            },
+            style: FilledButton.styleFrom(backgroundColor: _decline ? null : AppColors.danger, minimumSize: const Size(64, 44)),
+            child: Text(_decline ? 'Decline' : 'Reject'),
+          ),
+        ],
       );
 }
 
@@ -192,11 +266,11 @@ class _AdminEmployersScreenState extends ConsumerState<AdminEmployersScreen> {
 
   Future<void> _do(AdminCompany c, String action) async {
     final a = ref.read(adminActionsProvider);
-    final refresh = [adminCompaniesProvider, adminJobsProvider];
+    final refresh = [adminCompaniesProvider, adminJobsProvider, adminInvoicesProvider];
     final name = c.company.name;
     switch (action) {
       case 'approve':
-        await _act(context, ref, '$name approved. Their waiting jobs are now live.',
+        await _act(context, ref, '$name approved and given the verified check mark',
             () => a.run((b) => b.setCompanyStatus(c.company.id, CompanyStatus.approved), refresh: refresh));
       case 'reject':
         if (await confirmDialog(context, title: 'Reject $name?', message: 'Their jobs stay hidden. They can contact support to appeal.', confirmLabel: 'Reject', destructive: true)) {

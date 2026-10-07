@@ -14,6 +14,7 @@ import 'core/network/connectivity_service.dart';
 import 'core/storage/local_store.dart';
 import 'data/backend/backend.dart';
 import 'data/backend/demo_backend.dart';
+import 'data/backend/message_backend.dart';
 import 'data/backend/supabase_backend.dart';
 import 'employer/data/demo_employer_backend.dart';
 import 'employer/data/employer_backend.dart';
@@ -21,6 +22,7 @@ import 'employer/data/supabase_employer_backend.dart';
 import 'employer/providers.dart';
 import 'models/models.dart';
 import 'providers/core_providers.dart';
+import 'providers/message_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,15 +42,18 @@ Future<void> main() async {
   final VocationBackend backend;
   final EmployerBackend employerBackend;
   final AdminBackend adminBackend;
+  final MessageBackend messageBackend;
   if (AppConfig.useSupabase) {
     await Supabase.initialize(url: AppConfig.supabaseUrl, publishableKey: AppConfig.supabaseKey);
     backend = SupabaseBackend(Supabase.instance.client);
     employerBackend = SupabaseEmployerBackend(Supabase.instance.client);
     adminBackend = SupabaseAdminBackend(Supabase.instance.client);
+    messageBackend = SupabaseMessageBackend(Supabase.instance.client);
   } else {
     backend = DemoBackend(store: store, connectivity: connectivity, devSettings: () => DevSettings.load(store));
     employerBackend = DemoEmployerBackend();
     adminBackend = DemoAdminBackend();
+    messageBackend = DemoMessageBackend();
   }
 
   runApp(ProviderScope(
@@ -58,6 +63,7 @@ Future<void> main() async {
       backendProvider.overrideWithValue(backend),
       employerBackendProvider.overrideWithValue(employerBackend),
       adminBackendProvider.overrideWithValue(adminBackend),
+      messageBackendProvider.overrideWithValue(messageBackend),
     ],
     child: const VocationApp(),
   ));

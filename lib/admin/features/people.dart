@@ -6,6 +6,8 @@ import '../../core/utils/formatters.dart';
 import '../../employer/widgets.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
+import '../../widgets/document_viewer.dart';
+import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
 import '../admin_providers.dart';
 import '../admin_shell.dart';
@@ -149,28 +151,165 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   }
 }
 
-class _UserDialog extends StatelessWidget {
+/// Everything about one account: sign-in details, the full profile and
+/// their applications.
+class _UserDialog extends ConsumerWidget {
   const _UserDialog({required this.user});
   final AdminUser user;
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: Text(user.name.isEmpty ? user.email : user.name),
-        content: SizedBox(
-          width: 480,
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            InfoRow(icon: Icons.mail_outline_rounded, label: 'Email', value: user.email),
-            InfoRow(icon: Icons.badge_outlined, label: 'Uses app as', value: user.roleLabel),
-            if (user.headline.isNotEmpty) InfoRow(icon: Icons.work_outline_rounded, label: 'Headline', value: user.headline),
-            if (user.location.isNotEmpty) InfoRow(icon: Icons.place_outlined, label: 'Location', value: user.location),
-            if (user.phone.isNotEmpty) InfoRow(icon: Icons.phone_outlined, label: 'Phone', value: user.phone),
-            InfoRow(icon: Icons.event_outlined, label: 'Joined', value: Fmt.date(user.createdAt)),
-            InfoRow(icon: Icons.login_rounded, label: 'Last sign-in', value: user.lastSeenAt == null ? '—' : Fmt.dateTime(user.lastSeenAt!)),
-            if (user.suspended) InfoRow(icon: Icons.block_outlined, label: 'Suspended', value: user.suspendedReason ?? 'No reason given'),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final muted = context.palette.muted;
+    final p = user.profile;
+    final canSeeLogin = adminCan(ref, AdminRole.admin);
+    final apps = (ref.watch(adminApplicationsProvider).value ?? const <JobApplication>[]).where((a) => a.userId == user.id).toList();
+
+    Widget section(String title, List<Widget> children) => Padding(
+          padding: const EdgeInsets.only(top: 20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: context.text.titleMedium),
+            const SizedBox(height: 6),
+            ...children,
+          ]),
+        );
+    Widget line(String text, {String? sub}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(text, style: context.text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+            if (sub != null && sub.isNotEmpty) Text(sub, style: context.text.bodySmall?.copyWith(color: muted)),
+          ]),
+        );
+    String when(DateTime? d) => d == null ? '—' : '${Fmt.dateTime(d)} (${Fmt.ago(d)})';
+    String years(int start, int? end) => '$start – ${end ?? 'present'}';
+
+    final login = canSeeLogin
+        ? ref.watch(adminUserLoginProvider(user.id)).when(
+              loading: () => const [Skeleton(child: Column(children: [ListTileSkeleton(), ListTileSkeleton()]))],
+              error: (e, _) => [Text('Couldn\'t load sign-in details: $e', style: context.text.bodySmall?.copyWith(color: AppColors.danger))],
+              data: (l) => l == null
+                  ? [Text('No sign-in record for this account.', style: context.text.bodySmall?.copyWith(color: muted))]
+                  : [
+                      InfoRow(
+                        icon: Icons.key_outlined,
+                        label: 'Signs in with',
+                        value: l.providers.isEmpty ? '—' : l.providers.map(UserLoginInfo.providerLabel).join(', '),
+                      ),
+                      InfoRow(
+                        icon: Icons.mark_email_read_outlined,
+                        label: 'Email confirmed',
+                        value: l.emailConfirmedAt == null ? 'Not confirmed' : Fmt.dateTime(l.emailConfirmedAt!),
+                      ),
+                      InfoRow(icon: Icons.event_outlined, label: 'Account created', value: when(l.createdAt)),
+                      InfoRow(icon: Icons.login_rounded, label: 'Last sign-in', value: when(l.lastSignInAt)),
+                      if (l.phone.isNotEmpty) InfoRow(icon: Icons.phone_outlined, label: 'Sign-in phone', value: l.phone),
+                      if (l.adminRole != null) InfoRow(icon: Icons.admin_panel_settings_outlined, label: 'Admin role', value: l.adminRole!.label),
+                      for (final c in l.companies)
+                        InfoRow(icon: Icons.business_outlined, label: 'Company (${c.role})', value: '${c.name} · ${c.status}'),
+                      InfoRow(icon: Icons.assignment_outlined, label: 'Applications sent', value: '${l.applications}'),
+                      if (l.identities.length > 1)
+                        for (final i in l.identities)
+                          line('Linked: ${UserLoginInfo.providerLabel(i.provider)}${i.email.isEmpty ? '' : ' · ${i.email}'}',
+                              sub: 'Last used ${when(i.lastSignInAt)}'),
+                      const SizedBox(height: 8),
+                      Text('Recent devices', style: context.text.labelLarge),
+                      if (l.sessions.isEmpty)
+                        Text('No active sessions. They are signed out everywhere.', style: context.text.bodySmall?.copyWith(color: muted))
+                      else
+                        for (final s in l.sessions)
+                          line(describeUserAgent(s.userAgent),
+                              sub: [
+                                'Signed in ${when(s.createdAt)}',
+                                if (s.lastActiveAt != null) 'last active ${Fmt.ago(s.lastActiveAt!)}',
+                                if (s.ip.isNotEmpty) 'IP ${s.ip}',
+                              ].join(' · ')),
+                      const SizedBox(height: 6),
+                      Text('Passwords are stored encrypted and can\'t be viewed by anyone, including admins. Viewing this section is recorded in the activity log.',
+                          style: context.text.bodySmall?.copyWith(color: muted)),
+                    ],
+            )
+        : [Text('Sign-in details are visible to admins and owners.', style: context.text.bodySmall?.copyWith(color: muted))];
+
+    return AlertDialog(
+      title: Row(children: [
+        UserAvatar(initials: _initial(user.name.isEmpty ? user.email : user.name), size: 44),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(user.name.isEmpty ? user.email : user.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+            Text('${user.roleLabel} · ${user.email}', style: context.text.bodySmall?.copyWith(color: muted), maxLines: 1, overflow: TextOverflow.ellipsis),
           ]),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
-      );
+      ]),
+      content: SizedBox(
+        width: 640,
+        child: SingleChildScrollView(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+            if (user.suspended)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: AppColors.danger.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppSpacing.radius)),
+                child: Text('Suspended: ${user.suspendedReason ?? 'No reason given'}', style: context.text.bodyMedium),
+              ),
+            section('Account and sign-in', login),
+            section('Profile', [
+              if (p == null)
+                Text('This profile couldn\'t be read.', style: context.text.bodySmall?.copyWith(color: muted))
+              else ...[
+                Text('Profile ${p.completion}% complete', style: context.text.bodySmall?.copyWith(color: muted)),
+                if (p.headline.isNotEmpty) InfoRow(icon: Icons.work_outline_rounded, label: 'Headline', value: p.headline),
+                if (p.location.isNotEmpty) InfoRow(icon: Icons.place_outlined, label: 'Location', value: p.location),
+                if (p.phone.isNotEmpty) InfoRow(icon: Icons.phone_outlined, label: 'Phone', value: p.phone),
+                if (p.linkedinUrl.isNotEmpty) InfoRow(icon: Icons.link_rounded, label: 'LinkedIn', value: p.linkedinUrl),
+                if (p.portfolioUrl.isNotEmpty) InfoRow(icon: Icons.language_rounded, label: 'Portfolio', value: p.portfolioUrl),
+                InfoRow(
+                  icon: Icons.description_outlined,
+                  label: 'CV',
+                  value: p.resume == null ? 'Not uploaded' : '${p.resume!.fileName} · ${Fmt.fileSize(p.resume!.sizeBytes)} · ${Fmt.date(p.resume!.uploadedAt)}',
+                ),
+                if (p.about.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(p.about, style: context.text.bodyMedium)),
+              ],
+            ]),
+            if (p != null && p.experience.isNotEmpty)
+              section('Experience', [
+                for (final e in p.experience)
+                  line('${e.title} · ${e.company}',
+                      sub: '${Fmt.date(e.start)} – ${e.end == null ? 'present' : Fmt.date(e.end!)}${e.location.isEmpty ? '' : ' · ${e.location}'}'),
+              ]),
+            if (p != null && p.education.isNotEmpty)
+              section('Education', [
+                for (final e in p.education) line('${e.degree}${e.field.isEmpty ? '' : ', ${e.field}'}', sub: '${e.school} · ${years(e.startYear, e.endYear)}'),
+              ]),
+            if (p != null && p.skills.isNotEmpty)
+              section('Skills', [Wrap(spacing: 6, runSpacing: 6, children: [for (final s in p.skills) TagChip(s, dense: true)])]),
+            if (p != null && (p.languages.isNotEmpty || p.certifications.isNotEmpty))
+              section('Languages and certifications', [
+                for (final l in p.languages) line(l.name, sub: l.level),
+                for (final c in p.certifications) line(c.name, sub: '${c.issuer} · ${c.year}'),
+              ]),
+            if (p != null && !p.preferences.isEmpty)
+              section('Job preferences', [
+                if (p.preferences.titles.isNotEmpty) InfoRow(icon: Icons.search_rounded, label: 'Roles', value: p.preferences.titles.join(', ')),
+                if (p.preferences.industries.isNotEmpty)
+                  InfoRow(icon: Icons.category_outlined, label: 'Industries', value: p.preferences.industries.map((i) => i.label).join(', ')),
+                if (p.preferences.locations.isNotEmpty) InfoRow(icon: Icons.place_outlined, label: 'Locations', value: p.preferences.locations.join(', ')),
+                if (p.preferences.salaryExpectation != null)
+                  InfoRow(icon: Icons.payments_outlined, label: 'Salary expectation', value: 'SLE ${Fmt.money(p.preferences.salaryExpectation!)} / month'),
+              ]),
+            section('Applications (${apps.length})', [
+              if (apps.isEmpty)
+                Text('No applications.', style: context.text.bodySmall?.copyWith(color: muted))
+              else
+                for (final a in apps.take(20))
+                  line('${a.job?.title ?? 'Removed job'}${a.job == null ? '' : ' · ${a.job!.companyName}'}',
+                      sub: '${a.status.label} · applied ${Fmt.date(a.submittedAt)}'),
+            ]),
+            section('Account ID', [SelectableText(user.id, style: context.text.bodySmall?.copyWith(color: muted))]),
+          ]),
+        ),
+      ),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+    );
+  }
 }
 
 class _ReasonDialog extends StatefulWidget {
@@ -317,6 +456,7 @@ class _AdminApplicationsScreenState extends ConsumerState<AdminApplicationsScree
                   DataColumn(label: Text('Stage')),
                   DataColumn(label: Text('Applied')),
                   DataColumn(label: Text('Last update')),
+                  DataColumn(label: Text('Documents')),
                 ],
                 rows: [
                   for (final a in list)
@@ -333,6 +473,42 @@ class _AdminApplicationsScreenState extends ConsumerState<AdminApplicationsScree
                       DataCell(StatusChip(a.status, dense: true)),
                       DataCell(Text(Fmt.dateShort(a.submittedAt))),
                       DataCell(Text(Fmt.ago(a.updatedAt))),
+                      DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
+                        IconButton(
+                          tooltip: 'View CV: ${a.resume.fileName}',
+                          icon: const Icon(Icons.description_outlined),
+                          onPressed: () => viewDocument(context,
+                              title: '${a.applicant.fullName} · CV',
+                              fileName: a.resume.fileName,
+                              format: a.resume.format,
+                              storagePath: a.resume.storagePath,
+                              loadUrl: ref.read(adminBackendProvider).documentUrl),
+                        ),
+                        if (a.coverLetter?.kind == CoverLetterKind.uploaded)
+                          IconButton(
+                            tooltip: 'View cover letter',
+                            icon: const Icon(Icons.mail_outline_rounded),
+                            onPressed: () => viewDocument(context,
+                                title: '${a.applicant.fullName} · Cover letter',
+                                fileName: a.coverLetter!.fileName ?? 'Cover letter',
+                                format: a.coverLetter!.format,
+                                storagePath: a.coverLetter!.storagePath,
+                                loadUrl: ref.read(adminBackendProvider).documentUrl),
+                          )
+                        else if (a.coverLetter?.kind == CoverLetterKind.written)
+                          IconButton(
+                            tooltip: 'Read cover letter',
+                            icon: const Icon(Icons.mail_outline_rounded),
+                            onPressed: () => showDialog<void>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: Text('${a.applicant.fullName} · Cover letter'),
+                                content: SizedBox(width: 560, child: SingleChildScrollView(child: SelectableText(a.coverLetter!.text ?? ''))),
+                                actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+                              ),
+                            ),
+                          ),
+                      ])),
                     ]),
                 ],
               ),

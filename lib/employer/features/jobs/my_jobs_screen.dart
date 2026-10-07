@@ -16,6 +16,7 @@ enum _JobFilter {
   all('All'),
   live('Live'),
   pending('Awaiting approval'),
+  needsChanges('Needs changes'),
   draft('Drafts'),
   closed('Closed');
 
@@ -23,12 +24,13 @@ enum _JobFilter {
   final String label;
 
   bool matches(Job j) => switch (this) {
-        _JobFilter.all => true,
-        _JobFilter.live => j.status == JobStatus.published,
-        _JobFilter.pending => j.status == JobStatus.pending,
-        _JobFilter.draft => j.status == JobStatus.draft,
-        _JobFilter.closed => j.status == JobStatus.closed,
-      };
+    _JobFilter.all => true,
+    _JobFilter.live => j.status == JobStatus.published,
+    _JobFilter.pending => j.status == JobStatus.pending,
+    _JobFilter.needsChanges => j.status == JobStatus.declined || j.status == JobStatus.rejected,
+    _JobFilter.draft => j.status == JobStatus.draft,
+    _JobFilter.closed => j.status == JobStatus.closed,
+  };
 }
 
 class MyJobsScreen extends ConsumerStatefulWidget {
@@ -53,8 +55,12 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
         case 'preview':
           context.push('/employer/jobs/${job.id}/edit?preview=1');
         case 'close':
-          if (await confirmDialog(context,
-              title: 'Close this job?', message: 'It will stop accepting applications. Existing applicants stay in your pipeline.', confirmLabel: 'Close job')) {
+          if (await confirmDialog(
+            context,
+            title: 'Close this job?',
+            message: 'It will stop accepting applications. Existing applicants stay in your pipeline.',
+            confirmLabel: 'Close job',
+          )) {
             await ctrl.setStatus(job, JobStatus.closed);
             if (mounted) showSnack(context, 'Job closed');
           }
@@ -62,9 +68,9 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
           await ctrl.setStatus(job, JobStatus.published);
           if (mounted) showSnack(context, 'Job reopened');
         case 'delete':
-          if (await confirmDialog(context, title: 'Delete draft?', message: '"${job.title}" will be deleted.', confirmLabel: 'Delete', destructive: true)) {
+          if (await confirmDialog(context, title: 'Delete this job?', message: '"${job.title}" will be deleted.', confirmLabel: 'Delete', destructive: true)) {
             await ctrl.deleteDraft(job);
-            if (mounted) showSnack(context, 'Draft deleted');
+            if (mounted) showSnack(context, 'Job deleted');
           }
       }
     } catch (e) {
@@ -94,23 +100,23 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
       ],
       children: [
         if (company != null) ApprovalBanner(company: company),
-        if (async.value?.isOfflineCopy ?? false)
-          CacheNotice(syncedAt: async.value?.syncedAt, onRetry: () => ref.read(employerJobsProvider.notifier).refresh()),
-        Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-          for (final f in _JobFilter.values)
-            ChoiceChip(
-              label: Text('${f.label} (${all.where(f.matches).length})'),
-              selected: _filter == f,
-              onSelected: (_) => setState(() => _filter = f),
+        if (async.value?.isOfflineCopy ?? false) CacheNotice(syncedAt: async.value?.syncedAt, onRetry: () => ref.read(employerJobsProvider.notifier).refresh()),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final f in _JobFilter.values)
+              ChoiceChip(label: Text('${f.label} (${all.where(f.matches).length})'), selected: _filter == f, onSelected: (_) => setState(() => _filter = f)),
+            SizedBox(
+              width: 260,
+              child: TextField(
+                onChanged: (v) => setState(() => _query = v),
+                decoration: const InputDecoration(hintText: 'Search jobs', prefixIcon: Icon(Icons.search_rounded), isDense: true),
+              ),
             ),
-          SizedBox(
-            width: 260,
-            child: TextField(
-              onChanged: (v) => setState(() => _query = v),
-              decoration: const InputDecoration(hintText: 'Search jobs', prefixIcon: Icon(Icons.search_rounded), isDense: true),
-            ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 16),
         if (async.isLoading && !async.hasValue)
           const Skeleton(child: Column(children: [ListTileSkeleton(trailing: true), ListTileSkeleton(trailing: true), ListTileSkeleton(trailing: true)]))
@@ -137,35 +143,72 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
             rows: [
               for (final j in jobs)
                 DataRow(
-                  onSelectChanged: (_) => _act(j, j.status == JobStatus.draft ? 'edit' : 'applicants'),
+                  onSelectChanged: (_) => _act(j, const {JobStatus.draft, JobStatus.declined, JobStatus.rejected}.contains(j.status) ? 'edit' : 'applicants'),
                   cells: [
-                    DataCell(ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 280),
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(j.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                        Text('${j.location} · ${j.employmentType.label}',
-                            maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
-                      ]),
-                    )),
+                    DataCell(
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 280),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              j.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            if (j.reviewNote.isNotEmpty && (j.status == JobStatus.declined || j.status == JobStatus.rejected))
+                              Text(
+                                j.reviewNote,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.text.bodySmall?.copyWith(color: AppColors.warning),
+                              )
+                            else
+                              Text(
+                                '${j.location} · ${j.employmentType.label}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.text.bodySmall?.copyWith(color: context.palette.muted),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                     DataCell(JobStatusPill(j.status)),
                     DataCell(Text('${j.applicants}')),
                     DataCell(Text('${j.views}')),
                     DataCell(Text(j.status == JobStatus.draft ? '—' : Fmt.dateShort(j.postedAt))),
-                    DataCell(Text(
-                      Fmt.deadline(j.deadline),
-                      style: TextStyle(color: j.isClosed ? AppColors.danger : (Fmt.deadlineSoon(j.deadline) ? AppColors.warning : null)),
-                    )),
-                    DataCell(PopupMenuButton<String>(
-                      tooltip: 'Actions for ${j.title}',
-                      onSelected: (a) => _act(j, a),
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        if (j.status != JobStatus.draft) const PopupMenuItem(value: 'applicants', child: Text('View applicants')),
-                        if (j.status == JobStatus.published) const PopupMenuItem(value: 'close', child: Text('Close job')),
-                        if (j.status == JobStatus.closed) const PopupMenuItem(value: 'reopen', child: Text('Reopen')),
-                        if (j.status == JobStatus.draft) const PopupMenuItem(value: 'delete', child: Text('Delete draft')),
-                      ],
-                    )),
+                    DataCell(
+                      Text(
+                        Fmt.deadline(j.deadline),
+                        style: TextStyle(color: j.isClosed ? AppColors.danger : (Fmt.deadlineSoon(j.deadline) ? AppColors.warning : null)),
+                      ),
+                    ),
+                    DataCell(
+                      PopupMenuButton<String>(
+                        tooltip: 'Actions for ${j.title}',
+                        onSelected: (a) => _act(j, a),
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: Text(
+                              j.status == JobStatus.declined
+                                  ? 'Edit and resubmit'
+                                  : j.status == JobStatus.rejected
+                                  ? 'View'
+                                  : 'Edit',
+                            ),
+                          ),
+                          if (j.status != JobStatus.draft) const PopupMenuItem(value: 'applicants', child: Text('View applicants')),
+                          if (j.status == JobStatus.published) const PopupMenuItem(value: 'close', child: Text('Close job')),
+                          if (j.status == JobStatus.closed) const PopupMenuItem(value: 'reopen', child: Text('Reopen')),
+                          if (const {JobStatus.draft, JobStatus.declined, JobStatus.rejected}.contains(j.status))
+                            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
             ],

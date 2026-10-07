@@ -4,14 +4,48 @@ import 'package:vocation_sl/models/models.dart';
 
 void main() {
   group('permissions', () {
-    test('approving a company publishes its waiting jobs and is logged', () async {
+    test('approving a company gives the check mark but its jobs still need review', () async {
       final b = DemoAdminBackend();
-      expect((await b.jobs()).firstWhere((j) => j.id == 'j-pending').status, JobStatus.pending);
       await b.setCompanyStatus('c-pending', CompanyStatus.approved);
-      expect((await b.jobs()).firstWhere((j) => j.id == 'j-pending').status, JobStatus.published);
+      final c = (await b.companies()).firstWhere((c) => c.company.id == 'c-pending').company;
+      expect(c.verified, isTrue);
+      expect((await b.jobs()).firstWhere((j) => j.id == 'j-pending').status, JobStatus.pending);
       final log = await b.activity();
       expect(log.first.targetType, 'companies');
       expect(log.first.summary, contains('Waterloo Builders Ltd'));
+
+      await b.setCompanyStatus('c-pending', CompanyStatus.suspended);
+      expect((await b.companies()).firstWhere((c) => c.company.id == 'c-pending').company.verified, isFalse);
+    });
+
+    test('with job review off, approving a company publishes its waiting jobs', () async {
+      final b = DemoAdminBackend();
+      await b.saveSettings(const PlatformSettings(requireJobApproval: false));
+      await b.setCompanyStatus('c-pending', CompanyStatus.approved);
+      expect((await b.jobs()).firstWhere((j) => j.id == 'j-pending').status, JobStatus.published);
+    });
+
+    test('approve, decline and reject jobs; approval creates a draft invoice', () async {
+      final b = DemoAdminBackend();
+      final before = (await b.invoices()).length;
+      await b.setJobStatus('j-pending', JobStatus.declined, note: 'Add the salary');
+      var j = (await b.jobs()).firstWhere((j) => j.id == 'j-pending');
+      expect(j.status, JobStatus.declined);
+      expect(j.reviewNote, 'Add the salary');
+      expect((await b.invoices()).length, before, reason: 'no invoice until live');
+
+      await b.setJobStatus('j-pending', JobStatus.published);
+      j = (await b.jobs()).firstWhere((j) => j.id == 'j-pending');
+      expect(j.reviewNote, isEmpty);
+      final inv = (await b.invoices()).first;
+      expect(inv.jobId, 'j-pending');
+      expect(inv.needsPricing, isTrue);
+      expect(inv.billToName, 'Waterloo Builders Ltd');
+
+      // Closing and reopening doesn't create a second invoice.
+      await b.setJobStatus('j-pending', JobStatus.closed);
+      await b.setJobStatus('j-pending', JobStatus.published);
+      expect((await b.invoices()).where((i) => i.jobId == 'j-pending').length, 1);
     });
 
     test('viewers cannot moderate; moderators cannot suspend users', () async {
@@ -61,6 +95,76 @@ void main() {
       expect(r.status, ReportStatus.resolved);
       expect(r.adminNote, 'Job taken down');
       expect(r.resolvedAt, isNotNull);
+    });
+  });
+
+  group('invoices', () {
+    test('totals apply tax after the discount and round to cents', () {
+      final i = Invoice(id: '1', number: 'VSL-1', createdAt: DateTime(2026), quantity: 2, unitPrice: 250.5, discount: 1, taxRate: 15);
+      expect(i.subtotal, 501);
+      expect(i.taxAmount, 75);
+      expect(i.total, 575);
+      expect(Invoice(id: '2', number: 'x', createdAt: DateTime(2026), unitPrice: 10, discount: 50).total, 0);
+    });
+
+    test('issue fills dates, paid records payment, only admins can edit', () async {
+      final b = DemoAdminBackend();
+      final draft = (await b.invoices()).firstWhere((i) => i.status == InvoiceStatus.draft);
+      await b.saveInvoice(draft.copyWith(unitPrice: 400, status: InvoiceStatus.issued));
+      var i = (await b.invoices()).firstWhere((x) => x.id == draft.id);
+      expect(i.issueDate, isNotNull);
+      expect(i.dueDate!.difference(i.issueDate!).inDays, 14);
+      expect(i.total, 460);
+
+      await b.saveInvoice(i.copyWith(status: InvoiceStatus.paid, paymentMethod: 'Orange Money'));
+      i = (await b.invoices()).firstWhere((x) => x.id == draft.id);
+      expect(i.paidAt, isNotNull);
+      expect((await b.activity()).first.summary, contains(i.number));
+
+      final mod = DemoAdminBackend(role: AdminRole.moderator);
+      final other = (await mod.invoices()).first;
+      expect(() => mod.saveInvoice(other.copyWith(unitPrice: 1)), throwsA(isA<Exception>()));
+    });
+
+    test('overdue means issued and past the due date', () {
+      final i = Invoice(id: '1', number: 'x', createdAt: DateTime(2026), status: InvoiceStatus.issued, dueDate: DateTime(2026, 10, 1));
+      expect(i.isOverdueAt(DateTime(2026, 10, 2)), isTrue);
+      expect(i.isOverdueAt(DateTime(2026, 10, 1, 18)), isFalse);
+      expect(i.copyWith(status: InvoiceStatus.paid).isOverdueAt(DateTime(2026, 11)), isFalse);
+    });
+
+    test('database rows parse', () {
+      final i = Invoice.fromJson({
+        'id': 'a',
+        'number': 'VSL-2026-00001',
+        'status': 'void',
+        'unit_price': '1200.50',
+        'quantity': 1,
+        'tax_rate': 15,
+        'issue_date': '2026-10-01',
+        'created_at': '2026-10-01T10:00:00Z',
+      }..['unit_price'] = 1200.5);
+      expect(i.status, InvoiceStatus.voided);
+      expect(i.toJson()['status'], 'void');
+      expect(i.toJson()['issue_date'], '2026-10-01');
+    });
+  });
+
+  group('users', () {
+    test('sign-in details are admin-only and the view is logged', () async {
+      final b = DemoAdminBackend();
+      final me = (await b.users()).first;
+      final info = await b.userLogin(me.id);
+      expect(info!.providers, isNotEmpty);
+      expect((await b.activity()).first.summary, startsWith('Viewed user'));
+      expect(() => DemoAdminBackend(role: AdminRole.moderator).userLogin(me.id), throwsA(isA<Exception>()));
+      expect(me.profile?.skills, isNotEmpty);
+    });
+
+    test('device names are readable', () {
+      expect(describeUserAgent('Mozilla/5.0 (Linux; Android 13) Chrome/126.0 Mobile Safari/537.36'), 'Chrome on Android');
+      expect(describeUserAgent('Dart/3.4 (dart:io)'), 'Vocation SL app');
+      expect(describeUserAgent(''), 'Unknown device');
     });
   });
 

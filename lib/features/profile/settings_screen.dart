@@ -12,6 +12,7 @@ import '../../providers/job_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/legal_links.dart';
 import '../../widgets/vocation_logo.dart';
 import '../../models/models.dart';
 import '../auth/role_choice_screen.dart';
@@ -170,6 +171,7 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ),
+          const LegalTiles(),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
