@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:uuid/uuid.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/errors.dart';
 import '../../models/models.dart';
 import 'backend.dart';
@@ -57,6 +59,16 @@ class SupabaseBackend implements VocationBackend {
   String? get currentUserId => _client.auth.currentUser?.id;
 
   @override
+  Stream<String?> get authChanges => _client.auth.onAuthStateChange.map((s) => s.session?.user.id).distinct();
+
+  @override
+  bool get supportsGoogleSignIn => true;
+
+  /// Where Supabase sends the user back after OAuth, email confirmation or
+  /// password reset: the current site on web, the app's deep link on mobile.
+  String get _redirect => kIsWeb ? Uri.base.origin : AppConfig.mobileAuthRedirect;
+
+  @override
   Future<String> signIn({required String email, required String password}) => _run(() async {
         final res = await _client.auth.signInWithPassword(email: email.trim(), password: password);
         return res.user!.id;
@@ -64,11 +76,35 @@ class SupabaseBackend implements VocationBackend {
 
   @override
   Future<String> signUp({required String fullName, required String email, required String password}) => _run(() async {
-        final res = await _client.auth.signUp(email: email.trim(), password: password, data: {'full_name': fullName.trim()});
+        final res = await _client.auth.signUp(
+          email: email.trim(),
+          password: password,
+          data: {'full_name': fullName.trim()},
+          emailRedirectTo: _redirect,
+        );
         final user = res.user;
-        if (user == null) throw const AuthException('Check your email to confirm your account, then sign in.');
-        if (res.session == null) throw const AuthException('Check your email to confirm your account, then sign in.');
+        if (user == null || res.session == null) throw EmailConfirmationRequired(email.trim());
         return user.id;
+      });
+
+  @override
+  Future<void> signInWithGoogle() => _run(() async {
+        final launched = await _client.auth.signInWithOAuth(sb.OAuthProvider.google, redirectTo: _redirect);
+        if (!launched) throw const AuthException('Couldn\'t open Google sign-in. Try again.');
+      });
+
+  @override
+  Future<void> sendPasswordReset(String email) => _run(() async {
+        await _client.auth.resetPasswordForEmail(email.trim(), redirectTo: _redirect);
+      });
+
+  @override
+  Stream<void> get passwordRecovery =>
+      _client.auth.onAuthStateChange.where((s) => s.event == sb.AuthChangeEvent.passwordRecovery);
+
+  @override
+  Future<void> updatePassword(String newPassword) => _run(() async {
+        await _client.auth.updateUser(sb.UserAttributes(password: newPassword));
       });
 
   @override
@@ -121,7 +157,16 @@ class SupabaseBackend implements VocationBackend {
 
   @override
   Future<AppUser> fetchUser(String userId) => _run(() async {
-        final row = await _client.from('profiles').select().eq('id', userId).single();
+        var row = await _client.from('profiles').select().eq('id', userId).maybeSingle();
+        if (row == null) {
+          // No profile yet (e.g. account created before the sign-up trigger existed).
+          final auth = _client.auth.currentUser;
+          final meta = auth?.userMetadata ?? const {};
+          final name = (meta['full_name'] ?? meta['name'] ?? auth?.email?.split('@').first ?? '').toString();
+          final fresh = AppUser(id: userId, fullName: name, email: auth?.email ?? '');
+          await updateUser(fresh);
+          row = {'id': userId, 'email': fresh.email, 'full_name': name, 'data': fresh.toJson()};
+        }
         final data = Map<String, dynamic>.from(row['data'] as Map? ?? const {});
         return AppUser.fromJson({
           ...data,

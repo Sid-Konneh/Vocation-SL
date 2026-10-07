@@ -45,6 +45,7 @@ class _AppFrame extends ConsumerStatefulWidget {
 
 class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserver {
   StreamSubscription<SyncReport>? _reports;
+  StreamSubscription<void>? _recovery;
 
   @override
   void initState() {
@@ -52,6 +53,10 @@ class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserve
     WidgetsBinding.instance.addObserver(this);
     final sync = ref.read(syncServiceProvider);
     _reports = sync.reports.listen(_onSyncReport);
+    // A password-reset link signs the user in; send them to choose a new password.
+    _recovery = ref.read(userRepositoryProvider).passwordRecovery.listen((_) {
+      ref.read(routerProvider).go('/settings/password?reset=1');
+    });
     // Replay anything queued in a previous session.
     WidgetsBinding.instance.addPostFrameCallback((_) => sync.flush());
   }
@@ -60,6 +65,7 @@ class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserve
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _reports?.cancel();
+    _recovery?.cancel();
     super.dispose();
   }
 

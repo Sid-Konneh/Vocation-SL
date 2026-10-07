@@ -167,13 +167,16 @@ create policy "own job alerts" on public.job_alerts for all
 -- Create a profile row when someone signs up.
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare
+  -- Email sign-up sends full_name; Google sends full_name or name.
+  display_name text := coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1));
 begin
   insert into public.profiles (id, email, full_name, data)
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data->>'full_name', ''),
-    jsonb_build_object('id', new.id, 'email', new.email, 'full_name', coalesce(new.raw_user_meta_data->>'full_name', ''))
+    display_name,
+    jsonb_build_object('id', new.id, 'email', new.email, 'full_name', display_name)
   )
   on conflict (id) do nothing;
   return new;

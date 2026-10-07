@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/config/app_config.dart';
@@ -8,8 +10,22 @@ import 'core_providers.dart';
 
 /// The signed-in user's id, or null when signed out.
 class SessionNotifier extends Notifier<String?> {
+  StreamSubscription<String?>? _sub;
+
   @override
-  String? build() => ref.watch(userRepositoryProvider).currentUserId;
+  String? build() {
+    final repo = ref.watch(userRepositoryProvider);
+    // Sessions can start or end outside a direct call: returning from
+    // Google sign-in, an email link, or an expired refresh token.
+    _sub?.cancel();
+    _sub = repo.authChanges.listen((uid) {
+      if (uid != state) state = uid;
+    });
+    ref.onDispose(() => _sub?.cancel());
+    return repo.currentUserId;
+  }
+
+  Future<void> signInWithGoogle() => ref.read(userRepositoryProvider).signInWithGoogle();
 
   Future<void> signIn(String email, String password) async {
     state = await ref.read(userRepositoryProvider).signIn(email, password);

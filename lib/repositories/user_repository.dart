@@ -18,6 +18,24 @@ class UserRepository extends CachedRepository {
   final SyncService sync;
 
   String? get currentUserId => backend.currentUserId;
+  Stream<String?> get authChanges => backend.authChanges;
+  bool get supportsGoogleSignIn => backend.supportsGoogleSignIn;
+
+  Future<void> signInWithGoogle() => backend.signInWithGoogle();
+  Stream<void> get passwordRecovery => backend.passwordRecovery;
+
+  Future<void> updatePassword(String password, String confirm) {
+    if (password.length < 8) throw const ValidationException('Use at least 8 characters for your password.');
+    if (password != confirm) throw const ValidationException('The passwords don\'t match.');
+    return backend.updatePassword(password);
+  }
+
+  Future<void> sendPasswordReset(String email) {
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email.trim())) {
+      throw const ValidationException('Enter the email address you signed up with.');
+    }
+    return backend.sendPasswordReset(email);
+  }
   String _key(String uid) => 'u:$uid:profile';
 
   Future<String> signIn(String email, String password) {

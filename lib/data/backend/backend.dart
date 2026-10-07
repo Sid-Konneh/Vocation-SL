@@ -10,8 +10,24 @@ abstract interface class VocationBackend {
 
   // Auth
   String? get currentUserId;
+
+  /// Emits the signed-in user id (or null) when the session changes outside
+  /// a direct call, e.g. after returning from Google sign-in or a token expiry.
+  Stream<String?> get authChanges;
+
+  bool get supportsGoogleSignIn;
   Future<String> signIn({required String email, required String password});
+
+  /// Throws [EmailConfirmationRequired] when the account must be verified first.
   Future<String> signUp({required String fullName, required String email, required String password});
+
+  /// Opens Google sign-in. The session arrives later through [authChanges].
+  Future<void> signInWithGoogle();
+  Future<void> sendPasswordReset(String email);
+
+  /// Fires when the user opens a password-reset link and should choose a new password.
+  Stream<void> get passwordRecovery;
+  Future<void> updatePassword(String newPassword);
   Future<void> signOut();
 
   // Catalogue. Jobs are returned with their [Company] attached.

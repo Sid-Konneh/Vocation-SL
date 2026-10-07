@@ -31,6 +31,14 @@ class AuthException extends AppException {
   String get userMessage => message;
 }
 
+/// Not a failure: the account was created but the email must be confirmed.
+class EmailConfirmationRequired extends AppException {
+  const EmailConfirmationRequired(this.email) : super('Email confirmation required');
+  final String email;
+  @override
+  String get userMessage => 'We sent a confirmation link to $email. Open it, then sign in.';
+}
+
 class NotFoundException extends AppException {
   const NotFoundException([super.message = 'Not found']);
   @override

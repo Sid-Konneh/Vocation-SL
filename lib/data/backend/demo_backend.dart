@@ -84,6 +84,37 @@ class DemoBackend implements VocationBackend {
   String? get currentUserId => _currentUserId;
 
   @override
+  Stream<String?> get authChanges => const Stream.empty();
+
+  @override
+  bool get supportsGoogleSignIn => false;
+
+  @override
+  Future<void> signInWithGoogle() async =>
+      throw const AuthException('Google sign-in is available when the app is connected to Supabase.');
+
+  @override
+  Future<void> sendPasswordReset(String email) async {
+    await _call();
+    // Demo mode has no email delivery; the UI shows the same confirmation either way.
+  }
+
+  @override
+  Stream<void> get passwordRecovery => const Stream.empty();
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    await _call();
+    final accounts = Map<String, dynamic>.from(_state['accounts'] as Map);
+    for (final entry in accounts.entries) {
+      final acct = Map<String, dynamic>.from(entry.value as Map);
+      if (acct['user_id'] == _currentUserId) accounts[entry.key] = {...acct, 'password': newPassword};
+    }
+    _state['accounts'] = accounts;
+    await _persist();
+  }
+
+  @override
   Future<String> signIn({required String email, required String password}) async {
     await _call();
     final accounts = Map<String, dynamic>.from(_state['accounts'] as Map);

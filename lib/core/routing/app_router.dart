@@ -13,6 +13,7 @@ import '../../features/jobs/job_details_screen.dart';
 import '../../features/jobs/search_screen.dart';
 import '../../features/notifications/notification_settings_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
+import '../../features/profile/change_password_screen.dart';
 import '../../features/profile/edit_profile_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/profile/settings_screen.dart';
@@ -110,6 +111,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (c, s) => _page(s, EditProfileScreen(section: s.uri.queryParameters['section'])),
       ),
       GoRoute(path: '/settings', parentNavigatorKey: rootNavigatorKey, pageBuilder: (c, s) => _page(s, const SettingsScreen())),
+      GoRoute(
+        path: '/settings/password',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (c, s) => _page(s, ChangePasswordScreen(fromReset: s.uri.queryParameters['reset'] == '1')),
+      ),
       GoRoute(
         path: '/settings/notifications',
         parentNavigatorKey: rootNavigatorKey,

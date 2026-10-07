@@ -48,6 +48,13 @@ class SettingsScreen extends ConsumerWidget {
           header('Account'),
           ListTile(leading: const Icon(Icons.mail_outline_rounded), title: const Text('Email'), subtitle: Text(user?.email ?? '')),
           ListTile(
+            leading: const Icon(Icons.lock_outline_rounded),
+            title: const Text('Change password'),
+            subtitle: const Text('Accounts created with Google can set one here too'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/settings/password'),
+          ),
+          ListTile(
             leading: const Icon(Icons.notifications_outlined),
             title: const Text('Notifications'),
             subtitle: const Text('Choose which alerts you receive'),

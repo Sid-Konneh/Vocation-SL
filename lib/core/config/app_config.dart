@@ -10,6 +10,11 @@ class AppConfig {
 
   static bool get useSupabase => supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty;
 
+  /// Deep link the mobile apps receive after Google sign-in, email
+  /// confirmation and password reset. Must be listed in Supabase
+  /// Authentication → URL Configuration → Redirect URLs.
+  static const mobileAuthRedirect = 'org.vocationsl.app://login-callback';
+
   static const appName = 'Vocation SL';
   static const pageSize = 10;
   static const supportEmail = 'support@vocationsl.app';

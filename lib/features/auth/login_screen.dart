@@ -24,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _busy = false;
   bool _obscure = true;
   String? _error;
+  String? _info;
 
   @override
   void dispose() {
@@ -39,11 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _password.text = demoPassword;
       _signUp = false;
     }
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
+    await _run(() async {
       final session = ref.read(sessionProvider.notifier);
       if (_signUp) {
         await session.signUp(_name.text, _email.text, _password.text);
@@ -51,6 +48,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         await session.signIn(_email.text, _password.text);
       }
       // The router redirects to /jobs when the session changes.
+    });
+  }
+
+  Future<void> _google() => _run(() => ref.read(sessionProvider.notifier).signInWithGoogle());
+
+  Future<void> _forgotPassword() => _run(() async {
+        await ref.read(userRepositoryProvider).sendPasswordReset(_email.text);
+        if (mounted) {
+          setState(() => _info = 'If an account exists for ${_email.text.trim()}, we\'ve sent a link to reset the password.');
+        }
+      });
+
+  Future<void> _run(Future<void> Function() action) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+      _info = null;
+    });
+    try {
+      await action();
+    } on EmailConfirmationRequired catch (e) {
+      setState(() {
+        _info = e.userMessage;
+        _signUp = false;
+        _password.clear();
+      });
     } catch (e) {
       setState(() => _error = AppException.describe(e));
     } finally {
@@ -61,6 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final isDemo = isDemoBackend(ref.watch(backendProvider));
+    final supportsGoogle = ref.watch(userRepositoryProvider).supportsGoogleSignIn;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -76,13 +100,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 8),
                   Text(
                     _signUp
-                        ? 'Join thousands of job seekers across Sierra Leone.'
+                        ? 'Find and apply for jobs across Sierra Leone.'
                         : 'Sign in to find jobs, track applications and get alerts.',
                     style: context.text.bodyLarge?.copyWith(color: context.palette.muted),
                   ),
                   const SizedBox(height: 28),
                   if (isDemo) ...[
                     _DemoCard(onTap: _busy ? null : () => _submit(demo: true), busy: _busy),
+                    const SizedBox(height: 24),
+                    Row(children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('or use email', style: context.text.labelMedium?.copyWith(color: context.palette.muted)),
+                      ),
+                      const Expanded(child: Divider()),
+                    ]),
+                    const SizedBox(height: 24),
+                  ],
+                  if (supportsGoogle) ...[
+                    OutlinedButton(
+                      onPressed: _busy ? null : _google,
+                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const _GoogleMark(),
+                        const SizedBox(width: 12),
+                        Text(_signUp ? 'Sign up with Google' : 'Continue with Google'),
+                      ]),
+                    ),
                     const SizedBox(height: 24),
                     Row(children: [
                       const Expanded(child: Divider()),
@@ -133,6 +177,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ),
+                  if (!_signUp)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _busy ? null : _forgotPassword,
+                        child: const Text('Forgot password?'),
+                      ),
+                    ),
+                  if (_info != null) ...[
+                    const SizedBox(height: 14),
+                    Semantics(
+                      liveRegion: true,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: context.palette.accentTint, borderRadius: BorderRadius.circular(12)),
+                        child: Row(children: [
+                          Icon(Icons.mark_email_read_outlined, color: context.colors.primary, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(_info!, style: context.text.bodyMedium)),
+                        ]),
+                      ),
+                    ),
+                  ],
                   if (_error != null) ...[
                     const SizedBox(height: 14),
                     Semantics(
@@ -155,6 +222,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: _busy ? null : () => setState(() {
                       _signUp = !_signUp;
                       _error = null;
+                      _info = null;
                     }),
                     child: Text(_signUp ? 'Already have an account? Sign in' : 'New to Vocation SL? Create an account'),
                   ),
@@ -174,6 +242,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
+}
+
+/// A simple "G" in Google blue for the sign-in button.
+class _GoogleMark extends StatelessWidget {
+  const _GoogleMark();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 24,
+        height: 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: context.palette.border)),
+        child: const Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.w800, fontSize: 14)),
+      );
 }
 
 class _DemoCard extends StatelessWidget {
