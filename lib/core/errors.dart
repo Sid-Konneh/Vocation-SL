@@ -22,7 +22,10 @@ class NetworkException extends AppException {
 class ServerException extends AppException {
   const ServerException([super.message = 'Server error']);
   @override
-  String get userMessage => 'Our servers had a problem. Please try again in a moment.';
+  String get userMessage => message == 'Server error' || message.isEmpty
+      ? 'Our servers had a problem. Please try again in a moment.'
+      // Show the server's reason so problems can be reported and fixed.
+      : 'That didn\'t work: ${message.length > 160 ? '${message.substring(0, 160)}…' : message}';
 }
 
 class AuthException extends AppException {

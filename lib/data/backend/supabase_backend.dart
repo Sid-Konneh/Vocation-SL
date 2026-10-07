@@ -324,7 +324,7 @@ Future<T> guardSupabase<T>(Future<T> Function() body) async {
     throw AuthException(e.message);
   } on sb.PostgrestException catch (e) {
     if (e.code == 'PGRST116') throw const NotFoundException();
-    throw ServerException(e.message);
+    throw ServerException('${e.message}${e.code == null ? '' : ' (${e.code})'}');
   } on sb.StorageException catch (e) {
     throw ServerException(e.message);
   } on AppException {

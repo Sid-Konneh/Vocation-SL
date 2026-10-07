@@ -36232,7 +36232,7 @@ aqy:function aqy(){},
 aqM:function aqM(a){this.a=a},
 aqv:function aqv(a){this.a=a},
 ds(a,b){return A.bPO(a,b,b)},
-bPO(a,b,c){var s=0,r=A.r(c),q,p=2,o=[],n,m,l,k,j,i,h,g
+bPO(a,b,c){var s=0,r=A.r(c),q,p=2,o=[],n,m,l,k,j,i,h,g,f
 var $async$ds=A.n(function(d,e){if(d===1){o.push(e)
 s=p}for(;;)switch(s){case 0:p=4
 s=7
@@ -36245,13 +36245,16 @@ p=2
 s=6
 break
 case 4:p=3
-g=o.pop()
-i=A.Y(g)
+f=o.pop()
+i=A.Y(f)
 if(i instanceof A.kY){n=i
 throw A.i(new A.qk(n.a))}else if(i instanceof A.ru){m=i
 if(m.b==="PGRST116")throw A.i(B.qz)
-throw A.i(A.bkV(m.a))}else if(i instanceof A.vP){l=i
-throw A.i(A.bkV(l.a))}else if(i instanceof A.dV)throw g
+i=m.a
+m.toString
+g=m.b
+throw A.i(A.bkV(i+(" ("+g+")")))}else if(i instanceof A.vP){l=i
+throw A.i(A.bkV(l.a))}else if(i instanceof A.dV)throw f
 else{k=i
 j=J.ek(k)
 if(J.x2(j,"SocketException")||J.x2(j,"ClientException")||J.x2(j,"Failed host lookup")||J.x2(j,"XMLHttpRequest"))throw A.i(B.DF)
@@ -128445,7 +128448,10 @@ $ibm:1}
 A.fU.prototype={
 gfo(){return"You're offline. Check your connection and try again."}}
 A.pr.prototype={
-gfo(){return"Our servers had a problem. Please try again in a moment."}}
+gfo(){var s=this.a
+if(s==="Server error"||s.length===0)s="Our servers had a problem. Please try again in a moment."
+else s="That didn't work: "+(s.length>160?B.c.Z(s,0,160)+"\u2026":s)
+return s}}
 A.qk.prototype={
 gfo(){return this.a}}
 A.Lq.prototype={
