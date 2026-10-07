@@ -105,6 +105,97 @@ class SupabaseBackend implements VocationBackend {
   @override
   Future<void> signOut() => _run(() => _client.auth.signOut());
 
+  @override
+  Future<void> deleteAccount() => _run(() async {
+        final uid = _uid();
+        // 1. Files can only be removed through the Storage API (best effort).
+        await _removeFolder(_bucket, uid);
+        try {
+          final mine = await _client.from('company_members').select('company_id').eq('user_id', uid);
+          for (final row in mine) {
+            final cid = row['company_id'] as String;
+            final members = await _client.from('company_members').select('user_id').eq('company_id', cid);
+            if (members.length <= 1) await _removeFolder('logos', cid);
+          }
+        } catch (_) {
+          // Not an employer, or employer tables not installed.
+        }
+        // 2. Delete the account and its data in the database.
+        await _client.rpc('delete_my_account');
+        // 3. The session belongs to a deleted user; clear it locally.
+        try {
+          await _client.auth.signOut(scope: sb.SignOutScope.local);
+        } catch (_) {}
+      });
+
+  Future<void> _removeFolder(String bucket, String folder) async {
+    try {
+      final files = await _client.storage.from(bucket).list(path: folder);
+      if (files.isEmpty) return;
+      await _client.storage.from(bucket).remove([for (final f in files) '$folder/${f.name}']);
+    } catch (_) {
+      // Missing bucket or no permission: nothing to remove.
+    }
+  }
+
+  // ---- Platform content --------------------------------------------------------
+
+  @override
+  Future<List<Announcement>> fetchAnnouncements() => _run(() async {
+        try {
+          final rows = await _client.from('announcements').select().eq('active', true).order('created_at', ascending: false).limit(5);
+          final now = DateTime.now();
+          return rows.map(Announcement.fromJson).where((a) => a.isLiveAt(now)).toList();
+        } on sb.PostgrestException {
+          return const <Announcement>[]; // admin tables not installed yet
+        }
+      });
+
+  @override
+  Future<SitePage?> fetchPage(String slug) => _run(() async {
+        try {
+          final row = await _client.from('site_pages').select().eq('slug', slug).maybeSingle();
+          return row == null ? null : SitePage.fromJson(row);
+        } on sb.PostgrestException {
+          return null;
+        }
+      });
+
+  @override
+  Future<PlatformSettings> fetchPlatformSettings() => _run(() async {
+        try {
+          final rows = await _client.from('platform_settings').select();
+          return PlatformSettings.fromRows(List<Map<String, dynamic>>.from(rows));
+        } on sb.PostgrestException {
+          return const PlatformSettings();
+        }
+      });
+
+  @override
+  Future<bool> isSuspended() => _run(() async {
+        final uid = _client.auth.currentUser?.id;
+        if (uid == null) return false;
+        try {
+          final row = await _client.from('profiles').select('suspended').eq('id', uid).maybeSingle();
+          return row?['suspended'] as bool? ?? false;
+        } on sb.PostgrestException {
+          return false; // column not installed yet
+        }
+      });
+
+  @override
+  Future<void> submitReport({required ReportTarget type, required String targetId, required String targetLabel, required String reason, String details = ''}) =>
+      _run(() async {
+        await _client.from('reports').insert({
+          'reporter_id': _uid(),
+          'target_type': type.name,
+          'target_id': targetId,
+          'target_label': targetLabel,
+          'reason': reason,
+          'details': details,
+        });
+      });
+
   // ---- Catalogue -------------------------------------------------------------
 
   @override

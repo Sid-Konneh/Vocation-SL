@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/errors.dart';
 import '../../../core/theme/app_theme.dart';
@@ -122,6 +123,16 @@ class _CompanyProfileScreenState extends ConsumerState<CompanyProfileScreen> {
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
           child: Card(child: Padding(padding: const EdgeInsets.all(20), child: CompanyForm(key: _form, initial: company))),
+        ),
+        const SizedBox(height: 24),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => context.push('/account/delete'),
+            icon: const Icon(Icons.delete_forever_outlined),
+            label: const Text('Delete account'),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+          ),
         ),
       ],
     );

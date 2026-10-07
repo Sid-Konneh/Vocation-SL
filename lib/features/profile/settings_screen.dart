@@ -170,6 +170,16 @@ class SettingsScreen extends ConsumerWidget {
               label: const Text('Sign out'),
             ),
           ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextButton.icon(
+              onPressed: () => context.push('/account/delete'),
+              icon: const Icon(Icons.delete_forever_outlined),
+              label: const Text('Delete account'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            ),
+          ),
           const SizedBox(height: 40),
         ]),
       ),

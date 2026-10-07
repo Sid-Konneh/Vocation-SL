@@ -157,9 +157,60 @@ class DemoBackend implements VocationBackend {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    await _call();
+    final uid = _currentUserId;
+    if (uid == null) throw const AuthException('Please sign in again.');
+    final accounts = Map<String, dynamic>.from(_state['accounts'] as Map)
+      ..removeWhere((_, v) => (v as Map)['user_id'] == uid);
+    _state['accounts'] = accounts;
+    final users = Map<String, dynamic>.from(_state['users'] as Map)..remove(uid);
+    _state['users'] = users;
+    for (final key in ['applications', 'notifications', 'saved', 'alerts']) {
+      _list(key).removeWhere((e) => e['user_id'] == uid);
+    }
+    await _persist();
+    await store.removeSetting('demo_role:$uid');
+    await signOut();
+  }
+
+  @override
   Future<void> signOut() async {
     _currentUserId = null;
     await store.removeSetting('demo_session');
+  }
+
+  // ---- Platform content --------------------------------------------------------
+
+  @override
+  Future<List<Announcement>> fetchAnnouncements() async => const [];
+
+  @override
+  Future<SitePage?> fetchPage(String slug) async => null;
+
+  @override
+  Future<PlatformSettings> fetchPlatformSettings() async => const PlatformSettings();
+
+  @override
+  Future<bool> isSuspended() async => false;
+
+  @override
+  Future<void> submitReport({required ReportTarget type, required String targetId, required String targetLabel, required String reason, String details = ''}) async {
+    await _call();
+    final reports = (_state['reports'] as List?)?.cast<Map<String, dynamic>>() ?? <Map<String, dynamic>>[];
+    reports.add({
+      'id': _uuid.v4(),
+      'reporter_id': _currentUserId,
+      'target_type': type.name,
+      'target_id': targetId,
+      'target_label': targetLabel,
+      'reason': reason,
+      'details': details,
+      'status': 'open',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    _state['reports'] = reports;
+    await _persist();
   }
 
   // ---- Catalogue -------------------------------------------------------------

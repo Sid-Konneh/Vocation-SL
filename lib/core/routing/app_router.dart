@@ -23,6 +23,7 @@ import '../../features/jobs/search_screen.dart';
 import '../../features/notifications/notification_settings_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
 import '../../features/profile/change_password_screen.dart';
+import '../../features/profile/delete_account_screen.dart';
 import '../../features/profile/edit_profile_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/profile/settings_screen.dart';
@@ -60,7 +61,7 @@ GoRoute _pushed(String path, Widget Function(GoRouterState s) build, {List<Route
     );
 
 /// Pages both kinds of user can open.
-const _shared = ['/about', '/settings/password', '/choose-role'];
+const _shared = ['/about', '/settings/password', '/choose-role', '/account/delete'];
 
 /// Where each role lands after signing in.
 String homeFor(UserRole? role) => switch (role) {
@@ -144,6 +145,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ---- Shared -----------------------------------------------------------
       _pushed('/about', (s) => const AboutScreen()),
+      _pushed('/account/delete', (s) => const DeleteAccountScreen()),
       _pushed('/settings/password', (s) => ChangePasswordScreen(fromReset: s.uri.queryParameters['reset'] == '1')),
     ],
   );

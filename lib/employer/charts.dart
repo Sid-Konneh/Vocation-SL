@@ -12,8 +12,11 @@ final _dayLabel = DateFormat('d MMM');
 /// Applications per day: single-series bar chart with a recessive grid,
 /// per-bar hover tooltips, and a table view for screen readers and exact values.
 class DailyApplicationsChart extends StatefulWidget {
-  const DailyApplicationsChart({super.key, required this.days});
+  const DailyApplicationsChart({super.key, required this.days, this.noun = 'application'});
   final List<({DateTime day, int count})> days;
+
+  /// Singular name of what is counted, e.g. 'application' or 'signup'.
+  final String noun;
 
   @override
   State<DailyApplicationsChart> createState() => _DailyApplicationsChartState();
@@ -52,25 +55,25 @@ class _DailyApplicationsChartState extends State<DailyApplicationsChart> {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Align(alignment: Alignment.centerRight, child: toggle),
         if (rows.isEmpty)
-          Padding(padding: const EdgeInsets.all(16), child: Text('No applications in this period.', style: context.text.bodyMedium))
+          Padding(padding: const EdgeInsets.all(16), child: Text('No ${widget.noun}s in this period.', style: context.text.bodyMedium))
         else
           DataTable(
             headingRowHeight: 36,
             dataRowMinHeight: 36,
             dataRowMaxHeight: 40,
-            columns: const [DataColumn(label: Text('Day')), DataColumn(label: Text('Applications'), numeric: true)],
+            columns: [const DataColumn(label: Text('Day')), DataColumn(label: Text('${widget.noun[0].toUpperCase()}${widget.noun.substring(1)}s'), numeric: true)],
             rows: [for (final d in rows) DataRow(cells: [DataCell(Text(_dayLabel.format(d.day))), DataCell(Text('${d.count}'))])],
           ),
       ]);
     }
 
     return Semantics(
-      label: '$total applications in the last ${days.length} days, peak $peak in one day.',
+      label: '$total ${widget.noun}s in the last ${days.length} days, peak $peak in one day.',
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('$total', style: context.text.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(width: 8),
-          Expanded(child: Text('applications · last ${days.length} days', style: context.text.bodyMedium?.copyWith(color: muted))),
+          Expanded(child: Text('${widget.noun}s · last ${days.length} days', style: context.text.bodyMedium?.copyWith(color: muted))),
           toggle,
         ]),
         const SizedBox(height: 12),
@@ -106,7 +109,7 @@ class _DailyApplicationsChartState extends State<DailyApplicationsChart> {
                   top: 0,
                   height: plotH,
                   child: Tooltip(
-                    message: '${_dayLabel.format(days[i].day)}: ${days[i].count} application${days[i].count == 1 ? '' : 's'}',
+                    message: '${_dayLabel.format(days[i].day)}: ${days[i].count} ${widget.noun}${days[i].count == 1 ? '' : 's'}',
                     waitDuration: Duration.zero,
                     child: Container(
                       color: Colors.transparent, // full-height hit target
@@ -178,6 +181,48 @@ class FunnelChart extends StatelessWidget {
                   textAlign: TextAlign.right,
                   style: context.text.labelMedium?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
                 ),
+              ),
+            ]),
+          ),
+        ),
+    ]);
+  }
+}
+
+/// Ranked horizontal bars (e.g. top industries): one hue, direct value labels.
+class RankedBars extends StatelessWidget {
+  const RankedBars({super.key, required this.items, this.empty = 'No data yet.'});
+  final List<({String label, int count})> items;
+  final String empty;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return Text(empty, style: context.text.bodyMedium);
+    final max = math.max(1, items.fold(0, (m, e) => math.max(m, e.count)));
+    final color = chartColor(context);
+    return Column(children: [
+      for (final e in items)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Tooltip(
+            message: '${e.label}: ${e.count}',
+            child: Row(children: [
+              SizedBox(width: 130, child: Text(e.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodyMedium)),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, c) => Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      height: 14,
+                      width: math.max(4.0, c.maxWidth * e.count / max),
+                      decoration: BoxDecoration(color: color, borderRadius: const BorderRadius.horizontal(right: Radius.circular(4))),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 48,
+                child: Text('${e.count}', textAlign: TextAlign.right, style: context.text.labelMedium?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
               ),
             ]),
           ),

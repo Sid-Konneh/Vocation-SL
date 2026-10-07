@@ -54,6 +54,24 @@ class UserRepository extends CachedRepository {
     return backend.signUp(fullName: name, email: email, password: password);
   }
 
+  /// Deletes the account on the server, then wipes this device's copy.
+  Future<void> deleteAccount() async {
+    final uid = currentUserId;
+    await backend.deleteAccount();
+    await _clearLocal(uid);
+  }
+
+  Future<void> _clearLocal(String? uid) async {
+    if (uid != null) {
+      for (final k in [...store.keysWithPrefix('u:$uid:'), ...store.keysWithPrefix('emp:$uid:')]) {
+        await store.remove(k);
+      }
+    }
+    await store.clearOutbox();
+    await store.removeSetting('pending_role');
+    await store.removeSetting('last_role');
+  }
+
   Future<void> signOut() async {
     final uid = currentUserId;
     await backend.signOut();

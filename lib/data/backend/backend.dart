@@ -36,6 +36,20 @@ abstract interface class VocationBackend {
   Future<void> updatePassword(String newPassword);
   Future<void> signOut();
 
+  /// Permanently deletes the signed-in user's account and data, then signs out.
+  Future<void> deleteAccount();
+
+  // Platform content (managed by admins)
+  Future<List<Announcement>> fetchAnnouncements();
+  Future<SitePage?> fetchPage(String slug);
+  Future<PlatformSettings> fetchPlatformSettings();
+
+  /// Whether an admin has suspended the signed-in account.
+  Future<bool> isSuspended();
+
+  /// Flags a job, company or user for the moderation team.
+  Future<void> submitReport({required ReportTarget type, required String targetId, required String targetLabel, required String reason, String details = ''});
+
   // Catalogue. Jobs are returned with their [Company] attached.
   Future<List<Company>> fetchCompanies();
   Future<PageResult<Job>> searchJobs(JobFilter filter, {required int page, required int pageSize});

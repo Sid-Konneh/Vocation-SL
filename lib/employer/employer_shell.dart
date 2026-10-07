@@ -159,6 +159,14 @@ class EmployerShell extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.delete_forever_outlined, color: AppColors.danger),
+              title: const Text('Delete account', style: TextStyle(color: AppColors.danger)),
+              onTap: () {
+                Navigator.pop(sheet);
+                context.push('/account/delete');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.logout_rounded),
               title: const Text('Sign out'),
               onTap: () {

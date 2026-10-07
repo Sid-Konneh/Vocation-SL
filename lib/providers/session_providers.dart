@@ -39,6 +39,11 @@ class SessionNotifier extends Notifier<String?> {
     await ref.read(userRepositoryProvider).signOut();
     state = null;
   }
+
+  Future<void> deleteAccount() async {
+    await ref.read(userRepositoryProvider).deleteAccount();
+    state = null;
+  }
 }
 
 final sessionProvider = NotifierProvider<SessionNotifier, String?>(SessionNotifier.new);
