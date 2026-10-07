@@ -13,11 +13,7 @@ class AppConfig {
   /// Deep link the mobile apps receive after Google sign-in, email
   /// confirmation and password reset. Must be listed in Supabase
   /// Authentication → URL Configuration → Redirect URLs.
-  static String mobileAuthRedirect = 'org.vocationsl.app://login-callback';
-  static const employerAuthRedirect = 'org.vocationsl.employer://login-callback';
-
-  /// True in the employer app (set by main_employer.dart).
-  static bool isEmployerApp = false;
+  static const mobileAuthRedirect = 'org.vocationsl.app://login-callback';
 
   static const appName = 'Vocation SL';
   static const pageSize = 10;

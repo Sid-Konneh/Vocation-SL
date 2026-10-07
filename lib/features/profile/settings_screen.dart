@@ -12,6 +12,8 @@ import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/vocation_logo.dart';
+import '../../models/models.dart';
+import '../auth/role_choice_screen.dart';
 import 'sign_out.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -49,6 +51,13 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(children: [
           header('Account'),
           ListTile(leading: const Icon(Icons.mail_outline_rounded), title: const Text('Email'), subtitle: Text(user?.email ?? '')),
+          ListTile(
+            leading: const Icon(Icons.swap_horiz_rounded),
+            title: const Text('Switch to employer'),
+            subtitle: const Text('Post jobs and review candidates for your company'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => switchRole(context, ref, UserRole.employer),
+          ),
           ListTile(
             leading: const Icon(Icons.lock_outline_rounded),
             title: const Text('Change password'),

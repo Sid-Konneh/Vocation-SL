@@ -47,11 +47,11 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
     try {
       switch (action) {
         case 'edit':
-          context.push('/jobs/${job.id}/edit');
+          context.push('/employer/jobs/${job.id}/edit');
         case 'applicants':
-          context.go('/candidates?job=${job.id}');
+          context.go('/employer/candidates?job=${job.id}');
         case 'preview':
-          context.push('/jobs/${job.id}/edit?preview=1');
+          context.push('/employer/jobs/${job.id}/edit?preview=1');
         case 'close':
           if (await confirmDialog(context,
               title: 'Close this job?', message: 'It will stop accepting applications. Existing applicants stay in your pipeline.', confirmLabel: 'Close job')) {
@@ -86,7 +86,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
       onRefresh: () => ref.read(employerJobsProvider.notifier).refresh(),
       actions: [
         FilledButton.icon(
-          onPressed: () => context.push('/jobs/new'),
+          onPressed: () => context.push('/employer/jobs/new'),
           icon: const Icon(Icons.add_rounded),
           label: const Text('Post a job'),
           style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
@@ -123,7 +123,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
               title: all.isEmpty ? 'Post your first job' : 'No jobs match',
               message: all.isEmpty ? 'Create a listing and start receiving applications from candidates across Sierra Leone.' : 'Try another filter or search.',
               action: all.isEmpty ? 'Post a job' : null,
-              onAction: () => context.push('/jobs/new'),
+              onAction: () => context.push('/employer/jobs/new'),
             ),
             columns: const [
               DataColumn(label: Text('Job')),

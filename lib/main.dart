@@ -10,6 +10,10 @@ import 'core/storage/local_store.dart';
 import 'data/backend/backend.dart';
 import 'data/backend/demo_backend.dart';
 import 'data/backend/supabase_backend.dart';
+import 'employer/data/demo_employer_backend.dart';
+import 'employer/data/employer_backend.dart';
+import 'employer/data/supabase_employer_backend.dart';
+import 'employer/providers.dart';
 import 'providers/core_providers.dart';
 
 Future<void> main() async {
@@ -20,11 +24,14 @@ Future<void> main() async {
   await connectivity.init(simulateOffline: DevSettings.load(store).simulateOffline);
 
   final VocationBackend backend;
+  final EmployerBackend employerBackend;
   if (AppConfig.useSupabase) {
     await Supabase.initialize(url: AppConfig.supabaseUrl, publishableKey: AppConfig.supabaseKey);
     backend = SupabaseBackend(Supabase.instance.client);
+    employerBackend = SupabaseEmployerBackend(Supabase.instance.client);
   } else {
     backend = DemoBackend(store: store, connectivity: connectivity, devSettings: () => DevSettings.load(store));
+    employerBackend = DemoEmployerBackend();
   }
 
   runApp(ProviderScope(
@@ -32,6 +39,7 @@ Future<void> main() async {
       localStoreProvider.overrideWithValue(store),
       connectivityServiceProvider.overrideWithValue(connectivity),
       backendProvider.overrideWithValue(backend),
+      employerBackendProvider.overrideWithValue(employerBackend),
     ],
     child: const VocationApp(),
   ));

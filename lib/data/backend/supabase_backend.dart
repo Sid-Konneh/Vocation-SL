@@ -45,9 +45,22 @@ class SupabaseBackend implements VocationBackend {
   @override
   bool get supportsGoogleSignIn => true;
 
+  @override
+  UserRole? get currentRole {
+    final r = _client.auth.currentUser?.userMetadata?['role'];
+    return UserRole.values.where((v) => v.name == r).firstOrNull;
+  }
+
+  @override
+  Future<void> setRole(UserRole role) => _run(() async {
+        await _client.auth.updateUser(sb.UserAttributes(data: {'role': role.name}));
+      });
+
   /// Where Supabase sends the user back after OAuth, email confirmation or
   /// password reset: the current site on web, the app's deep link on mobile.
-  String get _redirect => kIsWeb ? Uri.base.origin : AppConfig.mobileAuthRedirect;
+  /// The trailing slash matters: Supabase matches it against allow-list
+  /// entries like "https://site/**"; a bare origin falls back to the Site URL.
+  String get _redirect => kIsWeb ? '${Uri.base.origin}/' : AppConfig.mobileAuthRedirect;
 
   @override
   Future<String> signIn({required String email, required String password}) => _run(() async {

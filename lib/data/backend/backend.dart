@@ -16,6 +16,10 @@ abstract interface class VocationBackend {
   Stream<String?> get authChanges;
 
   bool get supportsGoogleSignIn;
+
+  /// The signed-in user's chosen role, or null if they haven't chosen yet.
+  UserRole? get currentRole;
+  Future<void> setRole(UserRole role);
   Future<String> signIn({required String email, required String password});
 
   /// Throws [EmailConfirmationRequired] when the account must be verified first.

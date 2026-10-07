@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
+import '../features/auth/role_choice_screen.dart';
 import '../features/profile/sign_out.dart';
 import '../models/models.dart';
 import '../widgets/states.dart';
@@ -83,6 +84,7 @@ class EmployerShell extends ConsumerWidget {
                   const Spacer(),
                   const Divider(),
                   const SizedBox(height: 8),
+                  _NavRow(icon: const Icon(Icons.swap_horiz_rounded), label: 'Switch to job seeker', semantics: 'Switch to job seeker', onTap: () => switchRole(context, ref, UserRole.seeker)),
                   _NavRow(icon: const Icon(Icons.info_outline_rounded), label: 'About', semantics: 'About Vocation SL', onTap: () => context.push('/about')),
                   _NavRow(icon: const Icon(Icons.logout_rounded), label: 'Sign out', semantics: 'Sign out', onTap: () => confirmAndSignOut(context, ref)),
                 ]),
@@ -132,6 +134,14 @@ class EmployerShell extends ConsumerWidget {
                   _go(i);
                 },
               ),
+            ListTile(
+              leading: const Icon(Icons.swap_horiz_rounded),
+              title: const Text('Switch to job seeker'),
+              onTap: () {
+                Navigator.pop(sheet);
+                switchRole(context, ref, UserRole.seeker);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.info_outline_rounded),
               title: const Text('About'),

@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../employer/employer_shell.dart';
+import '../../employer/features/candidates/candidate_detail_screen.dart';
+import '../../employer/features/candidates/candidates_screen.dart';
+import '../../employer/features/company/company_screens.dart';
+import '../../employer/features/dashboard/dashboard_screens.dart';
+import '../../employer/features/jobs/job_editor_screen.dart';
+import '../../employer/features/jobs/my_jobs_screen.dart';
 import '../../features/about/about_screen.dart';
 import '../../features/applications/application_detail_screen.dart';
 import '../../features/applications/applications_screen.dart';
 import '../../features/apply/apply_flow_screen.dart';
 import '../../features/apply/apply_success_screen.dart';
 import '../../features/auth/login_screen.dart';
+import '../../features/auth/role_choice_screen.dart';
 import '../../features/jobs/company_screen.dart';
 import '../../features/jobs/home_screen.dart';
 import '../../features/jobs/job_details_screen.dart';
@@ -44,26 +52,54 @@ CustomTransitionPage<void> _page(GoRouterState state, Widget child) => CustomTra
       },
     );
 
+GoRoute _pushed(String path, Widget Function(GoRouterState s) build, {List<RouteBase> routes = const []}) => GoRoute(
+      path: path,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (c, s) => _page(s, build(s)),
+      routes: routes,
+    );
+
+/// Pages both kinds of user can open.
+const _shared = ['/about', '/settings/password', '/choose-role'];
+
+/// Where each role lands after signing in.
+String homeFor(UserRole? role) => switch (role) {
+      UserRole.employer => '/employer/dashboard',
+      UserRole.seeker => '/jobs',
+      null => '/choose-role',
+    };
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ValueNotifier<String?>(ref.read(sessionProvider));
-  ref.listen(sessionProvider, (_, next) => auth.value = next);
-  ref.onDispose(auth.dispose);
+  // Re-run redirects whenever the session or role changes.
+  final refresh = ValueNotifier<int>(0);
+  ref.listen(sessionProvider, (_, _) => refresh.value++);
+  ref.listen(roleProvider, (_, _) => refresh.value++);
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: '/',
-    refreshListenable: auth,
+    refreshListenable: refresh,
     redirect: (context, state) {
-      final signedIn = auth.value != null;
+      final signedIn = ref.read(sessionProvider) != null;
+      final role = ref.read(roleProvider);
       final loc = state.matchedLocation;
       if (loc == '/') return null; // splash decides
-      if (!signedIn && loc != '/login') return '/login';
-      if (signedIn && loc == '/login') return '/jobs';
+      if (!signedIn) return loc == '/login' ? null : '/login';
+      if (loc == '/login') return homeFor(role);
+      if (_shared.any(loc.startsWith)) return null;
+      if (role == null) return '/choose-role';
+      final inEmployer = loc.startsWith('/employer');
+      if (role == UserRole.employer && !inEmployer) return homeFor(role);
+      if (role == UserRole.seeker && inEmployer) return homeFor(role);
       return null;
     },
     routes: [
       GoRoute(path: '/', pageBuilder: (c, s) => _page(s, const SplashScreen())),
       GoRoute(path: '/login', pageBuilder: (c, s) => _page(s, const LoginScreen())),
+      GoRoute(path: '/choose-role', pageBuilder: (c, s) => _page(s, const RoleChoiceScreen())),
+
+      // ---- Job seeker -------------------------------------------------------
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(shell: shell),
         branches: [
@@ -74,55 +110,41 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [GoRoute(path: '/profile', builder: (c, s) => const ProfileScreen())]),
         ],
       ),
-      GoRoute(
-        path: '/search',
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => _page(s, SearchScreen(initialFilter: s.extra is JobFilter ? s.extra as JobFilter : null)),
-      ),
-      GoRoute(
-        path: '/job/:id',
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => _page(s, JobDetailsScreen(jobId: s.pathParameters['id']!)),
-        routes: [
-          GoRoute(
-            path: 'apply',
-            parentNavigatorKey: rootNavigatorKey,
-            pageBuilder: (c, s) => _page(s, ApplyFlowScreen(jobId: s.pathParameters['id']!)),
-          ),
+      _pushed('/search', (s) => SearchScreen(initialFilter: s.extra is JobFilter ? s.extra as JobFilter : null)),
+      _pushed('/job/:id', (s) => JobDetailsScreen(jobId: s.pathParameters['id']!), routes: [
+        GoRoute(
+          path: 'apply',
+          parentNavigatorKey: rootNavigatorKey,
+          pageBuilder: (c, s) => _page(s, ApplyFlowScreen(jobId: s.pathParameters['id']!)),
+        ),
+      ]),
+      _pushed('/applied/:appId', (s) => ApplySuccessScreen(applicationId: s.pathParameters['appId']!)),
+      _pushed('/application/:id', (s) => ApplicationDetailScreen(applicationId: s.pathParameters['id']!)),
+      _pushed('/company/:id', (s) => CompanyScreen(companyId: s.pathParameters['id']!)),
+      _pushed('/profile/edit', (s) => EditProfileScreen(section: s.uri.queryParameters['section'])),
+      _pushed('/settings', (s) => const SettingsScreen()),
+      _pushed('/settings/notifications', (s) => const NotificationSettingsScreen()),
+
+      // ---- Employer ---------------------------------------------------------
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => EmployerShell(shell: shell),
+        branches: [
+          StatefulShellBranch(routes: [GoRoute(path: '/employer/dashboard', builder: (c, s) => const DashboardScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/employer/insights', builder: (c, s) => const InsightsScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/employer/jobs', builder: (c, s) => const MyJobsScreen())]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/employer/candidates', builder: (c, s) => CandidatesScreen(jobId: s.uri.queryParameters['job'])),
+          ]),
+          StatefulShellBranch(routes: [GoRoute(path: '/employer/company', builder: (c, s) => const CompanyProfileScreen())]),
         ],
       ),
-      GoRoute(
-        path: '/applied/:appId',
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => _page(s, ApplySuccessScreen(applicationId: s.pathParameters['appId']!)),
-      ),
-      GoRoute(
-        path: '/application/:id',
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => _page(s, ApplicationDetailScreen(applicationId: s.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/company/:id',
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => _page(s, CompanyScreen(companyId: s.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/profile/edit',
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => _page(s, EditProfileScreen(section: s.uri.queryParameters['section'])),
-      ),
-      GoRoute(path: '/about', parentNavigatorKey: rootNavigatorKey, pageBuilder: (c, s) => _page(s, const AboutScreen())),
-      GoRoute(path: '/settings', parentNavigatorKey: rootNavigatorKey, pageBuilder: (c, s) => _page(s, const SettingsScreen())),
-      GoRoute(
-        path: '/settings/password',
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => _page(s, ChangePasswordScreen(fromReset: s.uri.queryParameters['reset'] == '1')),
-      ),
-      GoRoute(
-        path: '/settings/notifications',
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => _page(s, const NotificationSettingsScreen()),
-      ),
+      _pushed('/employer/jobs/new', (s) => const JobEditorScreen()),
+      _pushed('/employer/jobs/:id/edit', (s) => JobEditorScreen(jobId: s.pathParameters['id'])),
+      _pushed('/employer/candidates/:id', (s) => CandidateDetailScreen(applicationId: s.pathParameters['id']!)),
+
+      // ---- Shared -----------------------------------------------------------
+      _pushed('/about', (s) => const AboutScreen()),
+      _pushed('/settings/password', (s) => ChangePasswordScreen(fromReset: s.uri.queryParameters['reset'] == '1')),
     ],
   );
 });

@@ -90,6 +90,17 @@ class DemoBackend implements VocationBackend {
   bool get supportsGoogleSignIn => false;
 
   @override
+  UserRole? get currentRole {
+    final r = _currentUserId == null ? null : store.setting<String>('demo_role:$_currentUserId');
+    return UserRole.values.where((v) => v.name == r).firstOrNull;
+  }
+
+  @override
+  Future<void> setRole(UserRole role) async {
+    if (_currentUserId != null) await store.setSetting('demo_role:$_currentUserId', role.name);
+  }
+
+  @override
   Future<void> signInWithGoogle() async =>
       throw const AuthException('Google sign-in is available when the app is connected to Supabase.');
 

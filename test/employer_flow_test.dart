@@ -12,12 +12,12 @@ import 'package:vocation_sl/core/dev_settings.dart';
 import 'package:vocation_sl/core/network/connectivity_service.dart';
 import 'package:vocation_sl/core/storage/local_store.dart';
 import 'package:vocation_sl/data/backend/demo_backend.dart';
-import 'package:vocation_sl/employer/employer_app.dart';
+import 'package:vocation_sl/app.dart';
 import 'package:vocation_sl/employer/providers.dart';
 import 'package:vocation_sl/models/models.dart';
 import 'package:vocation_sl/providers/core_providers.dart';
 
-import 'fake_employer_backend.dart';
+import 'package:vocation_sl/employer/data/demo_employer_backend.dart';
 
 Future<void> settle(WidgetTester tester, [int ms = 600]) async {
   await tester.runAsync(() => Future<void>.delayed(Duration(milliseconds: ms)));
@@ -79,7 +79,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    final fake = FakeEmployerBackend();
+    final fake = DemoEmployerBackend();
     late ProviderContainer container;
     await tester.runAsync(() async {
       final store = await LocalStore.open(path: dir.path);
@@ -92,9 +92,12 @@ void main() {
         employerBackendProvider.overrideWithValue(fake),
       ]);
     });
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const EmployerApp()));
+    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const VocationApp()));
 
     // Sign in (demo auth) -> company setup gate.
+    await waitFor(tester, find.text('Hire talent'));
+    await tester.tap(find.text('Hire talent'));
+    await tester.pump();
     await waitFor(tester, find.text('Employer sign in'));
     await tester.tap(find.text('Continue with demo account'));
     await waitFor(tester, find.text('Set up your company'));
@@ -116,7 +119,7 @@ void main() {
     expect(find.text('Your company is awaiting approval'), findsOneWidget);
 
     // Sidebar has every section.
-    for (final s in ['Dashboard', 'Insights', 'My jobs', 'Candidates', 'Company profile', 'Sign out']) {
+    for (final s in ['Dashboard', 'Insights', 'My jobs', 'Candidates', 'Company profile', 'Switch to job seeker', 'Sign out']) {
       expect(find.text(s), findsWidgets, reason: s);
     }
 

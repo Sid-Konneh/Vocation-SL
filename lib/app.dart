@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/app_config.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'employer/providers.dart';
+import 'models/models.dart';
 import 'providers/core_providers.dart';
 import 'providers/job_providers.dart';
 import 'providers/session_providers.dart';
@@ -89,6 +91,14 @@ class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserve
   /// Background refresh of everything the user has open.
   void _refreshAll() {
     if (!ref.read(onlineProvider) || ref.read(sessionProvider) == null) return;
+    final role = ref.read(roleProvider);
+    if (role == UserRole.employer) {
+      unawaited(ref.read(companyProvider.notifier).refresh());
+      unawaited(ref.read(candidatesProvider.notifier).refresh());
+      unawaited(ref.read(employerJobsProvider.notifier).refresh());
+      return;
+    }
+    if (role == null) return;
     unawaited(ref.read(notificationsProvider.notifier).refresh());
     unawaited(ref.read(applicationsProvider.notifier).refresh());
     unawaited(ref.read(savedJobsProvider.notifier).refresh());

@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocation_sl/employer/insights.dart';
 import 'package:vocation_sl/models/models.dart';
 
-import 'fake_employer_backend.dart';
+import 'package:vocation_sl/employer/data/demo_employer_backend.dart';
 
 Job _job(String id, {JobStatus status = JobStatus.published, int views = 0, DateTime? deadline}) => Job(
       id: id,
@@ -127,21 +127,21 @@ void main() {
 
   group('fake backend mirrors database rules', () {
     test('pending company: a posted job waits for approval', () async {
-      final b = FakeEmployerBackend();
+      final b = DemoEmployerBackend();
       await b.registerCompany(const Company(id: '', name: 'Acme', industry: Industry.ngo, location: 'Bo', about: '', size: '', founded: 0, website: '', brandColor: 0));
       final job = await b.saveJob(_job('').copyWithCompany('co-1'), status: JobStatus.published);
       expect(job.status, JobStatus.pending);
     });
 
     test('approved company: a posted job goes live; drafts stay drafts', () async {
-      final b = FakeEmployerBackend(approveOnRegister: true);
+      final b = DemoEmployerBackend(approveOnRegister: true);
       await b.registerCompany(const Company(id: '', name: 'Acme', industry: Industry.ngo, location: 'Bo', about: '', size: '', founded: 0, website: '', brandColor: 0));
       expect((await b.saveJob(_job('').copyWithCompany('co-1'), status: JobStatus.published)).status, JobStatus.published);
       expect((await b.saveJob(_job('').copyWithCompany('co-1'), status: JobStatus.draft)).status, JobStatus.draft);
     });
 
     test('employers cannot set a candidate to withdrawn', () async {
-      final b = FakeEmployerBackend(approveOnRegister: true);
+      final b = DemoEmployerBackend(approveOnRegister: true);
       await b.registerCompany(const Company(id: '', name: 'Acme', industry: Industry.ngo, location: 'Bo', about: '', size: '', founded: 0, website: '', brandColor: 0));
       final job = await b.saveJob(_job('').copyWithCompany('co-1'), status: JobStatus.published);
       final app = b.addApplicant(job.id, 'Test Person');

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_data_providers.dart';
 import '../../widgets/vocation_logo.dart';
+import '../../models/models.dart';
+import '../auth/role_choice_screen.dart';
 import '../profile/sign_out.dart';
 
 class _Dest {
@@ -119,6 +121,12 @@ class _Sidebar extends ConsumerWidget {
               const Spacer(),
               const Divider(),
               const SizedBox(height: 8),
+              _SidebarItem(
+                icon: const Icon(Icons.swap_horiz_rounded),
+                label: 'Switch to employer',
+                semantics: 'Switch to employer',
+                onTap: () => switchRole(context, ref, UserRole.employer),
+              ),
               _SidebarItem(
                 icon: const Icon(Icons.info_outline_rounded),
                 label: 'About',

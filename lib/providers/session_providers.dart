@@ -43,6 +43,46 @@ class SessionNotifier extends Notifier<String?> {
 
 final sessionProvider = NotifierProvider<SessionNotifier, String?>(SessionNotifier.new);
 
+/// The signed-in user's role (job seeker or employer), or null until chosen.
+///
+/// The login screen records the user's intent ("Find a job" / "Hire talent")
+/// before sign-in, so it survives a Google redirect; it is applied here the
+/// first time a user without a role signs in.
+class RoleNotifier extends Notifier<UserRole?> {
+  static const _pendingKey = 'pending_role';
+
+  @override
+  UserRole? build() {
+    final uid = ref.watch(sessionProvider);
+    if (uid == null) return null;
+    final backend = ref.watch(backendProvider);
+    final saved = backend.currentRole;
+    if (saved != null) return saved;
+    final pending = ref.read(localStoreProvider).setting<String>(_pendingKey);
+    final intent = UserRole.values.where((r) => r.name == pending).firstOrNull;
+    if (intent != null) {
+      Future.microtask(() => choose(intent));
+      return intent;
+    }
+    return null;
+  }
+
+  /// Remembers the role picked on the login screen (before signing in).
+  Future<void> setIntent(UserRole role) => ref.read(localStoreProvider).setSetting(_pendingKey, role.name);
+
+  Future<void> choose(UserRole role) async {
+    state = role;
+    await ref.read(localStoreProvider).setSetting(_pendingKey, role.name);
+    try {
+      await ref.read(backendProvider).setRole(role);
+    } catch (_) {
+      // Saved locally; it is re-applied on next sign-in.
+    }
+  }
+}
+
+final roleProvider = NotifierProvider<RoleNotifier, UserRole?>(RoleNotifier.new);
+
 String requireUid(Ref ref) {
   final uid = ref.watch(sessionProvider);
   if (uid == null) throw StateError('Not signed in');

@@ -5,14 +5,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/errors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/demo/demo_seed.dart';
+import '../../models/models.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/vocation_logo.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key, this.forEmployers = false});
-  final bool forEmployers;
+  const LoginScreen({super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -27,6 +27,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscure = true;
   String? _error;
   String? _info;
+  late UserRole _intent = UserRole.values.where((r) => r.name == ref.read(localStoreProvider).setting<String>('pending_role')).firstOrNull ?? UserRole.seeker;
+
+  bool get _hiring => _intent == UserRole.employer;
 
   @override
   void dispose() {
@@ -63,6 +66,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       });
 
   Future<void> _run(Future<void> Function() action) async {
+    // Remember which side they chose; applied once the session starts.
+    await ref.read(roleProvider.notifier).setIntent(_intent);
     setState(() {
       _busy = true;
       _error = null;
@@ -97,11 +102,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: AutofillGroup(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   const Align(alignment: Alignment.centerLeft, child: VocationMark(size: 56)),
-                  const SizedBox(height: 28),
-                  Text(_signUp ? (widget.forEmployers ? 'Create an employer account' : 'Create your account') : (widget.forEmployers ? 'Employer sign in' : 'Welcome back'), style: context.text.headlineMedium),
+                  const SizedBox(height: 24),
+                  SegmentedButton<UserRole>(
+                    segments: const [
+                      ButtonSegment(value: UserRole.seeker, label: Text('Find a job'), icon: Icon(Icons.search_rounded)),
+                      ButtonSegment(value: UserRole.employer, label: Text('Hire talent'), icon: Icon(Icons.business_center_outlined)),
+                    ],
+                    selected: {_intent},
+                    showSelectedIcon: false,
+                    onSelectionChanged: _busy
+                        ? null
+                        : (s) => setState(() {
+                              _intent = s.first;
+                              _error = null;
+                            }),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(_signUp ? (_hiring ? 'Create an employer account' : 'Create your account') : (_hiring ? 'Employer sign in' : 'Welcome back'), style: context.text.headlineMedium),
                   const SizedBox(height: 8),
                   Text(
-                    widget.forEmployers
+                    _hiring
                         ? 'Post jobs and review candidates for your company.'
                         : _signUp
                             ? 'Find and apply for jobs across Sierra Leone.'

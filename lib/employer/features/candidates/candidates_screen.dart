@@ -177,7 +177,7 @@ class _CandidatesScreenState extends ConsumerState<CandidatesScreen> {
                   color: a.status == ApplicationStatus.applied
                       ? WidgetStatePropertyAll(context.palette.accentTint.withValues(alpha: 0.5))
                       : null,
-                  onSelectChanged: (_) => context.push('/candidates/${a.id}'),
+                  onSelectChanged: (_) => context.push('/employer/candidates/${a.id}'),
                   cells: [
                     DataCell(ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 240),

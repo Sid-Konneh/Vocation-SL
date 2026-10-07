@@ -36,7 +36,7 @@ class DashboardScreen extends ConsumerWidget {
 
     final recent = SectionCard(
       title: 'Recent applicants',
-      trailing: TextButton(onPressed: () => context.go('/candidates'), child: const Text('View all')),
+      trailing: TextButton(onPressed: () => context.go('/employer/candidates'), child: const Text('View all')),
       child: apps.isEmpty
           ? Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -46,7 +46,7 @@ class DashboardScreen extends ConsumerWidget {
               for (final a in apps.take(6))
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  onTap: () => context.push('/candidates/${a.id}'),
+                  onTap: () => context.push('/employer/candidates/${a.id}'),
                   leading: UserAvatar(initials: a.applicant.fullName.isEmpty ? '?' : a.applicant.fullName[0].toUpperCase(), size: 36),
                   title: Text(a.applicant.fullName, style: context.text.titleSmall?.copyWith(fontWeight: a.status == ApplicationStatus.applied ? FontWeight.w800 : null)),
                   subtitle: Text('${a.job?.title ?? ''} · ${Fmt.ago(a.submittedAt)}', maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -63,7 +63,7 @@ class DashboardScreen extends ConsumerWidget {
               for (final a in stats.upcomingInterviews.take(5))
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  onTap: () => context.push('/candidates/${a.id}'),
+                  onTap: () => context.push('/employer/candidates/${a.id}'),
                   leading: const Icon(Icons.event_rounded),
                   title: Text(a.applicant.fullName),
                   subtitle: Text('${Fmt.dateTime(a.interviewAt!)} · ${a.job?.title ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -79,7 +79,7 @@ class DashboardScreen extends ConsumerWidget {
               for (final j in closingSoon)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  onTap: () => context.push('/jobs/${j.id}/edit'),
+                  onTap: () => context.push('/employer/jobs/${j.id}/edit'),
                   title: Text(j.title),
                   subtitle: Text('${j.applicants} applicants'),
                   trailing: Text(Fmt.deadline(j.deadline), style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700)),
@@ -93,7 +93,7 @@ class DashboardScreen extends ConsumerWidget {
       onRefresh: () => _refreshAll(ref),
       actions: [
         FilledButton.icon(
-          onPressed: () => context.push('/jobs/new'),
+          onPressed: () => context.push('/employer/jobs/new'),
           icon: const Icon(Icons.add_rounded),
           label: const Text('Post a job'),
           style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
@@ -102,9 +102,9 @@ class DashboardScreen extends ConsumerWidget {
       children: [
         if (company != null) ApprovalBanner(company: company),
         StatGrid(children: [
-          StatTile(label: 'Live jobs', value: '${stats.liveJobs}', detail: stats.pendingJobs > 0 ? '${stats.pendingJobs} awaiting approval' : '${stats.draftJobs} drafts', icon: Icons.work_outline_rounded, onTap: () => context.go('/jobs')),
-          StatTile(label: 'Applicants', value: '${stats.totalApplicants}', detail: '${stats.newThisWeek} this week', icon: Icons.people_outline_rounded, onTap: () => context.go('/candidates')),
-          StatTile(label: 'To review', value: '${stats.awaitingReview}', detail: 'New, not yet opened', icon: Icons.mark_email_unread_outlined, attention: stats.awaitingReview > 0, onTap: () => context.go('/candidates')),
+          StatTile(label: 'Live jobs', value: '${stats.liveJobs}', detail: stats.pendingJobs > 0 ? '${stats.pendingJobs} awaiting approval' : '${stats.draftJobs} drafts', icon: Icons.work_outline_rounded, onTap: () => context.go('/employer/jobs')),
+          StatTile(label: 'Applicants', value: '${stats.totalApplicants}', detail: '${stats.newThisWeek} this week', icon: Icons.people_outline_rounded, onTap: () => context.go('/employer/candidates')),
+          StatTile(label: 'To review', value: '${stats.awaitingReview}', detail: 'New, not yet opened', icon: Icons.mark_email_unread_outlined, attention: stats.awaitingReview > 0, onTap: () => context.go('/employer/candidates')),
           StatTile(label: 'Interviews', value: '${stats.upcomingInterviews.length}', detail: 'Upcoming', icon: Icons.event_outlined),
         ]),
         const SizedBox(height: 16),
@@ -205,7 +205,7 @@ class InsightsScreen extends ConsumerWidget {
           rows: [
             for (final p in perf)
               DataRow(
-                onSelectChanged: (_) => context.go('/candidates?job=${p.job.id}'),
+                onSelectChanged: (_) => context.go('/employer/candidates?job=${p.job.id}'),
                 cells: [
                   DataCell(ConstrainedBox(constraints: const BoxConstraints(maxWidth: 260), child: Text(p.job.title, maxLines: 2, overflow: TextOverflow.ellipsis))),
                   DataCell(JobStatusPill(p.job.status)),

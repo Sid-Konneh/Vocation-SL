@@ -8,6 +8,15 @@ T enumByName<T extends Enum>(List<T> values, Object? name, T fallback) {
   return fallback;
 }
 
+/// Which side of Vocation SL a person uses.
+enum UserRole {
+  seeker('Find a job'),
+  employer('Hire talent');
+
+  const UserRole(this.label);
+  final String label;
+}
+
 enum EmploymentType {
   fullTime('Full-time'),
   partTime('Part-time'),

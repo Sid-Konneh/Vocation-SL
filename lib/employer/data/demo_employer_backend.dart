@@ -1,11 +1,12 @@
-import 'package:vocation_sl/core/errors.dart';
-import 'package:vocation_sl/employer/data/employer_backend.dart';
-import 'package:vocation_sl/models/models.dart';
+import '../../core/errors.dart';
+import '../../models/models.dart';
+import 'employer_backend.dart';
 
-/// In-memory EmployerBackend that mirrors the database rules in
-/// supabase/employer_schema.sql (approval gating, employer-editable fields only).
-class FakeEmployerBackend implements EmployerBackend {
-  FakeEmployerBackend({this.approveOnRegister = false});
+/// In-memory employer backend for demo mode and tests. Mirrors the database
+/// rules in supabase/employer_schema.sql (approval gating, employer-editable
+/// fields only). Data resets when the app restarts.
+class DemoEmployerBackend implements EmployerBackend {
+  DemoEmployerBackend({this.approveOnRegister = false});
 
   final bool approveOnRegister;
 
@@ -91,7 +92,7 @@ class FakeEmployerBackend implements EmployerBackend {
   @override
   Future<JobApplication> updateApplication(JobApplication a,
       {ApplicationStatus? status, String? employerMessage, DateTime? interviewAt, bool clearInterview = false}) async {
-    if (status == ApplicationStatus.withdrawn) throw const ValidationException('Employers cannot withdraw');
+    if (status == ApplicationStatus.withdrawn) throw const ValidationException('Only the candidate can withdraw an application.');
     final next = status ?? a.status;
     final updated = a.copyWith(
       status: next,
@@ -104,11 +105,15 @@ class FakeEmployerBackend implements EmployerBackend {
   }
 
   @override
-  Future<AppUser?> applicantProfile(String userId) async =>
-      AppUser(id: userId, fullName: 'Fatmata Kamara', email: 'fatmata@example.com', headline: 'Accountant', skills: const ['Excel', 'QuickBooks']);
+  Future<AppUser?> applicantProfile(String userId) async {
+    final a = apps.where((x) => x.userId == userId).firstOrNull;
+    if (a == null) return null;
+    return AppUser(id: userId, fullName: a.applicant.fullName, email: a.applicant.email, phone: a.applicant.phone, location: a.applicant.location);
+  }
 
   @override
-  Future<String> documentUrl(String storagePath) async => 'https://example.com/$storagePath';
+  Future<String> documentUrl(String storagePath) async =>
+      throw const ValidationException('Demo mode has no stored files to download.');
 
   /// Adds an applicant to [jobId] (simulates a job seeker applying).
   JobApplication addApplicant(String jobId, String name, {DateTime? at}) {
