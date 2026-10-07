@@ -55,24 +55,30 @@ class RoleNotifier extends Notifier<UserRole?> {
   UserRole? build() {
     final uid = ref.watch(sessionProvider);
     if (uid == null) return null;
-    final backend = ref.watch(backendProvider);
-    final saved = backend.currentRole;
-    if (saved != null) return saved;
-    final pending = ref.read(localStoreProvider).setting<String>(_pendingKey);
+    // The choice made on the login screen wins for this sign-in, so
+    // "Find a job" always opens the job seeker side and "Hire talent" the
+    // employer side, even if the account last used the other one.
+    final store = ref.read(localStoreProvider);
+    final pending = store.setting<String>(_pendingKey);
     final intent = UserRole.values.where((r) => r.name == pending).firstOrNull;
     if (intent != null) {
-      Future.microtask(() => choose(intent));
+      Future.microtask(() async {
+        await store.removeSetting(_pendingKey);
+        await choose(intent);
+      });
       return intent;
     }
-    return null;
+    return ref.watch(backendProvider).currentRole;
   }
 
-  /// Remembers the role picked on the login screen (before signing in).
+  /// Remembers the role picked on the login screen. It is applied once the
+  /// session starts (also after a Google redirect) and then cleared.
   Future<void> setIntent(UserRole role) => ref.read(localStoreProvider).setSetting(_pendingKey, role.name);
 
   Future<void> choose(UserRole role) async {
     state = role;
-    await ref.read(localStoreProvider).setSetting(_pendingKey, role.name);
+    // Pre-selects the same side on the login screen next time.
+    await ref.read(localStoreProvider).setSetting('last_role', role.name);
     try {
       await ref.read(backendProvider).setRole(role);
     } catch (_) {

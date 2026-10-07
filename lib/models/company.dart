@@ -142,6 +142,5 @@ class Company {
         'email': email,
         'phone': phone,
         'address': address,
-        'tin': tin,
       };
 }

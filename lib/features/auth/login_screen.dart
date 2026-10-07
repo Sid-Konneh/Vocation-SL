@@ -27,7 +27,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscure = true;
   String? _error;
   String? _info;
-  late UserRole _intent = UserRole.values.where((r) => r.name == ref.read(localStoreProvider).setting<String>('pending_role')).firstOrNull ?? UserRole.seeker;
+  late UserRole _intent = UserRole.values.where((r) => r.name == ref.read(localStoreProvider).setting<String>('last_role')).firstOrNull ?? UserRole.seeker;
 
   bool get _hiring => _intent == UserRole.employer;
 

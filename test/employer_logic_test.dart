@@ -123,6 +123,17 @@ void main() {
       expect(j.containsKey('verified'), isFalse);
       expect(j.containsKey('owner_id'), isFalse);
     });
+
+    test('company fields sent on save all exist in the companies table', () {
+      // Columns created by schema.sql + employer_schema.sql. A key missing here
+      // makes Supabase reject the whole insert/update.
+      const columns = {
+        'id', 'name', 'industry', 'location', 'about', 'size', 'founded', 'website', 'brand_color', 'verified',
+        'created_at', 'owner_id', 'status', 'email', 'phone', 'address',
+      };
+      const c = Company(id: 'c', name: 'Acme', industry: Industry.ngo, location: 'Bo', about: '', size: '', founded: 0, website: '', brandColor: 0);
+      expect(columns.containsAll(c.toEmployerJson().keys), isTrue, reason: '${c.toEmployerJson().keys.where((k) => !columns.contains(k))}');
+    });
   });
 
   group('fake backend mirrors database rules', () {
