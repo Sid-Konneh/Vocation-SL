@@ -251,11 +251,23 @@ create trigger applications_before_update before update on public.applications
 -- Storage: private bucket for CVs and cover letters, one folder per user.
 -- ---------------------------------------------------------------------------
 
-insert into storage.buckets (id, name, public)
-values ('documents', 'documents', false)
-on conflict (id) do nothing;
+-- Wrapped so a permissions difference in the storage schema can't roll back
+-- the tables above. If it raises a notice, create the bucket and policy in
+-- the dashboard: Storage → New bucket "documents" (private), then add a policy
+-- allowing authenticated users all operations where the first folder = auth.uid().
+do $$
+begin
+  insert into storage.buckets (id, name, public)
+  values ('documents', 'documents', false)
+  on conflict (id) do nothing;
 
-drop policy if exists "users manage own documents" on storage.objects;
-create policy "users manage own documents" on storage.objects for all
-  using (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::text)
-  with check (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::text);
+  drop policy if exists "users manage own documents" on storage.objects;
+  create policy "users manage own documents" on storage.objects for all to authenticated
+    using (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::text)
+    with check (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::text);
+exception when others then
+  raise notice 'Storage setup skipped (%). Create the "documents" bucket in the dashboard.', sqlerrm;
+end $$;
+
+-- Make the new tables visible to the API immediately.
+notify pgrst, 'reload schema';
