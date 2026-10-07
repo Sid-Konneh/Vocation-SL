@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/core_providers.dart';
+import '../../providers/push_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../widgets/common.dart';
 
@@ -20,6 +21,8 @@ Future<void> confirmAndSignOut(BuildContext context, WidgetRef ref) async {
   );
   if (!ok) return;
   try {
+    // Stop push alerts for this device while still signed in.
+    await ref.read(pushServiceProvider)?.unregister();
     await ref.read(sessionProvider.notifier).signOut();
   } catch (e) {
     if (context.mounted) showError(context, e);

@@ -23,6 +23,8 @@ import 'employer/providers.dart';
 import 'models/models.dart';
 import 'providers/core_providers.dart';
 import 'providers/message_providers.dart';
+import 'providers/push_providers.dart';
+import 'services/push_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,12 +45,14 @@ Future<void> main() async {
   final EmployerBackend employerBackend;
   final AdminBackend adminBackend;
   final MessageBackend messageBackend;
+  PushService? push;
   if (AppConfig.useSupabase) {
     await Supabase.initialize(url: AppConfig.supabaseUrl, publishableKey: AppConfig.supabaseKey);
     backend = SupabaseBackend(Supabase.instance.client);
     employerBackend = SupabaseEmployerBackend(Supabase.instance.client);
     adminBackend = SupabaseAdminBackend(Supabase.instance.client);
     messageBackend = SupabaseMessageBackend(Supabase.instance.client);
+    push = await PushService.start(Supabase.instance.client);
   } else {
     backend = DemoBackend(store: store, connectivity: connectivity, devSettings: () => DevSettings.load(store));
     employerBackend = DemoEmployerBackend();
@@ -64,6 +68,7 @@ Future<void> main() async {
       employerBackendProvider.overrideWithValue(employerBackend),
       adminBackendProvider.overrideWithValue(adminBackend),
       messageBackendProvider.overrideWithValue(messageBackend),
+      pushServiceProvider.overrideWithValue(push),
     ],
     child: const VocationApp(),
   ));

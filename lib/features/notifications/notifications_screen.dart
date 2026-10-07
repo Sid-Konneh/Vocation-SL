@@ -7,6 +7,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/models.dart';
 import '../../providers/user_data_providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/push_prompt.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
 import '../jobs/job_list_sliver.dart';
@@ -92,6 +93,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 padding: pad.copyWith(top: 8, bottom: 8),
                 sliver: SliverToBoxAdapter(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const PushPrompt(),
                     if (loaded.isOfflineCopy)
                       CacheNotice(syncedAt: loaded.syncedAt, onRetry: () => ref.read(notificationsProvider.notifier).refresh()),
                     Row(children: [

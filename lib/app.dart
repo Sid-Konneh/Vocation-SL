@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,9 +11,11 @@ import 'employer/providers.dart';
 import 'models/models.dart';
 import 'providers/core_providers.dart';
 import 'providers/job_providers.dart';
+import 'providers/push_providers.dart';
 import 'providers/session_providers.dart';
 import 'providers/user_data_providers.dart';
 import 'repositories/sync_service.dart';
+import 'services/push_service.dart';
 import 'widgets/states.dart';
 
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -48,6 +51,8 @@ class _AppFrame extends ConsumerStatefulWidget {
 class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserver {
   StreamSubscription<SyncReport>? _reports;
   StreamSubscription<void>? _recovery;
+  StreamSubscription<String>? _pushTaps;
+  StreamSubscription<Object>? _pushForeground;
 
   @override
   void initState() {
@@ -59,6 +64,21 @@ class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserve
     _recovery = ref.read(userRepositoryProvider).passwordRecovery.listen((_) {
       ref.read(routerProvider).go('/settings/password?reset=1');
     });
+    // Tapping a push alert opens the right screen.
+    final push = ref.read(pushServiceProvider);
+    _pushTaps = push?.taps.listen((route) => ref.read(routerProvider).go(route));
+    _pushForeground = push?.foreground.listen((m) {
+      _refreshAll();
+      final title = m.notification?.title;
+      if (title == null) return;
+      final route = m.data['route'] is String ? m.data['route'] as String : '/alerts';
+      scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(
+        content: Text(title),
+        persist: false,
+        action: SnackBarAction(label: 'View', onPressed: () => ref.read(routerProvider).go(route)),
+      ));
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPush());
     // Replay anything queued in a previous session.
     WidgetsBinding.instance.addPostFrameCallback((_) => sync.flush());
   }
@@ -68,6 +88,8 @@ class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserve
     WidgetsBinding.instance.removeObserver(this);
     _reports?.cancel();
     _recovery?.cancel();
+    _pushTaps?.cancel();
+    _pushForeground?.cancel();
     super.dispose();
   }
 
@@ -85,6 +107,20 @@ class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserve
       messenger.showSnackBar(SnackBar(content: Text('Some offline changes couldn\'t be saved. ${r.failed.first}')));
     } else if (r.synced > 0) {
       messenger.showSnackBar(SnackBar(content: Text('Back online · synced ${r.synced} change${r.synced == 1 ? '' : 's'}')));
+    }
+  }
+
+  /// Registers this device for push alerts after sign-in. On Android the
+  /// permission prompt appears once; on the web the user turns alerts on
+  /// from the Alerts screen (browsers only allow asking after a tap).
+  Future<void> _syncPush() async {
+    final push = ref.read(pushServiceProvider);
+    if (push == null || ref.read(sessionProvider) == null) return;
+    if (!kIsWeb && await push.permission() == PushPermission.notAsked) {
+      await push.enable();
+      ref.invalidate(pushPermissionProvider);
+    } else {
+      await push.sync();
     }
   }
 
@@ -107,6 +143,9 @@ class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserve
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<String?>(sessionProvider, (prev, uid) {
+      if (uid != null && uid != prev) _syncPush();
+    });
     ref.listen<bool>(onlineProvider, (prev, online) {
       if (prev == false && online) {
         ref.read(syncServiceProvider).flush();
