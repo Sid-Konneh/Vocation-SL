@@ -57,3 +57,5 @@ key.properties
 # Prebuilt deliverables that ARE committed on purpose:
 #   deploy/web/   (served by Vercel)
 #   release/*.apk (downloadable Android build)
+.vercel
+.env*

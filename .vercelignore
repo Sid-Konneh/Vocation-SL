@@ -1,0 +1,4 @@
+# Upload only the prebuilt web app; everything else is source or native build output.
+/*
+!/deploy
+!/vercel.json
