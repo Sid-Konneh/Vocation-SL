@@ -1,0 +1,111 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'core/config/app_config.dart';
+import 'core/routing/app_router.dart';
+import 'core/theme/app_theme.dart';
+import 'providers/core_providers.dart';
+import 'providers/job_providers.dart';
+import 'providers/session_providers.dart';
+import 'providers/user_data_providers.dart';
+import 'repositories/sync_service.dart';
+import 'widgets/states.dart';
+
+final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+class VocationApp extends ConsumerWidget {
+  const VocationApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+    return MaterialApp.router(
+      title: AppConfig.appName,
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
+      routerConfig: router,
+      scaffoldMessengerKey: scaffoldMessengerKey,
+      builder: (context, child) => _AppFrame(child: child ?? const SizedBox()),
+    );
+  }
+}
+
+/// Wraps every screen: offline banner, sync on reconnect, sync reports.
+class _AppFrame extends ConsumerStatefulWidget {
+  const _AppFrame({required this.child});
+  final Widget child;
+
+  @override
+  ConsumerState<_AppFrame> createState() => _AppFrameState();
+}
+
+class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserver {
+  StreamSubscription<SyncReport>? _reports;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final sync = ref.read(syncServiceProvider);
+    _reports = sync.reports.listen(_onSyncReport);
+    // Replay anything queued in a previous session.
+    WidgetsBinding.instance.addPostFrameCallback((_) => sync.flush());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _reports?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshAll();
+  }
+
+  void _onSyncReport(SyncReport r) {
+    ref.invalidate(pendingSyncCountProvider);
+    _refreshAll();
+    final messenger = scaffoldMessengerKey.currentState;
+    if (messenger == null) return;
+    if (r.failed.isNotEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text('Some offline changes couldn\'t be saved. ${r.failed.first}')));
+    } else if (r.synced > 0) {
+      messenger.showSnackBar(SnackBar(content: Text('Back online · synced ${r.synced} change${r.synced == 1 ? '' : 's'}')));
+    }
+  }
+
+  /// Background refresh of everything the user has open.
+  void _refreshAll() {
+    if (!ref.read(onlineProvider) || ref.read(sessionProvider) == null) return;
+    unawaited(ref.read(notificationsProvider.notifier).refresh());
+    unawaited(ref.read(applicationsProvider.notifier).refresh());
+    unawaited(ref.read(savedJobsProvider.notifier).refresh());
+    unawaited(ref.read(homeFeedProvider.notifier).refresh());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<bool>(onlineProvider, (prev, online) {
+      if (prev == false && online) {
+        ref.read(syncServiceProvider).flush();
+        _refreshAll();
+      }
+    });
+    final online = ref.watch(onlineProvider);
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(children: [
+        const OfflineBanner(),
+        Expanded(
+          child: MediaQuery.removePadding(context: context, removeTop: !online, child: widget.child),
+        ),
+      ]),
+    );
+  }
+}

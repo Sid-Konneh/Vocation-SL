@@ -1,0 +1,142 @@
+import '../../models/models.dart';
+
+/// Fictional employers used for demo mode. Any resemblance to real
+/// organisations is unintended; replace with live data from the backend.
+const demoCompanies = <Company>[
+  Company(
+    id: 'c1',
+    name: 'Salone Digital Labs',
+    industry: Industry.technology,
+    location: 'Freetown',
+    about:
+        'Salone Digital Labs builds mobile and web products for businesses across West Africa, from mobile-money integrations to school management systems. The team of 60 engineers and designers works from a studio in Wilberforce and remotely.',
+    size: '51–200 employees',
+    founded: 2016,
+    website: 'salonedigitallabs.example',
+    brandColor: 0xFF1F6FEB,
+    verified: true,
+  ),
+  Company(
+    id: 'c2',
+    name: 'Lion Mountain Health Network',
+    industry: Industry.healthcare,
+    location: 'Bo',
+    about:
+        'A network of five community hospitals and twelve clinics serving the Southern and Eastern Provinces, with a focus on maternal and child health, laboratory services and outreach.',
+    size: '501–1,000 employees',
+    founded: 2009,
+    website: 'lionmountainhealth.example',
+    brandColor: 0xFFD1435B,
+    verified: true,
+  ),
+  Company(
+    id: 'c3',
+    name: 'Cotton Tree Finance',
+    industry: Industry.finance,
+    location: 'Freetown',
+    about:
+        'Cotton Tree Finance provides SME loans, savings accounts and mobile banking to traders and small businesses in eight districts, through branches and a network of mobile money agents.',
+    size: '201–500 employees',
+    founded: 2012,
+    website: 'cottontreefinance.example',
+    brandColor: 0xFF0E7C66,
+    verified: true,
+  ),
+  Company(
+    id: 'c4',
+    name: 'Bright Futures Education Trust',
+    industry: Industry.education,
+    location: 'Makeni',
+    about:
+        'An education trust running six secondary schools and a teacher-training centre in the Northern Province, with digital literacy programmes for young people and adults.',
+    size: '201–500 employees',
+    founded: 2005,
+    website: 'brightfutures.example',
+    brandColor: 0xFFF29F05,
+  ),
+  Company(
+    id: 'c5',
+    name: 'Hope Bridge Initiative',
+    industry: Industry.ngo,
+    location: 'Freetown',
+    about:
+        'Hope Bridge Initiative is a non-profit working on youth livelihoods, water and sanitation, and community health in rural Sierra Leone, in partnership with district councils and local organisations.',
+    size: '51–200 employees',
+    founded: 2014,
+    website: 'hopebridge.example',
+    brandColor: 0xFF7A4CC2,
+    verified: true,
+  ),
+  Company(
+    id: 'c6',
+    name: 'Civic Service Delivery Unit',
+    industry: Industry.government,
+    location: 'Freetown',
+    about:
+        'A public-sector delivery programme supporting district administrations with procurement, land records and service-delivery monitoring. (Fictional demo employer.)',
+    size: '51–200 employees',
+    founded: 2019,
+    website: 'civicdelivery.example',
+    brandColor: 0xFF2D3A8C,
+  ),
+  Company(
+    id: 'c7',
+    name: 'Green Harvest Agro',
+    industry: Industry.agriculture,
+    location: 'Kenema',
+    about:
+        'Green Harvest Agro works with 4,000 smallholder farmers on cocoa, coffee and rice, providing inputs, training, processing and market access across Kenema, Kailahun and Port Loko.',
+    size: '201–500 employees',
+    founded: 2011,
+    website: 'greenharvestagro.example',
+    brandColor: 0xFF5B8C2A,
+  ),
+  Company(
+    id: 'c8',
+    name: 'Tagrin Bay Engineering',
+    industry: Industry.engineering,
+    location: 'Port Loko',
+    about:
+        'Civil and structural engineering contractor delivering roads, bridges and public buildings, with active sites in Port Loko, Lunsar and the Western Area.',
+    size: '201–500 employees',
+    founded: 2008,
+    website: 'tagrinbay.example',
+    brandColor: 0xFF8A5A2B,
+    verified: true,
+  ),
+  Company(
+    id: 'c9',
+    name: 'Kenema Solar Solutions',
+    industry: Industry.energy,
+    location: 'Kenema',
+    about:
+        'Designs and installs solar home systems and mini-grids for homes, clinics and schools in the Eastern Province, with pay-as-you-go plans for households.',
+    size: '11–50 employees',
+    founded: 2018,
+    website: 'kenemasolar.example',
+    brandColor: 0xFFE8702A,
+  ),
+  Company(
+    id: 'c10',
+    name: 'Lumley Logistics',
+    industry: Industry.logistics,
+    location: 'Freetown',
+    about:
+        'Freight, warehousing and last-mile delivery between Freetown port, Waterloo and the provincial towns, serving retailers, NGOs and health supply chains.',
+    size: '51–200 employees',
+    founded: 2015,
+    website: 'lumleylogistics.example',
+    brandColor: 0xFF16808F,
+  ),
+  Company(
+    id: 'c11',
+    name: 'MediLink Pharmacy',
+    industry: Industry.healthcare,
+    location: 'Makeni',
+    about: 'A chain of community pharmacies in Makeni, Bo and Freetown, known for reliable stock of essential medicines.',
+    size: '11–50 employees',
+    founded: 2017,
+    website: 'medilinkpharmacy.example',
+    brandColor: 0xFF2E9E5B,
+  ),
+];
