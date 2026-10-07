@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/models.dart';
+import '../../../widgets/announcement_banner.dart';
 import '../../../widgets/common.dart';
 import '../../../widgets/states.dart';
 import '../../charts.dart';
@@ -100,6 +101,7 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ],
       children: [
+        const AnnouncementBanner(audience: AnnouncementAudience.employer),
         if (company != null) ApprovalBanner(company: company),
         StatGrid(children: [
           StatTile(label: 'Live jobs', value: '${stats.liveJobs}', detail: stats.pendingJobs > 0 ? '${stats.pendingJobs} awaiting approval' : '${stats.draftJobs} drafts', icon: Icons.work_outline_rounded, onTap: () => context.go('/employer/jobs')),

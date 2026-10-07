@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../admin/admin_providers.dart';
+import '../../admin/admin_shell.dart';
+import '../../admin/features/moderation.dart';
+import '../../admin/features/overview_insights.dart';
+import '../../admin/features/people.dart';
+import '../../admin/features/platform.dart';
 import '../../employer/employer_shell.dart';
 import '../../employer/features/candidates/candidate_detail_screen.dart';
 import '../../employer/features/candidates/candidates_screen.dart';
@@ -10,12 +16,14 @@ import '../../employer/features/dashboard/dashboard_screens.dart';
 import '../../employer/features/jobs/job_editor_screen.dart';
 import '../../employer/features/jobs/my_jobs_screen.dart';
 import '../../features/about/about_screen.dart';
+import '../../features/about/site_page_screen.dart';
 import '../../features/applications/application_detail_screen.dart';
 import '../../features/applications/applications_screen.dart';
 import '../../features/apply/apply_flow_screen.dart';
 import '../../features/apply/apply_success_screen.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/role_choice_screen.dart';
+import '../../features/auth/suspended_screen.dart';
 import '../../features/jobs/company_screen.dart';
 import '../../features/jobs/home_screen.dart';
 import '../../features/jobs/job_details_screen.dart';
@@ -61,7 +69,7 @@ GoRoute _pushed(String path, Widget Function(GoRouterState s) build, {List<Route
     );
 
 /// Pages both kinds of user can open.
-const _shared = ['/about', '/settings/password', '/choose-role', '/account/delete'];
+const _shared = ['/about', '/settings/password', '/choose-role', '/account/delete', '/pages/', '/suspended', '/admin'];
 
 /// Where each role lands after signing in.
 String homeFor(UserRole? role) => switch (role) {
@@ -75,6 +83,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(sessionProvider, (_, _) => refresh.value++);
   ref.listen(roleProvider, (_, _) => refresh.value++);
+  ref.listen(suspendedProvider, (_, _) => refresh.value++);
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
@@ -88,6 +97,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (loc == '/') return null; // splash decides
       if (!signedIn) return loc == '/login' ? null : '/login';
       if (loc == '/login') return homeFor(role);
+      final suspended = ref.read(suspendedProvider).value ?? false;
+      if (suspended && !loc.startsWith('/suspended') && !loc.startsWith('/pages/') && !loc.startsWith('/account/delete')) return '/suspended';
+      if (!suspended && loc.startsWith('/suspended')) return homeFor(role);
       if (_shared.any(loc.startsWith)) return null;
       if (role == null) return '/choose-role';
       final inEmployer = loc.startsWith('/employer');
@@ -146,6 +158,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ---- Shared -----------------------------------------------------------
       _pushed('/about', (s) => const AboutScreen()),
       _pushed('/account/delete', (s) => const DeleteAccountScreen()),
+      _pushed('/pages/:slug', (s) => SitePageScreen(slug: s.pathParameters['slug']!)),
+      GoRoute(path: '/suspended', pageBuilder: (c, s) => _page(s, const SuspendedScreen())),
+
+      // ---- Admin ------------------------------------------------------------
+      GoRoute(path: '/admin', redirect: (c, s) => '/admin/overview'),
+      ShellRoute(
+        builder: (context, state, child) => AdminShell(location: state.matchedLocation, child: child),
+        routes: [
+          GoRoute(path: '/admin/overview', pageBuilder: (c, s) => _page(s, const AdminOverviewScreen())),
+          GoRoute(path: '/admin/insights', pageBuilder: (c, s) => _page(s, const AdminInsightsScreen())),
+          GoRoute(path: '/admin/jobs', pageBuilder: (c, s) => _page(s, const AdminJobsScreen())),
+          GoRoute(path: '/admin/employers', pageBuilder: (c, s) => _page(s, const AdminEmployersScreen())),
+          GoRoute(path: '/admin/users', pageBuilder: (c, s) => _page(s, const AdminUsersScreen())),
+          GoRoute(path: '/admin/applications', pageBuilder: (c, s) => _page(s, const AdminApplicationsScreen())),
+          GoRoute(path: '/admin/reports', pageBuilder: (c, s) => _page(s, const AdminReportsScreen())),
+          GoRoute(path: '/admin/content', pageBuilder: (c, s) => _page(s, const AdminContentScreen())),
+          GoRoute(path: '/admin/settings', pageBuilder: (c, s) => _page(s, const AdminSettingsScreen())),
+          GoRoute(path: '/admin/team', pageBuilder: (c, s) => _page(s, const AdminTeamScreen())),
+          GoRoute(path: '/admin/activity', pageBuilder: (c, s) => _page(s, const AdminActivityScreen())),
+        ],
+      ),
       _pushed('/settings/password', (s) => ChangePasswordScreen(fromReset: s.uri.queryParameters['reset'] == '1')),
     ],
   );

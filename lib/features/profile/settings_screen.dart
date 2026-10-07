@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../admin/admin_providers.dart';
 import '../../core/config/app_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/backend/demo_backend.dart';
@@ -51,6 +52,14 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(children: [
           header('Account'),
           ListTile(leading: const Icon(Icons.mail_outline_rounded), title: const Text('Email'), subtitle: Text(user?.email ?? '')),
+          if (ref.watch(adminRoleProvider).value != null)
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings_outlined),
+              title: const Text('Admin dashboard'),
+              subtitle: Text('You are an admin (${ref.watch(adminRoleProvider).value!.label})'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.go('/admin'),
+            ),
           ListTile(
             leading: const Icon(Icons.swap_horiz_rounded),
             title: const Text('Switch to employer'),

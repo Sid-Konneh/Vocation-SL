@@ -210,6 +210,34 @@ class DemoAdminBackend implements AdminBackend {
       topIndustries: top(live.map((j) => j.industry.label)),
       topLocations: top(live.map((j) => j.location)),
       topCompanies: top(_apps.map((a) => a.job?.companyName ?? '')),
+      activeUsers7d: _users.where((u) => u.lastSeenAt != null && now.difference(u.lastSeenAt!).inDays < 7).length,
+      companiesApproved: _companies.where((c) => c.company.status == CompanyStatus.approved).length,
+      companiesRejected: _companies.where((c) => c.company.status == CompanyStatus.rejected).length,
+      companiesSuspended: _companies.where((c) => c.company.status == CompanyStatus.suspended).length,
+      companiesVerified: _companies.where((c) => c.company.verified).length,
+      jobsDraft: _jobs.where((j) => j.status == JobStatus.draft).length,
+      jobsClosed: _jobs.where((j) => j.status == JobStatus.closed || (j.status == JobStatus.published && j.isClosed)).length,
+      jobsClosing7d: live.where((j) => !j.isClosed && j.deadline.difference(now).inDays < 7).length,
+      jobsFeatured: live.where((j) => j.featured).length,
+      avgSalary: () {
+        final s = live.where((j) => j.salaryMin != null || j.salaryMax != null).map((j) => ((j.salaryMin ?? j.salaryMax!) + (j.salaryMax ?? j.salaryMin!)) / 2).toList();
+        return s.isEmpty ? 0 : (s.reduce((a, b) => a + b) / s.length).round();
+      }(),
+      hires30d: _apps.where((a) => a.status == ApplicationStatus.hired && now.difference(a.updatedAt).inDays < 30).length,
+      reportsTotal: _reports.length,
+      avgResponseDays: () {
+        final waits = [
+          for (final a in _apps)
+            if (a.history.where((e) => e.status != ApplicationStatus.applied && e.status != ApplicationStatus.withdrawn).firstOrNull case final e?)
+              e.at.difference(a.submittedAt).inHours / 24,
+        ];
+        return waits.isEmpty ? null : waits.reduce((a, b) => a + b) / waits.length;
+      }(),
+      byEmploymentType: top(live.map((j) => j.employmentType.label)),
+      byWorkMode: top(live.map((j) => j.workMode.label)),
+      byExperience: top(live.map((j) => j.experienceLevel.label)),
+      seekerLocations: top(_users.where((u) => u.role != 'employer').map((u) => u.location.isEmpty ? 'Not set' : u.location)),
+      reportsByReason: top(_reports.map((r) => r.reason)),
     );
   }
 

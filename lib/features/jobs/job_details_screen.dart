@@ -50,6 +50,23 @@ class _JobDetailsView extends ConsumerWidget {
     if (copied && context.mounted) showSnack(context, 'Job details copied to clipboard');
   }
 
+  Future<void> _report(BuildContext context, WidgetRef ref) async {
+    final result = await showDialog<(String, String)>(context: context, builder: (_) => const _ReportDialog());
+    if (result == null || !context.mounted) return;
+    try {
+      await ref.read(backendProvider).submitReport(
+            type: ReportTarget.job,
+            targetId: job.id,
+            targetLabel: '${job.title} · ${job.companyName}',
+            reason: result.$1,
+            details: result.$2,
+          );
+      if (context.mounted) showSnack(context, 'Thanks. Our team will review this job.');
+    } catch (e) {
+      if (context.mounted) showError(context, e);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final application = ref.watch(applicationForJobProvider(job.id));
@@ -148,7 +165,13 @@ class _JobDetailsView extends ConsumerWidget {
         actions: [
           IconButton(tooltip: 'Share job', onPressed: () => _share(context, ref), icon: const Icon(Icons.ios_share_rounded)),
           SaveJobButton(job: job),
-          const SizedBox(width: 4),
+          PopupMenuButton<String>(
+            tooltip: 'More options',
+            onSelected: (_) => _report(context, ref),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'report', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Report this job'), contentPadding: EdgeInsets.zero)),
+            ],
+          ),
         ],
       ),
       body: Align(
@@ -346,4 +369,52 @@ class _ApplyBar extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ReportDialog extends StatefulWidget {
+  const _ReportDialog();
+
+  @override
+  State<_ReportDialog> createState() => _ReportDialogState();
+}
+
+class _ReportDialogState extends State<_ReportDialog> {
+  String? _reason;
+  final _details = TextEditingController();
+
+  @override
+  void dispose() {
+    _details.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: const Text('Report this job'),
+        content: SizedBox(
+          width: 440,
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Genuine employers never ask job seekers to pay fees. Tell us what\'s wrong and our team will check it.'),
+              const SizedBox(height: 8),
+              RadioGroup<String>(
+                groupValue: _reason,
+                onChanged: (v) => setState(() => _reason = v),
+                child: Column(children: [
+                  for (final r in reportReasons) RadioListTile<String>(contentPadding: EdgeInsets.zero, dense: true, value: r, title: Text(r)),
+                ]),
+              ),
+              TextField(controller: _details, minLines: 2, maxLines: 4, maxLength: 500, decoration: const InputDecoration(labelText: 'Details (optional)')),
+            ]),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: _reason == null ? null : () => Navigator.pop(context, (_reason!, _details.text.trim())),
+            style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
+            child: const Text('Send report'),
+          ),
+        ],
+      );
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/app_config.dart';
@@ -85,8 +86,7 @@ class AboutScreen extends ConsumerWidget {
             section('Your data', [
               body('Your profile, CV and applications are tied to your account and protected by access rules: other users '
                   'cannot see them. Your documents are shared with an employer only when you apply to that employer\'s job.'),
-              body('You can update your profile at any time. To delete your account and data, email us from the address '
-                  'linked to your account.'),
+              body('You can update your profile at any time, and delete your account and data from Settings → Delete account.'),
             ]),
             section('Listings in this early version', [
               Container(
@@ -116,7 +116,12 @@ class AboutScreen extends ConsumerWidget {
                 ),
               ),
             ]),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final p in const [('help', 'Help & FAQs'), ('terms', 'Terms of Use'), ('privacy', 'Privacy Policy')])
+                OutlinedButton(onPressed: () => context.push('/pages/${p.$1}'), style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)), child: Text(p.$2)),
+            ]),
+            const SizedBox(height: 24),
             Text('Version ${AppConfig.version}', style: context.text.bodySmall?.copyWith(color: muted)),
           ],
         ),

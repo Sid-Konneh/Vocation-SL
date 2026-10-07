@@ -411,6 +411,24 @@ class AdminStats {
     this.topIndustries = const [],
     this.topLocations = const [],
     this.topCompanies = const [],
+    this.activeUsers7d = 0,
+    this.companiesApproved = 0,
+    this.companiesRejected = 0,
+    this.companiesSuspended = 0,
+    this.companiesVerified = 0,
+    this.jobsDraft = 0,
+    this.jobsClosed = 0,
+    this.jobsClosing7d = 0,
+    this.jobsFeatured = 0,
+    this.avgSalary = 0,
+    this.hires30d = 0,
+    this.reportsTotal = 0,
+    this.avgResponseDays,
+    this.byEmploymentType = const [],
+    this.byWorkMode = const [],
+    this.byExperience = const [],
+    this.seekerLocations = const [],
+    this.reportsByReason = const [],
   });
 
   final int usersTotal, seekers, employers, suspended, newUsers7d;
@@ -419,6 +437,24 @@ class AdminStats {
   final List<({DateTime day, int count})> signups30d, applications30d, jobs30d;
   final Map<String, int> byStatus;
   final List<CountPoint> topIndustries, topLocations, topCompanies;
+  final int activeUsers7d, companiesApproved, companiesRejected, companiesSuspended, companiesVerified;
+  final int jobsDraft, jobsClosed, jobsClosing7d, jobsFeatured, avgSalary, hires30d, reportsTotal;
+
+  /// Average days from application to the employer's first action (null = no data).
+  final double? avgResponseDays;
+  final List<CountPoint> byEmploymentType, byWorkMode, byExperience, seekerLocations, reportsByReason;
+
+  /// Applications per posted (non-draft) job.
+  double get applicationsPerJob => (jobsTotal - jobsDraft) <= 0 ? 0 : applicationsTotal / (jobsTotal - jobsDraft);
+
+  /// Share of job views that turned into an application (null = no views).
+  double? get viewToApply => jobViews == 0 ? null : applicationsTotal / jobViews;
+
+  /// Share of reviewed companies that were approved (null = none reviewed).
+  double? get approvalRate {
+    final reviewed = companiesApproved + companiesRejected;
+    return reviewed == 0 ? null : companiesApproved / reviewed;
+  }
 
   int get pendingWork => companiesPending + jobsPending + reportsOpen;
 
@@ -454,6 +490,24 @@ class AdminStats {
       topIndustries: points('top_industries'),
       topLocations: points('top_locations'),
       topCompanies: points('top_companies'),
+      activeUsers7d: n('active_users_7d'),
+      companiesApproved: n('companies_approved'),
+      companiesRejected: n('companies_rejected'),
+      companiesSuspended: n('companies_suspended'),
+      companiesVerified: n('companies_verified'),
+      jobsDraft: n('jobs_draft'),
+      jobsClosed: n('jobs_closed'),
+      jobsClosing7d: n('jobs_closing_7d'),
+      jobsFeatured: n('jobs_featured'),
+      avgSalary: n('avg_salary'),
+      hires30d: n('hires_30d'),
+      reportsTotal: n('reports_total'),
+      avgResponseDays: (j['avg_response_days'] as num?)?.toDouble(),
+      byEmploymentType: points('by_employment_type'),
+      byWorkMode: points('by_work_mode'),
+      byExperience: points('by_experience'),
+      seekerLocations: points('seeker_locations'),
+      reportsByReason: points('reports_by_reason'),
     );
   }
 }

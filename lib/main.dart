@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'admin/admin_providers.dart';
+import 'admin/data/admin_backend.dart';
+import 'admin/data/demo_admin_backend.dart';
+import 'admin/data/supabase_admin_backend.dart';
 import 'app.dart';
 import 'core/config/app_config.dart';
 import 'core/dev_settings.dart';
@@ -35,13 +39,16 @@ Future<void> main() async {
 
   final VocationBackend backend;
   final EmployerBackend employerBackend;
+  final AdminBackend adminBackend;
   if (AppConfig.useSupabase) {
     await Supabase.initialize(url: AppConfig.supabaseUrl, publishableKey: AppConfig.supabaseKey);
     backend = SupabaseBackend(Supabase.instance.client);
     employerBackend = SupabaseEmployerBackend(Supabase.instance.client);
+    adminBackend = SupabaseAdminBackend(Supabase.instance.client);
   } else {
     backend = DemoBackend(store: store, connectivity: connectivity, devSettings: () => DevSettings.load(store));
     employerBackend = DemoEmployerBackend();
+    adminBackend = DemoAdminBackend();
   }
 
   runApp(ProviderScope(
@@ -50,6 +57,7 @@ Future<void> main() async {
       connectivityServiceProvider.overrideWithValue(connectivity),
       backendProvider.overrideWithValue(backend),
       employerBackendProvider.overrideWithValue(employerBackend),
+      adminBackendProvider.overrideWithValue(adminBackend),
     ],
     child: const VocationApp(),
   ));

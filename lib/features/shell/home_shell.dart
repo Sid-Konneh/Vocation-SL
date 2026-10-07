@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../admin/admin_providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_data_providers.dart';
 import '../../widgets/vocation_logo.dart';
@@ -121,6 +122,13 @@ class _Sidebar extends ConsumerWidget {
               const Spacer(),
               const Divider(),
               const SizedBox(height: 8),
+              if (ref.watch(adminRoleProvider).value != null)
+                _SidebarItem(
+                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                  label: 'Admin dashboard',
+                  semantics: 'Admin dashboard',
+                  onTap: () => context.go('/admin'),
+                ),
               _SidebarItem(
                 icon: const Icon(Icons.swap_horiz_rounded),
                 label: 'Switch to employer',

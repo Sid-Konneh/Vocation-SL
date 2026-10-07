@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../admin/admin_providers.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/role_choice_screen.dart';
 import '../features/profile/sign_out.dart';
@@ -84,6 +85,8 @@ class EmployerShell extends ConsumerWidget {
                   const Spacer(),
                   const Divider(),
                   const SizedBox(height: 8),
+                  if (ref.watch(adminRoleProvider).value != null)
+                    _NavRow(icon: const Icon(Icons.admin_panel_settings_outlined), label: 'Admin dashboard', semantics: 'Admin dashboard', onTap: () => context.go('/admin')),
                   _NavRow(icon: const Icon(Icons.swap_horiz_rounded), label: 'Switch to job seeker', semantics: 'Switch to job seeker', onTap: () => switchRole(context, ref, UserRole.seeker)),
                   _NavRow(icon: const Icon(Icons.info_outline_rounded), label: 'About', semantics: 'About Vocation SL', onTap: () => context.push('/about')),
                   _NavRow(icon: const Icon(Icons.logout_rounded), label: 'Sign out', semantics: 'Sign out', onTap: () => confirmAndSignOut(context, ref)),
@@ -132,6 +135,15 @@ class EmployerShell extends ConsumerWidget {
                 onTap: () {
                   Navigator.pop(sheet);
                   _go(i);
+                },
+              ),
+            if (ref.read(adminRoleProvider).value != null)
+              ListTile(
+                leading: const Icon(Icons.admin_panel_settings_outlined),
+                title: const Text('Admin dashboard'),
+                onTap: () {
+                  Navigator.pop(sheet);
+                  context.go('/admin');
                 },
               ),
             ListTile(
