@@ -270,7 +270,7 @@ class _AdminEmployersScreenState extends ConsumerState<AdminEmployersScreen> {
     final name = c.company.name;
     switch (action) {
       case 'approve':
-        await _act(context, ref, '$name approved and given the verified check mark',
+        await _act(context, ref, '$name approved. Add the verified badge separately when you\'re ready.',
             () => a.run((b) => b.setCompanyStatus(c.company.id, CompanyStatus.approved), refresh: refresh));
       case 'reject':
         if (await confirmDialog(context, title: 'Reject $name?', message: 'Their jobs stay hidden. They can contact support to appeal.', confirmLabel: 'Reject', destructive: true)) {

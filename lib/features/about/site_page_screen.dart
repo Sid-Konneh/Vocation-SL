@@ -34,7 +34,7 @@ class SitePageScreen extends ConsumerWidget {
                 message: 'Questions in the meantime? Email ${AppConfig.supportEmail}.',
               );
             }
-            final blocks = p.body.split(RegExp(r'\n\s*\n'));
+            final blocks = p.body.replaceAll('\r\n', '\n').trim().split(RegExp(r'\n\s*\n'));
             return ListView(padding: const EdgeInsets.all(AppSpacing.gutter), children: [
               for (final b in blocks)
                 Padding(

@@ -345,9 +345,8 @@ class DemoAdminBackend implements AdminBackend {
     _need(AdminRole.moderator);
     final i = _companies.indexWhere((c) => c.company.id == companyId);
     final c = _companies[i];
-    // Approving gives the verified check mark; rejecting or suspending removes it.
-    final verified = status == c.company.status ? null : status == CompanyStatus.approved;
-    _companies[i] = AdminCompany(company: _companyWith(c.company, status: status, verified: verified), members: c.members, createdAt: c.createdAt);
+    // The check mark is separate: see setCompanyVerified.
+    _companies[i] = AdminCompany(company: _companyWith(c.company, status: status), members: c.members, createdAt: c.createdAt);
     // With job review off, approval publishes the company's waiting jobs (as the database does).
     if (status == CompanyStatus.approved && !_settings.requireJobApproval) {
       for (var k = 0; k < _jobs.length; k++) {

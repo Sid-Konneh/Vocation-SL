@@ -339,7 +339,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Approve new companies'),
-                      subtitle: const Text('Recommended. When off, new companies are approved automatically (without the verified check mark).'),
+                      subtitle: const Text('Recommended. When off, new companies are approved automatically.'),
                       value: d.requireCompanyApproval,
                       onChanged: canEdit ? (v) => setState(() => _draft = d.copyWith(requireCompanyApproval: v)) : null,
                     ),

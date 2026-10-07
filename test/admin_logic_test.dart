@@ -4,18 +4,19 @@ import 'package:vocation_sl/models/models.dart';
 
 void main() {
   group('permissions', () {
-    test('approving a company gives the check mark but its jobs still need review', () async {
+    test('approving a company does not add the check mark, and its jobs still need review', () async {
       final b = DemoAdminBackend();
       await b.setCompanyStatus('c-pending', CompanyStatus.approved);
-      final c = (await b.companies()).firstWhere((c) => c.company.id == 'c-pending').company;
+      var c = (await b.companies()).firstWhere((c) => c.company.id == 'c-pending').company;
+      expect(c.verified, isFalse, reason: 'the check mark is given separately');
+      await b.setCompanyVerified('c-pending', true);
+      c = (await b.companies()).firstWhere((c) => c.company.id == 'c-pending').company;
       expect(c.verified, isTrue);
       expect((await b.jobs()).firstWhere((j) => j.id == 'j-pending').status, JobStatus.pending);
       final log = await b.activity();
       expect(log.first.targetType, 'companies');
       expect(log.first.summary, contains('Waterloo Builders Ltd'));
 
-      await b.setCompanyStatus('c-pending', CompanyStatus.suspended);
-      expect((await b.companies()).firstWhere((c) => c.company.id == 'c-pending').company.verified, isFalse);
     });
 
     test('with job review off, approving a company publishes its waiting jobs', () async {

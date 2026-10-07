@@ -2,7 +2,7 @@
 --   1. Job invoices
 --   2. Full user details with sign-in information (admins only)
 --   3. Every job is reviewed by an admin before it goes live
---   4. Approved employers get the verified check mark
+--   4. (Superseded by checkmark_fix.sql: the check mark is given separately)
 --   5. Two-way messages between employers and candidates on an application
 --   6. Help & FAQs, Terms of Use and Privacy Policy (only fills pages that are still empty)
 
@@ -317,11 +317,6 @@ create or replace function public.companies_guard() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if public.is_system_write() or public.admin_level() >= 2 then
-    -- Approving gives the check mark; rejecting or suspending removes it.
-    -- Admins can still add or remove the badge separately afterwards.
-    if tg_op = 'UPDATE' and new.status is distinct from old.status then
-      new.verified := new.status = 'approved';
-    end if;
     return new;
   end if;
   if tg_op = 'INSERT' then
@@ -336,14 +331,6 @@ begin
   return new;
 end $$;
 
--- Backfill: employers already approved get the check mark. Sample listings
--- (companies with no owner account) are left as they are.
-do $$
-begin
-  perform set_config('vsl.system', 'on', true);
-  update public.companies set verified = true where status = 'approved' and owner_id is not null and not verified;
-  perform set_config('vsl.system', '', true);
-end $$;
 
 -- ===========================================================================
 -- 5. Messages on an application (employer ⇄ candidate)
@@ -508,7 +495,7 @@ My job says "Changes needed". What do I do?
 Our team has sent it back with a note explaining what to fix. Edit the job and tap Resubmit for review.
 
 What does the green check mark mean?
-It shows that our team has reviewed and approved the company's account on Vocation SL. It is not a guarantee about the company, so job seekers should still take the usual care.
+It shows that our team has verified the company. Approved companies can post jobs; the check mark is an extra step our team adds separately. It is not a guarantee about the company, so job seekers should still take the usual care.
 
 Is posting a job free?
 Charges for job listings are agreed with each employer. Where a fee applies, we send an invoice for the listing once it is approved. Contact us for current rates.
