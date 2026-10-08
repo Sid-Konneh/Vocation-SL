@@ -162,6 +162,13 @@ class CandidatesController extends CacheFirstNotifier<List<JobApplication>> {
 final candidatesProvider =
     AsyncNotifierProvider<CandidatesController, Loaded<List<JobApplication>>>(CandidatesController.new);
 
+/// The company's issued invoices (newest first).
+final employerInvoicesProvider = FutureProvider.autoDispose<List<Invoice>>((ref) async {
+  final company = (await ref.watch(companyProvider.future)).data;
+  if (company == null) return const [];
+  return ref.watch(employerBackendProvider).invoices(company.id);
+});
+
 final applicantProfileProvider = FutureProvider.autoDispose.family<AppUser?, String>(
   (ref, userId) => ref.watch(employerBackendProvider).applicantProfile(userId),
 );

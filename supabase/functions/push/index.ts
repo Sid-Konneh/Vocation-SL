@@ -7,7 +7,7 @@
 // Secrets (Supabase → Edge Functions → Secrets):
 //   PUSH_WEBHOOK_SECRET        any long random text; the same value goes in private.push_config
 //   FIREBASE_SERVICE_ACCOUNT   the whole JSON file from Firebase → Project settings → Service accounts
-//   SITE_URL                   https://vocation-sl-app.vercel.app
+//   SITE_URL                   https://app.vocationsl.com
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided automatically.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";

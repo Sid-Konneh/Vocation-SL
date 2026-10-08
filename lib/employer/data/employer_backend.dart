@@ -40,4 +40,7 @@ abstract interface class EmployerBackend {
 
   /// A short-lived download link for a CV or cover letter.
   Future<String> documentUrl(String storagePath);
+
+  /// Invoices for the company's job listings, once issued (drafts stay with admins).
+  Future<List<Invoice>> invoices(String companyId);
 }

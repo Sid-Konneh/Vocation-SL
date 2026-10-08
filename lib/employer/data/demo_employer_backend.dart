@@ -122,6 +122,31 @@ class DemoEmployerBackend implements EmployerBackend {
   }
 
   @override
+  Future<List<Invoice>> invoices(String companyId) async {
+    // A sample issued invoice for the first live job, so the screen can be tried in demo mode.
+    final live = jobs.where((j) => j.status == JobStatus.published).toList();
+    if (live.isEmpty) return const [];
+    final now = DateTime.now();
+    final issued = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 2));
+    return [
+      Invoice(
+        id: 'demo-inv-1',
+        number: 'VSL-${now.year}-00001',
+        createdAt: issued,
+        jobId: live.first.id,
+        companyId: companyId,
+        jobTitle: live.first.title,
+        billToName: company?.name ?? '',
+        billToEmail: company?.email ?? '',
+        unitPrice: 500,
+        status: InvoiceStatus.issued,
+        issueDate: issued,
+        dueDate: issued.add(const Duration(days: 14)),
+      ),
+    ];
+  }
+
+  @override
   Future<String> documentUrl(String storagePath) async =>
       throw const ValidationException('Demo mode has no stored files to download.');
 

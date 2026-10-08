@@ -10,6 +10,7 @@ import '../../core/utils/formatters.dart';
 import '../../employer/widgets.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
+import '../../widgets/invoice_pdf.dart';
 import '../../widgets/states.dart';
 import '../admin_providers.dart';
 import '../admin_shell.dart';
@@ -149,6 +150,7 @@ class _AdminInvoicesScreenState extends ConsumerState<AdminInvoicesScreen> {
                   DataColumn(label: Text('Status')),
                   DataColumn(label: Text('Issued')),
                   DataColumn(label: Text('Due')),
+                  DataColumn(label: Text('PDF')),
                 ],
                 rows: [
                   for (final i in list)
@@ -167,6 +169,18 @@ class _AdminInvoicesScreenState extends ConsumerState<AdminInvoicesScreen> {
                       DataCell(InvoiceStatusPill(i, now: now)),
                       DataCell(Text(i.issueDate == null ? '—' : Fmt.dateShort(i.issueDate!))),
                       DataCell(Text(i.dueDate == null ? '—' : Fmt.dateShort(i.dueDate!))),
+                      DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
+                        IconButton(
+                          tooltip: 'View PDF',
+                          icon: const Icon(Icons.picture_as_pdf_outlined),
+                          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => InvoicePdfScreen(invoice: i))),
+                        ),
+                        IconButton(
+                          tooltip: 'Download PDF',
+                          icon: const Icon(Icons.download_rounded),
+                          onPressed: () => downloadInvoicePdf(context, i),
+                        ),
+                      ])),
                     ]),
                 ],
               ),
@@ -444,7 +458,19 @@ class _InvoiceEditorState extends ConsumerState<InvoiceEditor> {
       actionsOverflowButtonSpacing: 8,
       actions: [
         TextButton(onPressed: _busy ? null : () => Navigator.pop(context), child: const Text('Close')),
-        TextButton.icon(onPressed: _busy ? null : _share, icon: const Icon(Icons.ios_share_rounded, size: 18), label: const Text('Share')),
+        TextButton.icon(
+          onPressed: _busy
+              ? null
+              : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => InvoicePdfScreen(invoice: _current(status: widget.invoice.status)))),
+          icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+          label: const Text('View PDF'),
+        ),
+        TextButton.icon(
+          onPressed: _busy ? null : () => downloadInvoicePdf(context, _current(status: widget.invoice.status)),
+          icon: const Icon(Icons.download_rounded, size: 18),
+          label: const Text('Download PDF'),
+        ),
+        TextButton.icon(onPressed: _busy ? null : _share, icon: const Icon(Icons.ios_share_rounded, size: 18), label: const Text('Share text')),
         if (canEdit && inv.status == InvoiceStatus.draft)
           TextButton(onPressed: _busy ? null : _delete, style: TextButton.styleFrom(foregroundColor: AppColors.danger), child: const Text('Delete')),
         if (canEdit && inv.status != InvoiceStatus.draft)

@@ -14,6 +14,7 @@ import '../../employer/features/candidates/candidate_detail_screen.dart';
 import '../../employer/features/candidates/candidates_screen.dart';
 import '../../employer/features/company/company_screens.dart';
 import '../../employer/features/dashboard/dashboard_screens.dart';
+import '../../employer/features/invoices/employer_invoices_screen.dart';
 import '../../employer/features/jobs/job_editor_screen.dart';
 import '../../employer/features/jobs/my_jobs_screen.dart';
 import '../../features/about/about_screen.dart';
@@ -39,6 +40,7 @@ import '../../features/profile/settings_screen.dart';
 import '../../features/saved/saved_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/splash/splash_screen.dart';
+import '../config/app_config.dart';
 import '../../models/models.dart';
 import '../../providers/session_providers.dart';
 
@@ -98,7 +100,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (loc == '/') return null; // splash decides
       // Terms, Privacy and Help can be read before signing in.
       if (!signedIn) return loc == '/login' || loc.startsWith('/pages/') ? null : '/login';
-      if (loc == '/login') return homeFor(role);
+      // admin.vocationsl.com goes straight to the dashboard after sign-in.
+      if (loc == '/login') return AppConfig.adminSite ? '/admin' : homeFor(role);
       final suspended = ref.read(suspendedProvider).value ?? false;
       if (suspended && !loc.startsWith('/suspended') && !loc.startsWith('/pages/') && !loc.startsWith('/account/delete')) return '/suspended';
       if (!suspended && loc.startsWith('/suspended')) return homeFor(role);
@@ -151,6 +154,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(path: '/employer/candidates', builder: (c, s) => CandidatesScreen(jobId: s.uri.queryParameters['job'])),
           ]),
           StatefulShellBranch(routes: [GoRoute(path: '/employer/company', builder: (c, s) => const CompanyProfileScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/employer/invoices', builder: (c, s) => const EmployerInvoicesScreen())]),
         ],
       ),
       _pushed('/employer/jobs/new', (s) => const JobEditorScreen()),

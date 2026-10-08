@@ -146,7 +146,7 @@ void main() {
     await tester.tap(find.text('My jobs').first);
     await waitFor(tester, find.text('Store Accountant'));
     expect(find.text('Awaiting approval'), findsWidgets);
-    expect(find.text('Invoices'), findsNothing);
+    expect(find.text('Invoices'), findsWidgets, reason: 'employers see invoices once issued');
 
     // A candidate applies; the ATS table lists them.
     fake.addApplicant(fake.jobs.single.id, 'Fatmata Kamara');

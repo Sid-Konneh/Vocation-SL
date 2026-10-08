@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/config/app_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -27,7 +29,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   void _continue() {
     if (!mounted) return;
     final signedIn = ref.read(sessionProvider) != null;
-    context.go(signedIn ? widget.signedInPath : '/login');
+    context.go(signedIn ? (AppConfig.adminSite ? '/admin' : widget.signedInPath) : '/login');
   }
 
   @override

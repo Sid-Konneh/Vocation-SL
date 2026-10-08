@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Build-time configuration.
 ///
 /// Supabase is enabled by passing both values at build time:
@@ -22,6 +24,18 @@ class AppConfig {
   /// confirmation and password reset. Must be listed in Supabase
   /// Authentication → URL Configuration → Redirect URLs.
   static const mobileAuthRedirect = 'org.vocationsl.app://login-callback';
+
+  /// Web addresses. employers.* opens in hiring mode and admin.* opens the
+  /// admin dashboard; all of them serve the same app.
+  static const websiteUrl = 'https://vocationsl.com';
+  static const appUrl = 'https://app.vocationsl.com';
+  static const employersUrl = 'https://employers.vocationsl.com';
+
+  /// On the web, which role the address implies (employers.vocationsl.com).
+  static bool get employerSite => kIsWeb && Uri.base.host.startsWith('employers.');
+
+  /// On the web, whether this is admin.vocationsl.com.
+  static bool get adminSite => kIsWeb && Uri.base.host.startsWith('admin.');
 
   static const appName = 'Vocation SL';
   static const pageSize = 10;

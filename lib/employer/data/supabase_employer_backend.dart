@@ -154,6 +154,12 @@ class SupabaseEmployerBackend implements EmployerBackend {
       });
 
   @override
+  Future<List<Invoice>> invoices(String companyId) => guardSupabase(() async {
+        final rows = await _client.from('invoices').select().eq('company_id', companyId).neq('status', 'draft').order('created_at', ascending: false);
+        return rows.map(Invoice.fromJson).toList();
+      });
+
+  @override
   Future<String> documentUrl(String storagePath) =>
       guardSupabase(() => _client.storage.from(_bucket).createSignedUrl(storagePath, 60 * 30));
 }

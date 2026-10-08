@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/errors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/demo/demo_seed.dart';
@@ -28,7 +29,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscure = true;
   String? _error;
   String? _info;
-  late UserRole _intent = UserRole.values.where((r) => r.name == ref.read(localStoreProvider).setting<String>('last_role')).firstOrNull ?? UserRole.seeker;
+  // employers.vocationsl.com always starts in hiring mode.
+  late UserRole _intent = AppConfig.employerSite
+      ? UserRole.employer
+      : UserRole.values.where((r) => r.name == ref.read(localStoreProvider).setting<String>('last_role')).firstOrNull ?? UserRole.seeker;
 
   bool get _hiring => _intent == UserRole.employer;
 

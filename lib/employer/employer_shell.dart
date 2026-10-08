@@ -27,6 +27,7 @@ const _items = [
   _Item('My jobs', Icons.work_outline_rounded, Icons.work_rounded),
   _Item('Candidates', Icons.people_outline_rounded, Icons.people_rounded),
   _Item('Company profile', Icons.business_outlined, Icons.business_rounded),
+  _Item('Invoices', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
 ];
 
 /// Phone bottom bar shows these branches, plus "More" for the rest.
@@ -173,7 +174,7 @@ class EmployerShell extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final i in [1, 4])
+            for (final i in [1, 4, 5])
               ListTile(
                 leading: Icon(_items[i].icon),
                 title: Text(_items[i].label),
