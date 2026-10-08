@@ -3,7 +3,8 @@
 param([Parameter(Mandatory)][string]$Url, [Parameter(Mandatory)][string]$Key, [string]$Vapid = '', [switch]$SkipApk)
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
-$defs = @("--dart-define=SUPABASE_URL=$Url", "--dart-define=SUPABASE_PUBLISHABLE_KEY=$Key", "--dart-define=FIREBASE_VAPID_KEY=$Vapid")
+$defs = @("--dart-define=SUPABASE_URL=$Url", "--dart-define=SUPABASE_PUBLISHABLE_KEY=$Key")
+if ($Vapid) { $defs += "--dart-define=FIREBASE_VAPID_KEY=$Vapid" }
 $version = (Select-String pubspec.yaml -Pattern '^version: (\S+)\+').Matches[0].Groups[1].Value
 
 Write-Output "== Web"

@@ -117,7 +117,8 @@ Deno.serve(async (req) => {
     }
     const text = await res.text();
     // The device uninstalled the app, cleared site data or blocked alerts.
-    if (res.status === 404 || text.includes("UNREGISTERED") || text.includes("registration-token-not-registered")) {
+    if (res.status === 404 || text.includes("UNREGISTERED") || text.includes("registration-token-not-registered") ||
+        (res.status === 400 && text.includes("registration token"))) {
       stale.push(d.token);
     } else {
       console.error(`FCM ${res.status}: ${text}`);
