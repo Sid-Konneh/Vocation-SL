@@ -8,6 +8,7 @@ import '../../providers/job_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
 import '../../widgets/announcement_banner.dart';
+import '../../widgets/ios_install_banner.dart';
 import '../../widgets/common.dart';
 import '../../widgets/job_card.dart';
 import '../../widgets/skeletons.dart';
@@ -95,7 +96,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             SliverPadding(
               padding: pad.copyWith(top: 16),
-              sliver: const SliverToBoxAdapter(child: AnnouncementBanner(audience: AnnouncementAudience.seeker)),
+              sliver: const SliverToBoxAdapter(child: Column(children: [IosInstallBanner(), AnnouncementBanner(audience: AnnouncementAudience.seeker)])),
             ),
             SliverToBoxAdapter(
               child: SizedBox(

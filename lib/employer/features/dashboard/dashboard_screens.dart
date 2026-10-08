@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/models.dart';
+import '../../../widgets/ios_install_banner.dart';
 import '../../../widgets/push_prompt.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/announcement_banner.dart';
@@ -105,6 +106,7 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ],
       children: [
+        const IosInstallBanner(),
         const AnnouncementBanner(audience: AnnouncementAudience.employer),
         const PushPrompt(),
         if (company != null) ApprovalBanner(company: company),

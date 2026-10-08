@@ -183,8 +183,8 @@
     .warning b { color: var(--ink); }
 
     /* Download */
-    .download { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    @media (max-width: 960px) { .download { grid-template-columns: 1fr; } }
+    .download { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    @media (max-width: 760px) { .download { grid-template-columns: 1fr; } }
     .dl { display: flex; flex-direction: column; gap: 14px; }
     .dl .btn { margin-top: auto; align-self: flex-start; }
     .dl ol { margin: 0; padding-left: 20px; color: var(--muted); font-size: .92rem; }
@@ -621,6 +621,17 @@
             <p style="color:var(--muted)">Nothing to install. Works in Chrome, Edge, Firefox and Safari on phones and computers, with alerts in supported browsers.</p>
             <a class="btn btn-outline" href="https://app.vocationsl.com">Open app.vocationsl.com</a>
           </div>
+          <div class="card dl" id="iphone">
+            <span class="tag">Available now</span>
+            <h3>iPhone &amp; iPad</h3>
+            <p style="color:var(--muted)">Add Vocation SL to your Home Screen. It opens full screen like an app.</p>
+            <ol>
+              <li>Open <b>app.vocationsl.com</b> in <b>Safari</b>.</li>
+              <li>Tap the <b>Share</b> button (the square with an arrow).</li>
+              <li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+            </ol>
+            <a class="btn btn-outline" href="https://app.vocationsl.com">Open in Safari</a>
+          </div>
           <div class="card dl">
             <span class="tag soon-tag">Coming soon</span>
             <h3>Google Play &amp; App Store</h3>
@@ -662,6 +673,7 @@
           <details open><summary>Is Vocation SL free?</summary><p>Yes, for job seekers. Searching, saving jobs, applying and messaging employers are all free. Charges for employer job listings are agreed with each employer.</p></details>
           <details><summary>Which parts of Sierra Leone are covered?</summary><p>All 16 districts, from Western Area Urban and Rural to Kailahun, Kono, Falaba, Karene and Pujehun, plus main towns like Makeni, Koidu and Lunsar.</p></details>
           <details><summary>Do I need a good internet connection?</summary><p>No. The app saves jobs and your applications on your phone, so you can keep browsing offline. Anything you change is sent when you reconnect.</p></details>
+          <details><summary>Can I use Vocation SL on an iPhone?</summary><p>Yes. Open <b>app.vocationsl.com</b> in Safari, tap the Share button, then <b>Add to Home Screen</b>. It opens full screen like an app. An App Store version will follow.</p></details>
           <details><summary>Why isn't the app on Google Play yet?</summary><p>We're preparing the store listing. The Android app on this page is the same app, offered as a direct download in the meantime.</p></details>
           <details><summary>How do employers join?</summary><p>Sign in and choose <b>Hire talent</b>, then register your company. New companies and every job are reviewed by our team before going live.</p></details>
           <details><summary>How do I get help?</summary><p>Email us at <a href="mailto:vocationxsl@gmail.com">vocationxsl@gmail.com</a>.</p></details>

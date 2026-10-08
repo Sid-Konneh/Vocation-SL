@@ -88,14 +88,14 @@ class AboutScreen extends ConsumerWidget {
                   'cannot see them. Your documents are shared with an employer only when you apply to that employer\'s job.'),
               body('You can update your profile at any time, and delete your account and data from Settings → Delete account.'),
             ]),
-            section('Listings in this early version', [
+            section(demo ? 'Demo mode' : 'Genuine listings', [
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppSpacing.radius)),
                 child: Text(
                   demo
                       ? 'You are using demo mode. All employers, jobs and the demo profile are fictional examples, and nothing you do leaves this device.'
-                      : 'Vocation SL is in early access. Some employers and job listings currently shown are sample listings used while we onboard employers. They do not represent real vacancies.',
+                      : 'Every company and every job on Vocation SL is reviewed by our team before it goes live. A genuine employer will never ask you for money to apply. If anyone does, report the job.',
                   style: context.text.bodyMedium,
                 ),
               ),

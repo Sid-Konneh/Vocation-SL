@@ -43,8 +43,8 @@ lib/
   providers/     Riverpod controllers (cache-first base class, paged search, user data)
   features/      splash, auth, shell, jobs, apply, applications, saved, notifications, profile
   widgets/       design-system components: job cards, skeletons, empty/error states, logo
-supabase/        schema.sql (tables, RLS, triggers, storage) and seed.sql
-tool/            generate_seed.dart (builds seed.sql from the demo data)
+supabase/        schema.sql (tables, RLS, triggers, storage) and feature migrations
+tool/            build_all.ps1 (web + APK builds), generate_seed.dart (sample SQL for a test database only)
 ```
 
 The UI talks only to Riverpod controllers, the controllers talk to repositories, and the repositories talk to the `VocationBackend` interface. To move to another backend (Firebase, a REST API), implement `VocationBackend` and pass it in `main.dart`. No screen code changes.
@@ -64,8 +64,7 @@ flutter test                # unit tests + end-to-end flow test
 ## Connect Supabase
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In the SQL editor, run `supabase/schema.sql`, then `supabase/seed.sql`.
-   (To refresh demo dates later: `dart run tool/generate_seed.dart`, then run `seed.sql` again.)
+2. In the SQL editor, run `supabase/schema.sql`. (No sample data is loaded on the live system.)
 3. In **Authentication → Providers → Email**, decide whether to require email confirmation.
 4. Build or run with your project URL and **publishable (anon) key**:
 
@@ -92,7 +91,7 @@ One web app and one Android app serve both audiences. The login screen asks **Fi
 
 Posting jobs is free.
 
-**Setup:** run `supabase/employer_schema.sql` in the SQL editor after `schema.sql` and `seed.sql`. New companies start as **pending**: their jobs are saved as "Awaiting approval" and go live automatically when you approve the company in **Table Editor → companies → status = `approved`**. To feature a job on the job seekers' home screen, set `jobs.featured = true`.
+**Setup:** run `supabase/employer_schema.sql` in the SQL editor after `schema.sql`. New companies start as **pending**: their jobs are saved as "Awaiting approval" and go live automatically when you approve the company in **Table Editor → companies → status = `approved`**. To feature a job on the job seekers' home screen, set `jobs.featured = true`.
 
 Employers only ever see their own company's jobs, applicants, applicant profiles and CVs; the database enforces this with row-level security.
 
