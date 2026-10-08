@@ -165,7 +165,7 @@ Not a government app · No financial features · No health features.
 1. **Testing → Closed testing** (Personal accounts must do this first; Organization accounts can go straight to Production):
    - Create track "Alpha" → **Create new release**.
    - App signing: **Use Google-generated key** (Play App Signing) — recommended.
-   - Upload `release/play/vocation-sl-1.0.2.aab`.
+   - Upload `release/play/vocation-sl-1.0.3.aab`.
    - Release name: `1.0.2`
    - Release notes:
      ```

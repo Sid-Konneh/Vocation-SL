@@ -627,7 +627,7 @@ We do not sell your personal information.
 Employers: when you apply to a job, that employer can see your application, CV, cover letter, profile and your messages with them. Employers you have not applied to cannot see your CV or applications.
 Job seekers: can see company profiles and job listings.
 Our team: authorised Vocation SL staff can access information when needed to review content, handle reports, provide support and keep the service secure. Access depends on each person's role, and admin actions, including viewing a user's sign-in details, are recorded.
-Service providers: we use trusted providers to host our database, files and website, Google if you choose to sign in with Google, and Anthropic''s Claude AI to read your CV when you tap "Fill my profile from my CV". They process information only to provide their services to us. These providers may store information on servers outside Sierra Leone.
+Service providers: we use trusted providers to host our database, files and website, and Google if you choose to sign in with Google. They process information only to provide their services to us. These providers may store information on servers outside Sierra Leone.
 Legal requests: we may share information where the law requires it.
 
 # Information on your device

@@ -65,8 +65,8 @@ abstract interface class VocationBackend {
   /// Uploads a CV, cover letter or photo; returns the remote storage path.
   Future<String> uploadDocument({required String userId, required String fileName, required Uint8List bytes});
 
-  /// Reads an uploaded CV and returns the profile details found in it.
-  Future<CvExtract> readCv(String storagePath);
+  /// Downloads one of the user's own uploaded documents.
+  Future<Uint8List> downloadDocument(String storagePath);
 
   /// A short-lived link to view one of the user's own uploaded documents.
   Future<String> documentUrl(String storagePath);

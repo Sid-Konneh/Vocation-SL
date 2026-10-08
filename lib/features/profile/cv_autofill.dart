@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,16 +8,32 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/models.dart';
 import '../../providers/core_providers.dart';
+import '../../services/cv_text.dart';
 import '../../widgets/common.dart';
 
-/// Reads the CV at [storagePath], shows what was found and lets the user pick
-/// what to add. Returns the updated profile, or null if they cancel.
-Future<AppUser?> fillProfileFromCv(BuildContext context, WidgetRef ref, AppUser user, String? storagePath) async {
-  if (storagePath == null || storagePath.isEmpty) {
+/// Reads a CV on the device, shows what was found and lets the user pick
+/// what to add. Pass the file's [bytes] when they are at hand (just
+/// uploaded); otherwise the CV at [resume]'s storage path is downloaded.
+/// Returns the updated profile, or null if they cancel.
+Future<AppUser?> fillProfileFromCv(
+  BuildContext context,
+  WidgetRef ref,
+  AppUser user, {
+  Uint8List? bytes,
+  DocumentFormat? format,
+  Resume? resume,
+}) async {
+  final path = resume?.storagePath;
+  if (bytes == null && (path == null || path.isEmpty)) {
     showSnack(context, 'Upload your CV first.', error: true);
     return null;
   }
-  final reading = ref.read(backendProvider).readCv(storagePath);
+  Future<CvExtract> read() async {
+    final data = bytes ?? await ref.read(backendProvider).downloadDocument(path!);
+    return readCvOnDevice(data, format ?? resume?.format ?? DocumentFormat.fromFileName(resume?.fileName ?? ''));
+  }
+
+  final reading = read();
   final found = await showDialog<CvExtract>(
     context: context,
     barrierDismissible: false,

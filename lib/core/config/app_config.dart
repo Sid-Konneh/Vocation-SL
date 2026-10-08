@@ -40,7 +40,7 @@ class AppConfig {
   static const appName = 'Vocation SL';
   static const pageSize = 10;
   static const supportEmail = 'vocationxsl@gmail.com';
-  static const version = '1.0.2';
+  static const version = '1.0.3';
 }
 
 /// How long cached data counts as fresh before a background refresh.

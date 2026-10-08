@@ -262,32 +262,8 @@ class DemoBackend implements VocationBackend {
   }
 
   @override
-  Future<CvExtract> readCv(String storagePath) async {
-    await _call();
-    await Future<void>.delayed(const Duration(milliseconds: 1200));
-    // Demo mode doesn't read the file; it returns a fixed example.
-    return CvExtract.fromJson(const {
-      'headline': 'Accounts Assistant',
-      'phone': '+232 76 123 456',
-      'location': 'Freetown, Sierra Leone',
-      'about': 'Detail-oriented accounts assistant with four years of experience in bookkeeping, payroll and reconciliations.',
-      'experience': [
-        {'title': 'Accounts Assistant', 'company': 'Lumley Trading Co.', 'location': 'Freetown', 'start': '2022-02', 'current': true, 'description': 'Bookkeeping, supplier payments and monthly reconciliations.'},
-        {'title': 'Accounts Clerk', 'company': 'Bo Wholesale Ltd', 'location': 'Bo', 'start': '2020-01', 'end': '2022-01'},
-      ],
-      'education': [
-        {'school': 'Fourah Bay College', 'degree': 'BSc', 'field': 'Accounting', 'start_year': 2016, 'end_year': 2020},
-      ],
-      'skills': ['Bookkeeping', 'QuickBooks', 'Payroll', 'Excel', 'Reconciliations'],
-      'languages': [
-        {'name': 'English', 'level': 'Fluent'},
-        {'name': 'Krio', 'level': 'Native'},
-      ],
-      'certifications': [
-        {'name': 'Certified Bookkeeper', 'issuer': 'ACCA', 'year': 2021},
-      ],
-    });
-  }
+  Future<Uint8List> downloadDocument(String storagePath) async =>
+      throw const ValidationException('Files in demo mode stay on this device. Upload your CV again to read it.');
 
   @override
   Future<String> documentUrl(String storagePath) async =>
