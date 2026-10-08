@@ -152,7 +152,7 @@ class ApprovalBanner extends StatelessWidget {
           AppColors.warning,
           Icons.hourglass_top_rounded,
           'Your company is awaiting approval',
-          'You can post jobs now. They are saved as "Awaiting approval" and go live automatically once our team approves your company. '
+          'You can post jobs now. They are saved as "Awaiting approval" and reviewed by our team once your company is approved. '
               'Questions? Email vocationxsl@gmail.com.',
         ),
       CompanyStatus.rejected => (

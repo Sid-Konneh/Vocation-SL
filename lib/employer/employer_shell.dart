@@ -118,6 +118,18 @@ class EmployerShell extends ConsumerWidget {
                                 onTap: () => context.push('/about'),
                               ),
                               _NavRow(
+                                icon: const Icon(Icons.lock_outline_rounded),
+                                label: 'Change password',
+                                semantics: 'Change password',
+                                onTap: () => context.push('/settings/password'),
+                              ),
+                              _NavRow(
+                                icon: const Icon(Icons.delete_forever_outlined, color: AppColors.danger),
+                                label: 'Delete account',
+                                semantics: 'Delete account',
+                                onTap: () => context.push('/account/delete'),
+                              ),
+                              _NavRow(
                                 icon: const Icon(Icons.logout_rounded),
                                 label: 'Sign out',
                                 semantics: 'Sign out',
