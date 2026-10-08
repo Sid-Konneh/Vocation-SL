@@ -284,6 +284,15 @@ class SupabaseBackend implements VocationBackend {
       });
 
   @override
+  Future<CvExtract> readCv(String storagePath) => _run(() async {
+        final res = await _client.functions.invoke('parse-cv', body: {'path': storagePath});
+        final data = res.data;
+        if (data is! Map) throw const ServerException('Couldn\'t read that CV. Try again later.');
+        if (data['error'] is String) throw ValidationException(data['error'] as String);
+        return CvExtract.fromJson(Map<String, dynamic>.from(data['profile'] as Map? ?? const {}));
+      });
+
+  @override
   Future<String> documentUrl(String storagePath) => _run(() => _client.storage.from(_bucket).createSignedUrl(storagePath, 60 * 30));
 
   @override

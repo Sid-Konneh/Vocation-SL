@@ -13,6 +13,7 @@ import '../../providers/core_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/document_viewer.dart';
+import 'cv_autofill.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
 
@@ -85,7 +86,11 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
         format: f.format!,
         storagePath: path,
       );
-      await _save(widget.user.copyWith(resume: () => resume), 'CV uploaded');
+      final withCv = widget.user.copyWith(resume: () => resume);
+      await _save(withCv, 'CV uploaded');
+      if (!mounted) return;
+      setState(() => _uploadingCv = false);
+      await _offerAutofill(withCv, path);
     } on NetworkException {
       if (mounted) showSnack(context, 'You\'re offline. Connect to the internet to upload your CV.', error: true);
     } catch (e) {
@@ -93,6 +98,23 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
     } finally {
       if (mounted) setState(() => _uploadingCv = false);
     }
+  }
+
+  /// Offers to fill empty profile sections from the CV just uploaded.
+  Future<void> _offerAutofill(AppUser user, String? path) async {
+    final ok = await confirmDialog(
+      context,
+      title: 'Fill your profile from this CV?',
+      message: 'We can read your CV and suggest your experience, education, skills and more. You choose what to add.',
+      confirmLabel: 'Fill my profile',
+    );
+    if (!ok || !mounted) return;
+    await _fillFromCv(user, path);
+  }
+
+  Future<void> _fillFromCv(AppUser user, String? path) async {
+    final updated = await fillProfileFromCv(context, ref, user, path);
+    if (updated != null && mounted) await _save(updated, 'Profile updated from your CV');
   }
 
   @override
@@ -172,6 +194,15 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                         format: u.resume!.format,
                         storagePath: u.resume!.storagePath,
                         loadUrl: ref.read(backendProvider).documentUrl),
+                  ),
+                ),
+              if (u.resume?.storagePath != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: TextButton.icon(
+                    onPressed: _uploadingCv ? null : () => _fillFromCv(u, u.resume!.storagePath),
+                    icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                    label: const Text('Fill my profile from my CV'),
                   ),
                 ),
               const SizedBox(height: 8),
