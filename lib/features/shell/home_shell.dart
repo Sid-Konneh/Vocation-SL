@@ -54,34 +54,28 @@ class HomeShell extends ConsumerWidget {
 
     if (context.isWide) {
       return Scaffold(
-        body: Row(children: [
-          _Sidebar(
-            selected: shell.currentIndex,
-            onSelect: _go,
-            iconFor: icon,
-            semanticFor: semantic,
-          ),
-          const VerticalDivider(width: 1),
-          Expanded(child: shell),
-        ]),
+        body: Row(
+          children: [
+            _Sidebar(selected: shell.currentIndex, onSelect: _go, iconFor: icon, semanticFor: semantic),
+            const VerticalDivider(width: 1),
+            Expanded(child: shell),
+          ],
+        ),
       );
     }
 
     return Scaffold(
       body: shell,
       bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(border: Border(top: BorderSide(color: context.palette.border))),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: context.palette.border)),
+        ),
         child: NavigationBar(
           selectedIndex: shell.currentIndex,
           onDestinationSelected: _go,
           destinations: [
             for (var i = 0; i < _destinations.length; i++)
-              NavigationDestination(
-                icon: icon(i, false),
-                selectedIcon: icon(i, true),
-                label: _destinations[i].label,
-                tooltip: semantic(i),
-              ),
+              NavigationDestination(icon: icon(i, false), selectedIcon: icon(i, true), label: _destinations[i].label, tooltip: semantic(i)),
           ],
         ),
       ),
@@ -101,56 +95,69 @@ class _Sidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => SizedBox(
-        width: 248,
-        child: SafeArea(
-          right: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(12, 0, 12, 24),
-                child: Align(alignment: Alignment.centerLeft, child: VocationLogo(size: 34)),
-              ),
-              for (var i = 0; i < _sidebarLabels.length; i++)
-                _SidebarItem(
-                  icon: iconFor(i, i == selected),
-                  label: _sidebarLabels[i],
-                  semantics: semanticFor(i),
-                  selected: i == selected,
-                  onTap: () => onSelect(i),
+    width: 248,
+    child: SafeArea(
+      right: false,
+      // Scrolls on short windows so the bottom items (Sign out) stay reachable.
+      child: LayoutBuilder(
+        builder: (context, box) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: box.maxHeight),
+            child: IntrinsicHeight(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(12, 0, 12, 24),
+                      child: Align(alignment: Alignment.centerLeft, child: VocationLogo(size: 34)),
+                    ),
+                    for (var i = 0; i < _sidebarLabels.length; i++)
+                      _SidebarItem(
+                        icon: iconFor(i, i == selected),
+                        label: _sidebarLabels[i],
+                        semantics: semanticFor(i),
+                        selected: i == selected,
+                        onTap: () => onSelect(i),
+                      ),
+                    const Spacer(),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    if (ref.watch(adminRoleProvider).value != null)
+                      _SidebarItem(
+                        icon: const Icon(Icons.admin_panel_settings_outlined),
+                        label: 'Admin dashboard',
+                        semantics: 'Admin dashboard',
+                        onTap: () => context.go('/admin'),
+                      ),
+                    _SidebarItem(
+                      icon: const Icon(Icons.swap_horiz_rounded),
+                      label: 'Switch to employer',
+                      semantics: 'Switch to employer',
+                      onTap: () => switchRole(context, ref, UserRole.employer),
+                    ),
+                    _SidebarItem(
+                      icon: const Icon(Icons.info_outline_rounded),
+                      label: 'About',
+                      semantics: 'About Vocation SL',
+                      onTap: () => context.push('/about'),
+                    ),
+                    _SidebarItem(
+                      icon: const Icon(Icons.logout_rounded),
+                      label: 'Sign out',
+                      semantics: 'Sign out',
+                      onTap: () => confirmAndSignOut(context, ref),
+                    ),
+                  ],
                 ),
-              const Spacer(),
-              const Divider(),
-              const SizedBox(height: 8),
-              if (ref.watch(adminRoleProvider).value != null)
-                _SidebarItem(
-                  icon: const Icon(Icons.admin_panel_settings_outlined),
-                  label: 'Admin dashboard',
-                  semantics: 'Admin dashboard',
-                  onTap: () => context.go('/admin'),
-                ),
-              _SidebarItem(
-                icon: const Icon(Icons.swap_horiz_rounded),
-                label: 'Switch to employer',
-                semantics: 'Switch to employer',
-                onTap: () => switchRole(context, ref, UserRole.employer),
               ),
-              _SidebarItem(
-                icon: const Icon(Icons.info_outline_rounded),
-                label: 'About',
-                semantics: 'About Vocation SL',
-                onTap: () => context.push('/about'),
-              ),
-              _SidebarItem(
-                icon: const Icon(Icons.logout_rounded),
-                label: 'Sign out',
-                semantics: 'Sign out',
-                onTap: () => confirmAndSignOut(context, ref),
-              ),
-            ]),
+            ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _SidebarItem extends StatelessWidget {
@@ -179,20 +186,22 @@ class _SidebarItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Row(children: [
-                IconTheme(
-                  data: IconThemeData(color: selected ? context.colors.primary : context.palette.muted, size: 24),
-                  child: icon,
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    label,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.text.titleSmall?.copyWith(color: fg, fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+              child: Row(
+                children: [
+                  IconTheme(
+                    data: IconThemeData(color: selected ? context.colors.primary : context.palette.muted, size: 24),
+                    child: icon,
                   ),
-                ),
-              ]),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.text.titleSmall?.copyWith(color: fg, fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -111,16 +111,16 @@ class PushService {
     }
   }
 
-  /// Stops alerts for this device. Call before signing out.
+  /// Stops alerts for this device. Call before signing out. Never takes
+  /// more than a few seconds, so sign-out can't get stuck here.
   Future<void> unregister() async {
     final t = _token;
+    _token = null;
     if (t == null) return;
     try {
-      await _client.rpc('unregister_push_token', params: {'p_token': t});
+      await _client.rpc('unregister_push_token', params: {'p_token': t}).timeout(const Duration(seconds: 4));
     } catch (_) {}
-    try {
-      await _fm.deleteToken();
-    } catch (_) {}
-    _token = null;
+    // Deleting the browser/phone token can be slow; don't wait for it.
+    unawaited(_fm.deleteToken().catchError((_) {}));
   }
 }

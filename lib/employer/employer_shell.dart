@@ -44,7 +44,9 @@ class EmployerShell extends ConsumerWidget {
     final companyAsync = ref.watch(companyProvider);
     if (!companyAsync.hasValue) {
       if (companyAsync.hasError) {
-        return Scaffold(body: ErrorState(error: companyAsync.error!, onRetry: () => ref.invalidate(companyProvider)));
+        return Scaffold(
+          body: ErrorState(error: companyAsync.error!, onRetry: () => ref.invalidate(companyProvider)),
+        );
       }
       return const ShellSkeleton();
     }
@@ -59,45 +61,80 @@ class EmployerShell extends ConsumerWidget {
 
     if (context.isWide) {
       return Scaffold(
-        body: Row(children: [
-          SizedBox(
-            width: 256,
-            child: SafeArea(
-              right: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-                    child: Align(alignment: Alignment.centerLeft, child: VocationLogo(size: 32)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-                    child: Text('for Employers', style: context.text.labelLarge?.copyWith(color: context.palette.muted)),
-                  ),
-                  for (var i = 0; i < _items.length; i++)
-                    _NavRow(
-                      icon: icon(i, i == shell.currentIndex),
-                      label: _items[i].label,
-                      semantics: i == 3 && toReview > 0 ? 'Candidates, $toReview to review' : _items[i].label,
-                      selected: i == shell.currentIndex,
-                      onTap: () => _go(i),
+        body: Row(
+          children: [
+            SizedBox(
+              width: 256,
+              child: SafeArea(
+                right: false,
+                // Scrolls on short windows so the bottom items (Sign out) stay reachable.
+                child: LayoutBuilder(
+                  builder: (context, box) => SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: box.maxHeight),
+                      child: IntrinsicHeight(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                                child: Align(alignment: Alignment.centerLeft, child: VocationLogo(size: 32)),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+                                child: Text('for Employers', style: context.text.labelLarge?.copyWith(color: context.palette.muted)),
+                              ),
+                              for (var i = 0; i < _items.length; i++)
+                                _NavRow(
+                                  icon: icon(i, i == shell.currentIndex),
+                                  label: _items[i].label,
+                                  semantics: i == 3 && toReview > 0 ? 'Candidates, $toReview to review' : _items[i].label,
+                                  selected: i == shell.currentIndex,
+                                  onTap: () => _go(i),
+                                ),
+                              const Spacer(),
+                              const Divider(),
+                              const SizedBox(height: 8),
+                              if (ref.watch(adminRoleProvider).value != null)
+                                _NavRow(
+                                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                                  label: 'Admin dashboard',
+                                  semantics: 'Admin dashboard',
+                                  onTap: () => context.go('/admin'),
+                                ),
+                              _NavRow(
+                                icon: const Icon(Icons.swap_horiz_rounded),
+                                label: 'Switch to job seeker',
+                                semantics: 'Switch to job seeker',
+                                onTap: () => switchRole(context, ref, UserRole.seeker),
+                              ),
+                              _NavRow(
+                                icon: const Icon(Icons.info_outline_rounded),
+                                label: 'About',
+                                semantics: 'About Vocation SL',
+                                onTap: () => context.push('/about'),
+                              ),
+                              _NavRow(
+                                icon: const Icon(Icons.logout_rounded),
+                                label: 'Sign out',
+                                semantics: 'Sign out',
+                                onTap: () => confirmAndSignOut(context, ref),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  const Spacer(),
-                  const Divider(),
-                  const SizedBox(height: 8),
-                  if (ref.watch(adminRoleProvider).value != null)
-                    _NavRow(icon: const Icon(Icons.admin_panel_settings_outlined), label: 'Admin dashboard', semantics: 'Admin dashboard', onTap: () => context.go('/admin')),
-                  _NavRow(icon: const Icon(Icons.swap_horiz_rounded), label: 'Switch to job seeker', semantics: 'Switch to job seeker', onTap: () => switchRole(context, ref, UserRole.seeker)),
-                  _NavRow(icon: const Icon(Icons.info_outline_rounded), label: 'About', semantics: 'About Vocation SL', onTap: () => context.push('/about')),
-                  _NavRow(icon: const Icon(Icons.logout_rounded), label: 'Sign out', semantics: 'Sign out', onTap: () => confirmAndSignOut(context, ref)),
-                ]),
+                  ),
+                ),
               ),
             ),
-          ),
-          const VerticalDivider(width: 1),
-          Expanded(child: shell),
-        ]),
+            const VerticalDivider(width: 1),
+            Expanded(child: shell),
+          ],
+        ),
       );
     }
 
@@ -105,7 +142,9 @@ class EmployerShell extends ConsumerWidget {
     return Scaffold(
       body: shell,
       bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(border: Border(top: BorderSide(color: context.palette.border))),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: context.palette.border)),
+        ),
         child: NavigationBar(
           selectedIndex: phoneIndex < 0 ? _phoneBranches.length : phoneIndex,
           onDestinationSelected: (i) {
@@ -116,8 +155,7 @@ class EmployerShell extends ConsumerWidget {
             }
           },
           destinations: [
-            for (final b in _phoneBranches)
-              NavigationDestination(icon: icon(b, false), selectedIcon: icon(b, true), label: b == 2 ? 'Jobs' : _items[b].label),
+            for (final b in _phoneBranches) NavigationDestination(icon: icon(b, false), selectedIcon: icon(b, true), label: b == 2 ? 'Jobs' : _items[b].label),
             const NavigationDestination(icon: Icon(Icons.more_horiz_rounded), label: 'More'),
           ],
         ),
@@ -126,9 +164,15 @@ class EmployerShell extends ConsumerWidget {
   }
 
   void _showMore(BuildContext context, WidgetRef ref) => showModalBottomSheet<void>(
-        context: context,
-        builder: (sheet) => SafeArea(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
+    context: context,
+    // Let the sheet grow and scroll so every item, including Sign out, is reachable on small phones.
+    isScrollControlled: true,
+    constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+    builder: (sheet) => SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             for (final i in [1, 4])
               ListTile(
                 leading: Icon(_items[i].icon),
@@ -188,9 +232,11 @@ class EmployerShell extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 8),
-          ]),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _NavRow extends StatelessWidget {
@@ -203,35 +249,42 @@ class _NavRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Semantics(
-          button: true,
-          selected: selected,
-          label: semantics,
-          excludeSemantics: true,
-          child: Material(
-            color: selected ? context.colors.primaryContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                child: Row(children: [
-                  IconTheme(data: IconThemeData(color: selected ? context.colors.primary : context.palette.muted, size: 24), child: icon),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(label,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.text.titleSmall?.copyWith(
-                          color: selected ? context.colors.onPrimaryContainer : context.colors.onSurface,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                        )),
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Semantics(
+      button: true,
+      selected: selected,
+      label: semantics,
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? context.colors.primaryContainer : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              children: [
+                IconTheme(
+                  data: IconThemeData(color: selected ? context.colors.primary : context.palette.muted, size: 24),
+                  child: icon,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.text.titleSmall?.copyWith(
+                      color: selected ? context.colors.onPrimaryContainer : context.colors.onSurface,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
                   ),
-                ]),
-              ),
+                ),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

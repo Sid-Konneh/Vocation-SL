@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://vocation-sl-home.vercel.app/sitemap.xml

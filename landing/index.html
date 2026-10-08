@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vocation SL · Jobs in Sierra Leone</title>
+  <meta name="description" content="Vocation SL is a job platform built for Sierra Leone. Find jobs across all 16 districts, apply with your CV, track every application and hear back from employers.">
+  <meta name="theme-color" content="#3F7A1F">
+  <meta property="og:title" content="Vocation SL · Jobs in Sierra Leone">
+  <meta property="og:description" content="Find work and hire talent across Sierra Leone. Free for job seekers.">
+  <meta property="og:image" content="assets/app-icon.png">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #3F7A1F;
+      --green-dark: #2C5A14;
+      --brand: #7DB43A;
+      --tint: #EFF6E6;
+      --ink: #14171A;
+      --text: #2B3036;
+      --muted: #5E6670;
+      --line: #E3E7E0;
+      --bg: #FFFFFF;
+      --bg-soft: #F7F9F5;
+      --card: #FFFFFF;
+      --warn: #B4570F;
+      --shadow: 0 18px 50px rgba(20, 23, 26, .10);
+      --radius: 20px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --green: #6AA334;
+        --green-dark: #8BC34A;
+        --tint: #1C2617;
+        --ink: #F2F4F0;
+        --text: #DCE0DA;
+        --muted: #A2AAA0;
+        --line: #2B322A;
+        --bg: #0F1210;
+        --bg-soft: #151A15;
+        --card: #171C17;
+        --warn: #E59A52;
+        --shadow: 0 18px 50px rgba(0, 0, 0, .45);
+      }
+      .logo-v { stroke: #F2F4F0; }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--green); }
+    img { max-width: 100%; display: block; }
+    .wrap { width: min(1160px, 100% - 32px); margin-inline: auto; }
+    h1, h2, h3 { color: var(--ink); line-height: 1.15; letter-spacing: -0.02em; margin: 0; }
+    h1 { font-size: clamp(2.3rem, 5.4vw, 4rem); font-weight: 800; }
+    h2 { font-size: clamp(1.8rem, 3.6vw, 2.6rem); font-weight: 800; }
+    h3 { font-size: 1.12rem; font-weight: 700; }
+    p { margin: 0; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; color: var(--green); }
+    .lead { font-size: clamp(1.05rem, 1.6vw, 1.22rem); color: var(--muted); }
+    section { padding: 96px 0; }
+    .section-head { max-width: 680px; margin-bottom: 48px; }
+    .section-head p { margin-top: 14px; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 14px; font-weight: 700; font-size: 1rem; text-decoration: none; border: 2px solid transparent; transition: transform .15s ease, background .15s ease, border-color .15s ease; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:focus-visible, a:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-dark); }
+    .btn-outline { border-color: var(--line); color: var(--ink); background: var(--card); }
+    .btn-outline:hover { border-color: var(--green); }
+    .btn svg { width: 20px; height: 20px; flex: none; }
+
+    /* Header */
+    header { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .brand svg { width: 36px; height: 36px; }
+    .brand b { color: var(--brand); }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a { color: var(--text); text-decoration: none; font-weight: 600; font-size: .95rem; }
+    .nav-links a:hover { color: var(--green); }
+    .nav .btn { min-height: 44px; padding: 0 18px; font-size: .95rem; }
+    .nav-links a.btn-primary, .nav-links a.btn-primary:hover { color: #fff; }
+    @media (max-width: 860px) { .nav-links .hide-sm { display: none; } }
+    @media (max-width: 520px) { .nav-links { gap: 12px; } .nav .btn { padding: 0 14px; } }
+
+    /* Hero */
+    .hero { padding: 72px 0 88px; background: radial-gradient(1200px 500px at 85% -10%, var(--tint), transparent 70%); overflow: hidden; }
+    .hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 56px; align-items: center; }
+    .hero h1 span { color: var(--green); }
+    .hero .lead { margin: 22px 0 32px; max-width: 560px; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+    .stores { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 26px; }
+    .store { position: relative; display: inline-flex; align-items: center; }
+    .store img { height: 48px; width: auto; opacity: .55; filter: grayscale(.2); }
+    .store.play img { height: 70px; margin: -11px -10px; }
+    .soon { position: absolute; top: -10px; right: -8px; background: var(--warn); color: #fff; font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+    .note { font-size: .88rem; color: var(--muted); margin-top: 14px; }
+    @media (max-width: 960px) { .hero-grid { grid-template-columns: 1fr; } .hero-grid > * { min-width: 0; } .phone-stage { margin-top: 24px; } }
+
+    /* Phone mock-up (illustration) */
+    .phone-stage { display: flex; justify-content: center; position: relative; }
+    .phone-stage::before { content: ""; position: absolute; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--brand) 32%, transparent), transparent 68%); top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .phone { position: relative; width: 300px; border-radius: 42px; padding: 12px; background: #14171A; box-shadow: var(--shadow), 0 0 0 2px #2b3036 inset; }
+    .screen { border-radius: 32px; background: #F7F9F5; color: #14171A; overflow: hidden; height: 600px; display: flex; flex-direction: column; }
+    .s-top { padding: 22px 18px 14px; background: #fff; }
+    .s-hello { font-size: .78rem; color: #5E6670; }
+    .s-title { font-size: 1.25rem; font-weight: 800; margin-top: 2px; }
+    .s-search { margin-top: 12px; border: 1px solid #E3E7E0; border-radius: 12px; padding: 10px 12px; font-size: .8rem; color: #5E6670; display: flex; gap: 8px; align-items: center; }
+    .s-chips { display: flex; gap: 6px; padding: 10px 18px; overflow: hidden; }
+    .s-chip { flex: none; font-size: .7rem; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: #fff; border: 1px solid #E3E7E0; white-space: nowrap; }
+    .s-chip.on { background: #3F7A1F; color: #fff; border-color: #3F7A1F; }
+    .s-list { padding: 4px 14px; display: grid; gap: 10px; }
+    .s-card { background: #fff; border: 1px solid #E3E7E0; border-radius: 16px; padding: 12px; }
+    .s-row { display: flex; gap: 10px; align-items: center; }
+    .s-logo { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: .8rem; flex: none; }
+    .s-job { font-weight: 700; font-size: .85rem; }
+    .s-co { font-size: .72rem; color: #5E6670; }
+    .s-tags { display: flex; gap: 5px; margin-top: 9px; flex-wrap: wrap; }
+    .s-tag { font-size: .64rem; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #EFF6E6; color: #2C5A14; }
+    .s-pay { margin-top: 8px; font-size: .74rem; font-weight: 700; }
+    .s-alert { position: absolute; left: -46px; top: 120px; width: 250px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; gap: 10px; align-items: flex-start; font-size: .8rem; }
+    .s-alert b { display: block; font-size: .82rem; }
+    .s-alert .dot { width: 30px; height: 30px; border-radius: 9px; background: var(--green); display: grid; place-items: center; flex: none; }
+    .s-alert .dot svg { width: 16px; height: 16px; }
+    .s-caption { position: absolute; bottom: -30px; left: 0; right: 0; text-align: center; font-size: .75rem; color: var(--muted); }
+    @media (max-width: 520px) { .s-alert { left: 50%; transform: translateX(-50%); top: auto; bottom: 40px; width: 240px; } .phone { width: 270px; } .screen { height: 540px; } .phone-stage::before { width: 300px; height: 300px; } }
+
+    /* Feature grid */
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; }
+    .card p { color: var(--muted); margin-top: 8px; }
+    .icon { width: 48px; height: 48px; border-radius: 14px; background: var(--tint); color: var(--green); display: grid; place-items: center; margin-bottom: 16px; }
+    .icon svg { width: 24px; height: 24px; }
+
+    /* Steps */
+    .soft { background: var(--bg-soft); border-block: 1px solid var(--line); }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
+    @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+    .step { position: relative; padding: 28px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
+    .step::before { counter-increment: step; content: counter(step); width: 40px; height: 40px; border-radius: 50%; background: var(--green); color: #fff; font-weight: 800; display: grid; place-items: center; margin-bottom: 16px; }
+    .step p { color: var(--muted); margin-top: 8px; }
+
+    /* Split (employers) */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+    @media (max-width: 960px) { .split { grid-template-columns: 1fr; } }
+    .checks { list-style: none; padding: 0; margin: 26px 0 30px; display: grid; gap: 14px; }
+    .checks li { display: flex; gap: 12px; align-items: flex-start; }
+    .checks svg { width: 22px; height: 22px; color: var(--green); flex: none; margin-top: 2px; }
+    .ats { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .ats-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .ats-head b { color: var(--ink); }
+    .ats table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .ats th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 12px 20px; }
+    .ats td { padding: 13px 20px; border-top: 1px solid var(--line); color: var(--ink); }
+    .pill { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+    .p-new { background: #E8F0FB; color: #2F6FD1; }
+    .p-short { background: var(--tint); color: var(--green); }
+    .p-int { background: #FCEBDD; color: #B4570F; }
+    .ats-foot { padding: 12px 20px; font-size: .75rem; color: var(--muted); border-top: 1px solid var(--line); }
+    @media (max-width: 520px) { .ats th:nth-child(2), .ats td:nth-child(2) { display: none; } }
+
+    /* Trust */
+    .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 860px) { .trust { grid-template-columns: 1fr; } }
+    .warning { margin-top: 28px; padding: 20px 22px; border-radius: var(--radius); background: color-mix(in srgb, var(--warn) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); display: flex; gap: 14px; align-items: flex-start; }
+    .warning svg { width: 26px; height: 26px; color: var(--warn); flex: none; }
+    .warning b { color: var(--ink); }
+
+    /* Download */
+    .download { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 960px) { .download { grid-template-columns: 1fr; } }
+    .dl { display: flex; flex-direction: column; gap: 14px; }
+    .dl .btn { margin-top: auto; align-self: flex-start; }
+    .dl ol { margin: 0; padding-left: 20px; color: var(--muted); font-size: .92rem; }
+    .dl ol li + li { margin-top: 4px; }
+    .tag { align-self: flex-start; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 4px 10px; border-radius: 999px; background: var(--tint); color: var(--green); }
+    .tag.soon-tag { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
+    .badges-soon { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .badges-soon img { height: 44px; width: auto; opacity: .55; }
+    .badges-soon img.play { height: 64px; margin: -10px -9px; }
+
+    /* FAQ */
+    .faq { max-width: 820px; }
+    details { border-bottom: 1px solid var(--line); padding: 20px 0; }
+    summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; font-weight: 700; color: var(--ink); font-size: 1.05rem; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; font-size: 1.5rem; color: var(--green); font-weight: 500; }
+    details[open] summary::after { content: "–"; }
+    details p { margin-top: 12px; color: var(--muted); }
+
+    /* CTA band */
+    .band { background: var(--green); color: #fff; border-radius: 28px; padding: 56px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items: center; }
+    .band h2 { color: #fff; }
+    .band p { color: rgba(255, 255, 255, .85); margin-top: 12px; }
+    .band .cta-row { justify-content: flex-end; }
+    .band .btn-primary { background: #fff; color: #2C5A14; }
+    .band .btn-outline { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .5); }
+    @media (max-width: 860px) { .band { grid-template-columns: 1fr; padding: 36px 24px; } .band .cta-row { justify-content: flex-start; } }
+
+    /* Footer */
+    footer { padding: 56px 0 40px; border-top: 1px solid var(--line); margin-top: 96px; }
+    .foot { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 32px; }
+    @media (max-width: 860px) { .foot { grid-template-columns: 1fr 1fr; } }
+    .foot h4 { margin: 0 0 12px; color: var(--ink); font-size: .95rem; }
+    .foot ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    .foot a { color: var(--muted); text-decoration: none; }
+    .foot a:hover { color: var(--green); }
+    .foot p { color: var(--muted); margin-top: 12px; max-width: 320px; font-size: .92rem; }
+    .copy { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+    /* Announcement bar */
+    .announce { background: var(--ink); color: #fff; font-size: .88rem; text-align: center; padding: 9px 16px; }
+    .announce a { color: #B9E07F; font-weight: 700; text-decoration: none; margin-left: 6px; white-space: nowrap; }
+    @media (prefers-color-scheme: dark) { .announce { background: #1F2A1A; } }
+
+    /* Mobile menu */
+    .menu-btn { display: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); align-items: center; justify-content: center; cursor: pointer; }
+    .menu-btn svg { width: 22px; height: 22px; }
+    .mobile-menu { display: none; border-top: 1px solid var(--line); padding: 8px 0 16px; }
+    .mobile-menu a { display: block; padding: 12px 4px; color: var(--ink); text-decoration: none; font-weight: 600; border-bottom: 1px solid var(--line); }
+    .mobile-menu.open { display: block; }
+    @media (max-width: 860px) { .menu-btn { display: inline-flex; } }
+    @media (min-width: 861px) { .mobile-menu.open { display: none; } }
+    @media (max-width: 430px) { .nav-links .btn-primary { display: none; } }
+
+    /* Highlights strip */
+    .highlights { border-block: 1px solid var(--line); background: var(--bg-soft); }
+    .hl-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .hl { padding: 28px 24px; display: flex; gap: 14px; align-items: center; }
+    .hl + .hl { border-left: 1px solid var(--line); }
+    .hl b { display: block; color: var(--ink); font-size: 1.05rem; }
+    .hl span { color: var(--muted); font-size: .9rem; }
+    .hl .icon { margin: 0; flex: none; }
+    @media (max-width: 960px) { .hl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hl:nth-child(3) { border-left: 0; } .hl:nth-child(n+3) { border-top: 1px solid var(--line); } }
+    @media (max-width: 520px) { .hl-grid { grid-template-columns: 1fr; } .hl + .hl { border-left: 0; border-top: 1px solid var(--line); } }
+
+    /* Industries & districts */
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip { display: inline-flex; align-items: center; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-weight: 600; }
+    .provinces { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin-top: 40px; }
+    @media (max-width: 1060px) { .provinces { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 680px) { .provinces { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .province { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+    .province h3 { font-size: .95rem; }
+    .province ul { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; color: var(--muted); font-size: .92rem; }
+    .province li::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); margin-right: 8px; vertical-align: middle; }
+
+    /* Pricing */
+    .pricing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 920px; }
+    @media (max-width: 760px) { .pricing { grid-template-columns: 1fr; } }
+    .plan { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px; display: flex; flex-direction: column; }
+    .plan.featured { border: 2px solid var(--green); box-shadow: var(--shadow); }
+    .plan .price { font-size: 2.4rem; font-weight: 800; color: var(--ink); margin: 14px 0 4px; letter-spacing: -0.02em; }
+    .plan .per { color: var(--muted); }
+    .plan .checks { margin: 22px 0 28px; }
+    .plan .btn { margin-top: auto; align-self: flex-start; }
+
+    /* About */
+    .about { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+    @media (max-width: 960px) { .about { grid-template-columns: 1fr; } }
+    .values { display: grid; gap: 14px; }
+    .value { display: flex; gap: 14px; align-items: flex-start; padding: 18px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+    .value .icon { margin: 0; flex: none; }
+    .value p { color: var(--muted); margin-top: 4px; font-size: .95rem; }
+
+    /* Contact */
+    .contact { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    @media (max-width: 860px) { .contact { grid-template-columns: 1fr; } }
+    .contact .card { display: flex; flex-direction: column; gap: 10px; }
+    .contact .card p { margin-top: 0; }
+    .contact .card a.btn { margin-top: auto; align-self: flex-start; }
+
+    /* Back to top */
+    .to-top { position: fixed; right: 18px; bottom: 18px; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--green); color: #fff; box-shadow: var(--shadow); display: grid; place-items: center; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 30; }
+    .to-top.show { opacity: 1; pointer-events: auto; }
+    .to-top svg { width: 22px; height: 22px; }
+
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7Z"/></symbol>
+  </svg>
+
+  <div class="announce">The Vocation SL Android app is available now.<a href="#download">Download it →</a></div>
+  <header>
+    <nav class="wrap nav" aria-label="Main">
+      <a class="brand" href="#top" aria-label="Vocation SL home">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <path class="logo-v" d="M26 14 L50 86 L74 14" fill="none" stroke="#14171A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M28 86 L50 20 L72 86" fill="none" stroke="#7DB43A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Vocation <b>SL</b></span>
+      </a>
+      <div class="nav-links">
+        <a class="hide-sm" href="#features">Features</a>
+        <a class="hide-sm" href="#employers">For employers</a>
+        <a class="hide-sm" href="#pricing">Pricing</a>
+        <a class="hide-sm" href="#download">Download</a>
+        <a class="hide-sm" href="#about">About</a>
+        <a class="btn btn-primary" href="https://vocation-sl.vercel.app">Open web app</a>
+        <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z"/></svg>
+        </button>
+      </div>
+    </nav>
+    <div class="wrap mobile-menu" id="mobile-menu">
+      <a href="#features">Features</a>
+      <a href="#employers">For employers</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#download">Download</a>
+      <a href="#about">About us</a>
+      <a href="#faq">FAQ</a>
+      <a href="#contact">Contact</a>
+      <a href="https://vocation-sl.vercel.app" style="color:var(--green)">Open web app →</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow">Built for Sierra Leone</span>
+          <h1 style="margin-top:14px">Find work.<br><span>Hire the right people.</span></h1>
+          <p class="lead">Vocation SL brings job openings from Freetown to Kailahun into one place. Search, apply with your CV, follow every application and hear back from employers, on your phone or on the web.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="https://github.com/Sid-Konneh/Vocation-SL/raw/main/release/vocation-sl-v1.0.2.apk" download>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.6 9.48 19.44 6.3a.38.38 0 0 0-.66-.38l-1.87 3.23a11.6 11.6 0 0 0-9.82 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52ZM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/></svg>
+              Download for Android
+            </a>
+            <a class="btn btn-outline" href="https://vocation-sl.vercel.app">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.9 6h-2.95a15.6 15.6 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.9 8ZM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96ZM4.26 14a8.2 8.2 0 0 1 0-4h3.38a16.5 16.5 0 0 0 0 4H4.26Zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A8 8 0 0 1 5.08 16Zm2.95-8H5.08a8 8 0 0 1 4.33-3.56A15.6 15.6 0 0 0 8.03 8ZM12 19.96A14.1 14.1 0 0 1 10.09 16h3.82A14.1 14.1 0 0 1 12 19.96ZM14.34 14H9.66a14.7 14.7 0 0 1 0-4h4.68a14.7 14.7 0 0 1 0 4Zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56ZM16.36 14a16.5 16.5 0 0 0 0-4h3.38a8.2 8.2 0 0 1 0 4h-3.38Z"/></svg>
+              Use on the web
+            </a>
+          </div>
+          <div class="stores" aria-label="App stores (coming soon)">
+            <span class="store play" title="Coming soon to Google Play">
+              <img src="assets/google-play-badge.png" alt="Get it on Google Play (coming soon)">
+              <span class="soon">Soon</span>
+            </span>
+            <span class="store" title="Coming soon to the App Store">
+              <img src="assets/app-store-badge.svg" alt="Download on the App Store (coming soon)">
+              <span class="soon">Soon</span>
+            </span>
+          </div>
+          <p class="note">Free for job seekers. Android app available now as a direct download; Google Play and App Store listings are coming soon.</p>
+        </div>
+
+        <div class="phone-stage" aria-hidden="true">
+          <div class="phone">
+            <div class="screen">
+              <div class="s-top">
+                <div class="s-hello">Good morning</div>
+                <div class="s-title">Find your next role</div>
+                <div class="s-search">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#5E6670" d="M10 2a8 8 0 0 1 6.32 12.9l5.39 5.4-1.42 1.4-5.39-5.38A8 8 0 1 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></svg>
+                  Search jobs, skills or companies
+                </div>
+              </div>
+              <div class="s-chips">
+                <span class="s-chip on">Freetown</span><span class="s-chip">Bo</span><span class="s-chip">Kenema</span><span class="s-chip">Remote</span>
+              </div>
+              <div class="s-list">
+                <div class="s-card">
+                  <div class="s-row"><div class="s-logo" style="background:#2F6FD1">CT</div><div><div class="s-job">Accounts Assistant</div><div class="s-co">Sample company · Freetown</div></div></div>
+                  <div class="s-tags"><span class="s-tag">Full-time</span><span class="s-tag">On-site</span><span class="s-tag">Mid level</span></div>
+                  <div class="s-pay">SLE 6,000 – 8,000 / month</div>
+                </div>
+                <div class="s-card">
+                  <div class="s-row"><div class="s-logo" style="background:#3F7A1F">GH</div><div><div class="s-job">Field Agronomist</div><div class="s-co">Sample company · Bo</div></div></div>
+                  <div class="s-tags"><span class="s-tag">Contract</span><span class="s-tag">Field-based</span></div>
+                  <div class="s-pay">SLE 5,000 – 7,000 / month</div>
+                </div>
+                <div class="s-card">
+                  <div class="s-row"><div class="s-logo" style="background:#B4570F">LM</div><div><div class="s-job">Community Health Officer</div><div class="s-co">Sample company · Kenema</div></div></div>
+                  <div class="s-tags"><span class="s-tag">Full-time</span><span class="s-tag">Entry level</span></div>
+                  <div class="s-pay">SLE 4,500 – 6,000 / month</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-alert">
+            <span class="dot"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg></span>
+            <span><b>Interview invitation</b>Accounts Assistant · tap to view</span>
+          </div>
+          <div class="s-caption">Illustration with sample listings</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Highlights -->
+    <div class="highlights">
+      <div class="wrap hl-grid">
+        <div class="hl"><span class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 4.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg></span><div><b>All 16 districts</b><span>Every province covered</span></div></div>
+        <div class="hl"><span class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z"/></svg></span><div><b>Free for job seekers</b><span>No fees to search or apply</span></div></div>
+        <div class="hl"><span class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.6-4.6 1.4 1.4-6 6Z"/></svg></span><div><b>Every job reviewed</b><span>Checked before it goes live</span></div></div>
+        <div class="hl"><span class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm0 18H7V5h10v14Z"/></svg></span><div><b>Android &amp; web</b><span>Phone, tablet or computer</span></div></div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <section id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">For job seekers</span>
+          <h2 style="margin-top:10px">Everything you need to land the job</h2>
+          <p class="lead">Designed for how people in Sierra Leone actually look for work: on a phone, sometimes on a weak connection, across every district.</p>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 4.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg></div>
+            <h3>Jobs in all 16 districts</h3>
+            <p>Search by title, skill or company, and filter by district, industry, job type, experience, salary and remote work.</p>
+          </div>
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.5V8h4.5L14 3.5ZM8 12v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></div>
+            <h3>Apply in a few steps</h3>
+            <p>Send your CV, a cover letter and a note to the employer. PDF, DOC and DOCX files are accepted.</p>
+          </div>
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h2v-2H3v2Zm0 4h2v-2H3v2Zm0-8h2V7H3v2Zm4 4h14v-2H7v2Zm0 4h14v-2H7v2ZM7 7v2h14V7H7Z"/></svg></div>
+            <h3>Track every application</h3>
+            <p>See each step, from submitted and viewed to shortlisted, interview and offer, with a clear timeline.</p>
+          </div>
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-5 4V6a2 2 0 0 1 2-2Z"/></svg></div>
+            <h3>Talk to employers</h3>
+            <p>When an employer messages you about an application, reply right inside the app. No lost phone numbers or missed calls.</p>
+          </div>
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg></div>
+            <h3>Alerts, even when closed</h3>
+            <p>Get notified about messages, interview invitations and status changes, on Android and in your browser.</p>
+          </div>
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4a7.5 7.5 0 0 0-6.65 4.04A6 6 0 0 0 6 20h13a5 5 0 0 0 .35-9.96ZM10 17l-3.5-3.5 1.41-1.41L10 14.17l5.18-5.18 1.41 1.41L10 17Z"/></svg></div>
+            <h3>Works on weak connections</h3>
+            <p>Jobs and your applications are saved on your phone. Keep browsing offline; changes sync when you're back online.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="soft">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">How it works</span>
+          <h2 style="margin-top:10px">From search to offer in three steps</h2>
+        </div>
+        <div class="steps">
+          <div class="step"><h3>Create your profile</h3><p>Sign up with email or Google, add your experience and skills, and upload your CV once.</p></div>
+          <div class="step"><h3>Find and apply</h3><p>Save jobs and searches, then apply to the roles that fit you in a couple of minutes.</p></div>
+          <div class="step"><h3>Hear back</h3><p>Follow your progress, get alerts and reply to employers until you get the offer.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Industries & districts -->
+    <section id="coverage">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Coverage</span>
+          <h2 style="margin-top:10px">Every sector, every district</h2>
+          <p class="lead">Browse openings by industry, or narrow your search to the district where you want to work.</p>
+        </div>
+        <div class="chips" aria-label="Industries">
+          <span class="chip">Technology</span><span class="chip">Healthcare</span><span class="chip">Finance &amp; Banking</span>
+          <span class="chip">Education</span><span class="chip">NGO &amp; Development</span><span class="chip">Government &amp; Public</span>
+          <span class="chip">Agriculture</span><span class="chip">Engineering</span><span class="chip">Energy</span><span class="chip">Logistics</span>
+        </div>
+        <div class="provinces">
+          <div class="province"><h3>Western Area</h3><ul><li>Western Area Urban</li><li>Western Area Rural</li></ul></div>
+          <div class="province"><h3>Eastern Province</h3><ul><li>Kailahun</li><li>Kenema</li><li>Kono</li></ul></div>
+          <div class="province"><h3>Northern Province</h3><ul><li>Bombali</li><li>Falaba</li><li>Koinadugu</li><li>Tonkolili</li></ul></div>
+          <div class="province"><h3>North West Province</h3><ul><li>Kambia</li><li>Karene</li><li>Port Loko</li></ul></div>
+          <div class="province"><h3>Southern Province</h3><ul><li>Bo</li><li>Bonthe</li><li>Moyamba</li><li>Pujehun</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Employers -->
+    <section id="employers">
+      <div class="wrap split">
+        <div>
+          <span class="eyebrow">For employers</span>
+          <h2 style="margin-top:10px">Hire with a simple, organised pipeline</h2>
+          <p class="lead" style="margin-top:14px">Choose <b>Hire talent</b> when you sign in, register your company and start receiving applications from candidates across Sierra Leone.</p>
+          <ul class="checks">
+            <li><svg><use href="#i-check"/></svg><span><b>Post jobs</b> with salary, location, requirements and deadlines. Every listing is reviewed by our team before it goes live.</span></li>
+            <li><svg><use href="#i-check"/></svg><span><b>Applicant tracking</b> in a clear table: move candidates through shortlist, assessment, interview, offer and hire.</span></li>
+            <li><svg><use href="#i-check"/></svg><span><b>Read CVs and cover letters</b> inside the app, and message candidates directly.</span></li>
+            <li><svg><use href="#i-check"/></svg><span><b>Insights</b> on views, applications and your hiring funnel for every job.</span></li>
+          </ul>
+          <a class="btn btn-primary" href="https://vocation-sl.vercel.app">Start hiring</a>
+        </div>
+        <div class="ats" aria-hidden="true">
+          <div class="ats-head"><b>Candidates</b><span class="pill p-short">Accounts Assistant</span></div>
+          <table>
+            <thead><tr><th>Candidate</th><th>Applied</th><th>Stage</th></tr></thead>
+            <tbody>
+              <tr><td>Candidate A</td><td>Today</td><td><span class="pill p-new">Applied</span></td></tr>
+              <tr><td>Candidate B</td><td>Yesterday</td><td><span class="pill p-short">Shortlisted</span></td></tr>
+              <tr><td>Candidate C</td><td>2 days ago</td><td><span class="pill p-int">Interview</span></td></tr>
+              <tr><td>Candidate D</td><td>3 days ago</td><td><span class="pill p-short">Shortlisted</span></td></tr>
+            </tbody>
+          </table>
+          <div class="ats-foot">Illustration · candidate names hidden</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Pricing</span>
+          <h2 style="margin-top:10px">Simple and fair</h2>
+          <p class="lead">Job seekers never pay. Employers pay only for job listings, at a rate agreed with our team.</p>
+        </div>
+        <div class="pricing">
+          <div class="plan">
+            <h3>Job seekers</h3>
+            <div class="price">Free</div>
+            <div class="per">No fees, ever</div>
+            <ul class="checks">
+              <li><svg><use href="#i-check"/></svg><span>Search and save jobs</span></li>
+              <li><svg><use href="#i-check"/></svg><span>Apply with your CV and cover letter</span></li>
+              <li><svg><use href="#i-check"/></svg><span>Track applications and reply to employers</span></li>
+              <li><svg><use href="#i-check"/></svg><span>Alerts on Android and the web</span></li>
+            </ul>
+            <a class="btn btn-outline" href="https://vocation-sl.vercel.app">Create your profile</a>
+          </div>
+          <div class="plan featured">
+            <h3>Employers</h3>
+            <div class="price">Per listing</div>
+            <div class="per">Rates agreed with our team · invoiced once your job is approved</div>
+            <ul class="checks">
+              <li><svg><use href="#i-check"/></svg><span>Company profile with your logo</span></li>
+              <li><svg><use href="#i-check"/></svg><span>Applicant tracking and in-app messaging</span></li>
+              <li><svg><use href="#i-check"/></svg><span>Read CVs and cover letters in the app</span></li>
+              <li><svg><use href="#i-check"/></svg><span>Insights for every job</span></li>
+            </ul>
+            <a class="btn btn-primary" href="mailto:vocationxsl@gmail.com?subject=Employer%20enquiry%20-%20Vocation%20SL">Ask for rates</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust -->
+    <section class="soft">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Trust &amp; safety</span>
+          <h2 style="margin-top:10px">Genuine jobs, protected data</h2>
+        </div>
+        <div class="trust">
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.6-4.6 1.4 1.4-6 6Z"/></svg></div>
+            <h3>Every job is reviewed</h3>
+            <p>Companies and job listings are checked by our team before they are published. Verified companies carry a check mark.</p>
+          </div>
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Zm0 6a3 3 0 0 1 3 3v1h1v6H8v-6h1v-1a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v1h2v-1a1 1 0 0 0-1-1Z"/></svg></div>
+            <h3>Your CV stays private</h3>
+            <p>Your documents are shared only with the employers you apply to. You can delete your account and data at any time.</p>
+          </div>
+          <div class="card">
+            <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></div>
+            <h3>Report anything suspicious</h3>
+            <p>Any listing can be reported in one tap. Our team reviews every report and removes listings that break the rules.</p>
+          </div>
+        </div>
+        <div class="warning" role="note">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21Zm12-3h-2v-2h2v2Zm0-4h-2v-4h2v4Z"/></svg>
+          <p><b>Never pay to get a job.</b> A genuine employer will never ask you for money to apply, to attend an interview, or for a uniform, training or medical before you are hired. If anyone does, report the job.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download -->
+    <section id="download">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Get Vocation SL</span>
+          <h2 style="margin-top:10px">Use it your way</h2>
+        </div>
+        <div class="download">
+          <div class="card dl">
+            <span class="tag">Available now</span>
+            <h3>Android app (APK)</h3>
+            <p style="color:var(--muted)">Version 1.0.2 · about 83 MB. Install directly on any Android phone.</p>
+            <ol>
+              <li>Tap <b>Download APK</b>.</li>
+              <li>Open the downloaded file.</li>
+              <li>If asked, allow your browser to <b>install unknown apps</b>, then tap <b>Install</b>.</li>
+            </ol>
+            <a class="btn btn-primary" href="https://github.com/Sid-Konneh/Vocation-SL/raw/main/release/vocation-sl-v1.0.2.apk" download>Download APK</a>
+          </div>
+          <div class="card dl">
+            <span class="tag">Available now</span>
+            <h3>Web app</h3>
+            <p style="color:var(--muted)">Nothing to install. Works in Chrome, Edge, Firefox and Safari on phones and computers, with alerts in supported browsers.</p>
+            <a class="btn btn-outline" href="https://vocation-sl.vercel.app">Open vocation-sl.vercel.app</a>
+          </div>
+          <div class="card dl">
+            <span class="tag soon-tag">Coming soon</span>
+            <h3>Google Play &amp; App Store</h3>
+            <p style="color:var(--muted)">We're preparing Vocation SL for the official stores. Until then, use the Android download or the web app.</p>
+            <div class="badges-soon" aria-label="Store badges (coming soon)">
+              <img class="play" src="assets/google-play-badge.png" alt="Get it on Google Play (coming soon)">
+              <img src="assets/app-store-badge.svg" alt="Download on the App Store (coming soon)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section id="about">
+      <div class="wrap about">
+        <div>
+          <span class="eyebrow">About us</span>
+          <h2 style="margin-top:10px">Making opportunity easier to reach</h2>
+          <p class="lead" style="margin-top:16px">Finding work in Sierra Leone often depends on who you know, which notice board you pass, or which WhatsApp group you are in.</p>
+          <p style="margin-top:14px">Vocation SL exists to make opportunities easier to find and fairer to reach, so that skilled people in every district can find the right role, and employers can find the right people, quickly and safely.</p>
+        </div>
+        <div class="values">
+          <div class="value"><span class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4Z"/></svg></span><div><h3>Fair access</h3><p>The same opportunities for everyone, wherever they live.</p></div></div>
+          <div class="value"><span class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z"/></svg></span><div><h3>Trust and safety</h3><p>Reviewed listings, verified companies and zero tolerance for scams.</p></div></div>
+          <div class="value"><span class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm0 18H7V5h10v14Z"/></svg></span><div><h3>Built for local realities</h3><p>Phone-first, light on data and dependable on weak connections.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="soft">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Questions</span>
+          <h2 style="margin-top:10px">Frequently asked</h2>
+        </div>
+        <div class="faq">
+          <details open><summary>Is Vocation SL free?</summary><p>Yes, for job seekers. Searching, saving jobs, applying and messaging employers are all free. Charges for employer job listings are agreed with each employer.</p></details>
+          <details><summary>Which parts of Sierra Leone are covered?</summary><p>All 16 districts, from Western Area Urban and Rural to Kailahun, Kono, Falaba, Karene and Pujehun, plus main towns like Makeni, Koidu and Lunsar.</p></details>
+          <details><summary>Do I need a good internet connection?</summary><p>No. The app saves jobs and your applications on your phone, so you can keep browsing offline. Anything you change is sent when you reconnect.</p></details>
+          <details><summary>Why isn't the app on Google Play yet?</summary><p>We're preparing the store listing. The Android app on this page is the same app, offered as a direct download in the meantime.</p></details>
+          <details><summary>How do employers join?</summary><p>Sign in and choose <b>Hire talent</b>, then register your company. New companies and every job are reviewed by our team before going live.</p></details>
+          <details><summary>How do I get help?</summary><p>Email us at <a href="mailto:vocationxsl@gmail.com">vocationxsl@gmail.com</a>.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Contact</span>
+          <h2 style="margin-top:10px">We're here to help</h2>
+          <p class="lead">Questions, partnerships or trouble signing in? Write to us and our team will get back to you.</p>
+        </div>
+        <div class="contact">
+          <div class="card"><h3>Job seekers</h3><p>Help with your account, applications or alerts.</p><a class="btn btn-outline" href="mailto:vocationxsl@gmail.com?subject=Support%20-%20Vocation%20SL">Email support</a></div>
+          <div class="card"><h3>Employers</h3><p>Posting jobs, listing rates and company verification.</p><a class="btn btn-outline" href="mailto:vocationxsl@gmail.com?subject=Employer%20enquiry%20-%20Vocation%20SL">Email our team</a></div>
+          <div class="card"><h3>Report a problem</h3><p>Seen a suspicious listing or been asked for money? Tell us.</p><a class="btn btn-outline" href="mailto:vocationxsl@gmail.com?subject=Report%20-%20Vocation%20SL">Send a report</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section style="padding-bottom:0">
+      <div class="wrap band">
+        <div>
+          <h2>Your next opportunity is on Vocation SL</h2>
+          <p>Join on Android or the web. It takes a minute to get started.</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/Sid-Konneh/Vocation-SL/raw/main/release/vocation-sl-v1.0.2.apk" download>Download for Android</a>
+          <a class="btn btn-outline" href="https://vocation-sl.vercel.app">Use on the web</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot">
+        <div>
+          <a class="brand" href="#top">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <path class="logo-v" d="M26 14 L50 86 L74 14" fill="none" stroke="#14171A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M28 86 L50 20 L72 86" fill="none" stroke="#7DB43A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Vocation <b>SL</b></span>
+          </a>
+          <p>A job discovery and application platform built for Sierra Leone.</p>
+        </div>
+        <div>
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#features">For job seekers</a></li>
+            <li><a href="#employers">For employers</a></li>
+            <li><a href="#download">Download</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="https://vocation-sl.vercel.app">Web app</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <ul>
+            <li><a href="#about">About us</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="https://vocation-sl.vercel.app/#/pages/help">Help &amp; FAQs</a></li>
+            <li><a href="mailto:vocationxsl@gmail.com">vocationxsl@gmail.com</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="https://vocation-sl.vercel.app/#/pages/terms">Terms of Use</a></li>
+            <li><a href="https://vocation-sl.vercel.app/#/pages/privacy">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="copy">
+        <span>© <span id="year">2026</span> Vocation SL. All rights reserved.</span>
+        <span>Google Play and the Google Play logo are trademarks of Google LLC. App Store is a service mark of Apple Inc.</span>
+      </div>
+    </div>
+  </footer>
+  <button class="to-top" type="button" aria-label="Back to top"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5.6 4.3 13.3l1.4 1.4L11 9.4V20h2V9.4l5.3 5.3 1.4-1.4L12 5.6Z"/></svg></button>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const menuBtn = document.querySelector('.menu-btn');
+    const menu = document.getElementById('mobile-menu');
+    menuBtn.addEventListener('click', () => {
+      const open = menu.classList.toggle('open');
+      menuBtn.setAttribute('aria-expanded', String(open));
+      menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    });
+    menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => {
+      menu.classList.remove('open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }));
+    const toTop = document.querySelector('.to-top');
+    addEventListener('scroll', () => toTop.classList.toggle('show', scrollY > 900), { passive: true });
+    toTop.addEventListener('click', () => scrollTo({ top: 0 }));
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "Organization", "name": "Vocation SL", "email": "vocationxsl@gmail.com", "areaServed": "Sierra Leone",
+        "url": "https://vocation-sl-home.vercel.app", "logo": "https://vocation-sl-home.vercel.app/assets/app-icon.png" },
+      { "@type": "SoftwareApplication", "name": "Vocation SL", "operatingSystem": "Android, Web",
+        "applicationCategory": "BusinessApplication", "url": "https://vocation-sl.vercel.app",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "SLE" } }
+    ]
+  }
+  </script>
+</body>
+</html>
