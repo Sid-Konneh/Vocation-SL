@@ -65,6 +65,12 @@ class AdminUser {
   /// The profile the user filled in (CV, experience, skills, preferences).
   final Map<String, dynamic> profileData;
 
+  /// The profile photo the user uploaded (base64), if any.
+  String? get photoBase64 {
+    final p = profileData['photo_base64'];
+    return p is String && p.isNotEmpty ? p : null;
+  }
+
   /// The parsed profile, or null if the stored data can't be read.
   AppUser? get profile {
     try {

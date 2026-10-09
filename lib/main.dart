@@ -55,7 +55,7 @@ Future<void> main() async {
     push = await PushService.start(Supabase.instance.client);
   } else {
     backend = DemoBackend(store: store, connectivity: connectivity, devSettings: () => DevSettings.load(store));
-    employerBackend = DemoEmployerBackend();
+    employerBackend = DemoEmployerBackend(withSamples: true);
     adminBackend = DemoAdminBackend();
     messageBackend = DemoMessageBackend();
   }

@@ -9,9 +9,13 @@ import 'employer_backend.dart';
 /// rules in supabase/employer_schema.sql (approval gating, employer-editable
 /// fields only). Data resets when the app restarts.
 class DemoEmployerBackend implements EmployerBackend {
-  DemoEmployerBackend({this.approveOnRegister = false});
+  DemoEmployerBackend({this.approveOnRegister = false, this.withSamples = false});
 
   final bool approveOnRegister;
+
+  /// Demo mode: registering a company also adds two sample jobs with sample
+  /// applicants, so every employer screen has something to show.
+  final bool withSamples;
 
   Company? company;
   final jobs = <Job>[];
@@ -36,8 +40,9 @@ class DemoEmployerBackend implements EmployerBackend {
       phone: draft.phone,
       address: draft.address,
       tin: draft.tin,
-      status: approveOnRegister ? CompanyStatus.approved : CompanyStatus.pending,
+      status: approveOnRegister || withSamples ? CompanyStatus.approved : CompanyStatus.pending,
     );
+    if (withSamples) _addSamples();
     return company!;
   }
 
@@ -149,6 +154,55 @@ class DemoEmployerBackend implements EmployerBackend {
   @override
   Future<String> documentUrl(String storagePath) async =>
       throw const ValidationException('Demo mode has no stored files to download.');
+
+  void _addSamples() {
+    final now = DateTime.now();
+    Job job(String id, String title, String location, int min, int max, List<String> skills, int views) => Job(
+          id: id,
+          title: title,
+          companyId: company!.id,
+          location: location,
+          employmentType: EmploymentType.fullTime,
+          workMode: WorkMode.onsite,
+          industry: company!.industry,
+          experienceLevel: ExperienceLevel.mid,
+          salaryMin: min,
+          salaryMax: max,
+          postedAt: now.subtract(const Duration(days: 6)),
+          deadline: now.add(const Duration(days: 21)),
+          about: 'Join our growing team in $location.',
+          description: 'A sample job created for demo mode.',
+          responsibilities: const ['Day-to-day duties for this role'],
+          requirements: const ['Relevant qualification', 'Two years of experience'],
+          preferred: const [],
+          skills: skills,
+          benefits: const ['Medical cover', 'Transport allowance'],
+          status: JobStatus.published,
+          company: company,
+          views: views,
+        );
+    jobs.addAll([
+      job('job-s1', 'Accounts Assistant', 'Freetown', 6000, 8000, const ['Bookkeeping', 'Excel', 'QuickBooks'], 214),
+      job('job-s2', 'Sales Representative', 'Bo', 4500, 6500, const ['Sales', 'Customer service'], 131),
+    ]);
+    final people = [
+      ('job-s1', 'Fatmata Kamara', ApplicationStatus.interview, 5),
+      ('job-s1', 'Mohamed Bangura', ApplicationStatus.shortlisted, 4),
+      ('job-s1', 'Isatu Conteh', ApplicationStatus.applied, 1),
+      ('job-s1', 'Abdul Sesay', ApplicationStatus.viewed, 3),
+      ('job-s2', 'Mariama Koroma', ApplicationStatus.applied, 2),
+      ('job-s2', 'Ibrahim Turay', ApplicationStatus.offer, 6),
+    ];
+    for (final (jobId, name, status, daysAgo) in people) {
+      final a = addApplicant(jobId, name, at: now.subtract(Duration(days: daysAgo, hours: 2)));
+      if (status == ApplicationStatus.applied) continue;
+      apps[apps.indexWhere((x) => x.id == a.id)] = a.copyWith(
+        status: status,
+        history: [...a.history, StatusEvent(status: status, at: now.subtract(Duration(days: daysAgo - 1)))],
+        interviewAt: status == ApplicationStatus.interview ? () => DateTime(now.year, now.month, now.day + 2, 10) : null,
+      );
+    }
+  }
 
   /// Adds an applicant to [jobId] (simulates a job seeker applying).
   JobApplication addApplicant(String jobId, String name, {DateTime? at}) {

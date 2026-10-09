@@ -114,7 +114,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                       DataCell(ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 280),
                         child: Row(children: [
-                          UserAvatar(initials: _initial(u.name.isEmpty ? u.email : u.name), size: 32),
+                          UserAvatar(initials: _initial(u.name.isEmpty ? u.email : u.name), photoBase64: u.photoBase64, size: 32),
                           const SizedBox(width: 10),
                           Flexible(
                             child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -231,7 +231,7 @@ class _UserDialog extends ConsumerWidget {
 
     return AlertDialog(
       title: Row(children: [
-        UserAvatar(initials: _initial(user.name.isEmpty ? user.email : user.name), size: 44),
+        UserAvatar(initials: _initial(user.name.isEmpty ? user.email : user.name), photoBase64: user.photoBase64, size: 56),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
