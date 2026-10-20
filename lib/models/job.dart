@@ -46,6 +46,12 @@ class Job {
     this.status = JobStatus.published,
     this.views = 0,
     this.reviewNote = '',
+    this.documentsRequested = false,
+    this.documentsNote = '',
+    this.applyUrl = '',
+    this.applyClicks = 0,
+    this.featureRequestedAt,
+    this.screening = const [],
   });
 
   final String id;
@@ -76,6 +82,39 @@ class Job {
 
   /// The admin's reason when a job is declined or rejected.
   final String reviewNote;
+
+  /// The employer asks applicants for supporting documents (up to 5 PDFs, optional).
+  final bool documentsRequested;
+
+  /// Which documents, e.g. "Certificates and a copy of your ID".
+  final String documentsNote;
+
+  /// When set, candidates apply on the employer's own website instead of in the app.
+  final String applyUrl;
+  bool get appliesExternally => applyUrl.isNotEmpty;
+
+  /// Taps on "Apply on website" (jobs with an external link).
+  final int applyClicks;
+
+  /// When the employer asked for this job to be featured (null if never).
+  final DateTime? featureRequestedAt;
+  bool get featureRequested => featureRequestedAt != null && !featured;
+
+  /// Yes/no questions candidates answer when applying (up to 5).
+  final List<ScreeningQuestion> screening;
+
+  /// The website name shown to candidates before they leave the app, e.g. careers.example.org.
+  String get applyHost => Uri.tryParse(applyUrl)?.host ?? applyUrl;
+
+  /// Cleans an employer-entered link: adds https:// if missing. Null if it isn't a web address.
+  static String? normalizeApplyUrl(String input) {
+    var t = input.trim();
+    if (t.isEmpty) return null;
+    if (!RegExp(r'^https?://', caseSensitive: false).hasMatch(t)) t = 'https://$t';
+    final u = Uri.tryParse(t);
+    if (u == null || !u.hasAuthority || !u.host.contains('.') || u.host.contains(' ')) return null;
+    return u.toString();
+  }
 
   /// Populated by repositories so the UI never has to join data itself.
   final Company? company;
@@ -112,6 +151,12 @@ class Job {
         status: status,
         views: views,
         reviewNote: reviewNote,
+        documentsRequested: documentsRequested,
+        documentsNote: documentsNote,
+        applyUrl: applyUrl,
+        applyClicks: applyClicks,
+        featureRequestedAt: featureRequestedAt,
+        screening: screening,
       );
 
   factory Job.fromJson(Map<String, dynamic> j) => Job(
@@ -141,6 +186,14 @@ class Job {
         status: enumByName(JobStatus.values, j['status'], JobStatus.published),
         views: (j['views'] as num?)?.toInt() ?? 0,
         reviewNote: j['review_note'] as String? ?? '',
+        documentsRequested: j['documents_requested'] as bool? ?? false,
+        documentsNote: j['documents_note'] as String? ?? '',
+        applyUrl: j['apply_url'] as String? ?? '',
+        applyClicks: (j['apply_clicks'] as num?)?.toInt() ?? 0,
+        featureRequestedAt: j['feature_requested_at'] == null ? null : DateTime.tryParse('${j['feature_requested_at']}'),
+        screening: [
+          for (final q in (j['screening'] as List? ?? const [])) ScreeningQuestion.fromJson(Map<String, dynamic>.from(q as Map))
+        ],
         company: j['company'] is Map<String, dynamic> ? Company.fromJson(j['company'] as Map<String, dynamic>) : null,
       );
 
@@ -171,8 +224,32 @@ class Job {
         'status': status.name,
         'views': views,
         'review_note': reviewNote,
+        'documents_requested': documentsRequested,
+        'documents_note': documentsNote,
+        'apply_url': applyUrl,
+        'apply_clicks': applyClicks,
+        'feature_requested_at': featureRequestedAt?.toIso8601String(),
+        'screening': screening.map((q) => q.toJson()).toList(),
         if (includeCompany && company != null) 'company': company!.toJson(),
       };
 }
 
 List<String> _list(Object? v) => v is List ? v.map((e) => e.toString()).toList() : const [];
+
+/// A yes/no question an employer asks applicants, e.g. "Do you have a driving licence?".
+class ScreeningQuestion {
+  const ScreeningQuestion({required this.id, required this.text, this.wanted});
+
+  static const maxPerJob = 5;
+
+  final String id;
+  final String text;
+
+  /// The answer the employer is looking for; null if either answer is fine.
+  final bool? wanted;
+
+  factory ScreeningQuestion.fromJson(Map<String, dynamic> j) =>
+      ScreeningQuestion(id: j['id'] as String? ?? '', text: j['text'] as String? ?? '', wanted: j['wanted'] as bool?);
+
+  Map<String, dynamic> toJson() => {'id': id, 'text': text, 'wanted': wanted};
+}

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/models.dart';
+import '../../../admin/admin_providers.dart';
+import '../../../providers/core_providers.dart';
+import '../../../services/share_service.dart';
 import '../../../widgets/common.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/states.dart';
@@ -50,6 +54,29 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
       switch (action) {
         case 'edit':
           context.push('/employer/jobs/${job.id}/edit');
+        case 'share':
+          final copied = await ref.read(shareServiceProvider).shareText(
+            '${job.title} at ${job.companyName}\nApply on Vocation SL: ${ShareService.jobLink(job.id)}',
+            subject: '${job.title} – ${job.companyName}',
+          );
+          if (copied && mounted) showSnack(context, 'Job link copied. Paste it into WhatsApp, Facebook or email.');
+        case 'copy':
+          await Clipboard.setData(ClipboardData(text: ShareService.jobLink(job.id)));
+          if (mounted) showSnack(context, 'Job link copied');
+        case 'feature':
+          final price = (await ref.read(platformSettingsProvider.future)).featuredPrice;
+          if (!mounted) return;
+          final ok = await confirmDialog(
+            context,
+            title: 'Feature this job?',
+            message: 'Featured jobs appear at the top of the job seekers\' home screen until they close. '
+                'Price: SLE ${Fmt.money(price)} + 15% GST. We\'ll send you an invoice; the job is featured once it\'s paid.',
+            confirmLabel: 'Request featuring',
+          );
+          if (!ok) return;
+          final number = await ref.read(employerBackendProvider).requestFeatured(job.id);
+          await ctrl.refresh();
+          if (mounted) showSnack(context, 'Request sent. Invoice $number is in Invoices.');
         case 'applicants':
           context.go('/employer/candidates?job=${job.id}');
         case 'preview':
@@ -158,7 +185,12 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: context.text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                             ),
-                            if (j.reviewNote.isNotEmpty && (j.status == JobStatus.declined || j.status == JobStatus.rejected))
+                            if (j.featured || j.featureRequested)
+                              Text(
+                                j.featured ? '★ Featured on the home screen' : 'Featuring requested, pending payment',
+                                style: context.text.bodySmall?.copyWith(color: j.featured ? AppColors.green : AppColors.warning, fontWeight: FontWeight.w600),
+                              )
+                            else if (j.reviewNote.isNotEmpty && (j.status == JobStatus.declined || j.status == JobStatus.rejected))
                               Text(
                                 j.reviewNote,
                                 maxLines: 1,
@@ -177,7 +209,9 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                       ),
                     ),
                     DataCell(JobStatusPill(j.status)),
-                    DataCell(Text('${j.applicants}')),
+                    DataCell(j.appliesExternally
+                        ? Tooltip(message: 'Taps on "Apply on website". Applications go to your own website.', child: Text('${j.applyClicks} taps'))
+                        : Text('${j.applicants}')),
                     DataCell(Text('${j.views}')),
                     DataCell(Text(j.status == JobStatus.draft ? '—' : Fmt.dateShort(j.postedAt))),
                     DataCell(
@@ -201,7 +235,13 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                                   : 'Edit',
                             ),
                           ),
-                          if (j.status != JobStatus.draft) const PopupMenuItem(value: 'applicants', child: Text('View applicants')),
+                          if (j.status == JobStatus.published) ...[
+                            const PopupMenuItem(value: 'share', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.share_rounded), title: Text('Share job link'))),
+                            const PopupMenuItem(value: 'copy', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.link_rounded), title: Text('Copy job link'))),
+                          ],
+                          if (j.status == JobStatus.published && !j.featured && !j.featureRequested)
+                            const PopupMenuItem(value: 'feature', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.star_outline_rounded), title: Text('Feature this job'))),
+                          if (j.status != JobStatus.draft && !j.appliesExternally) const PopupMenuItem(value: 'applicants', child: Text('View applicants')),
                           if (j.status == JobStatus.published) const PopupMenuItem(value: 'close', child: Text('Close job')),
                           if (j.status == JobStatus.closed) const PopupMenuItem(value: 'reopen', child: Text('Reopen')),
                           if (const {JobStatus.draft, JobStatus.declined, JobStatus.rejected}.contains(j.status))

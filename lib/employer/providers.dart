@@ -6,6 +6,7 @@ import '../core/errors.dart';
 import '../models/models.dart';
 import '../providers/cache_first.dart';
 import '../providers/core_providers.dart';
+import '../providers/referral_providers.dart';
 import '../providers/session_providers.dart';
 import '../repositories/base.dart';
 import 'data/employer_backend.dart';
@@ -29,28 +30,65 @@ class CompanyController extends CacheFirstNotifier<Company?> {
     return super.build();
   }
 
+  /// A saved "no company yet" is never trusted: the company may have been
+  /// created since (on this device as a job seeker who switched, or on
+  /// another device), so always ask the server in that case.
   @override
-  Loaded<Company?>? readCache() => ref.read(employerRepositoryProvider).peekCompany(_uid);
+  Loaded<Company?>? readCache() {
+    final cached = ref.read(employerRepositoryProvider).peekCompany(_uid);
+    return cached?.data == null ? null : cached;
+  }
   @override
   bool get cacheIsFresh => ref.read(employerRepositoryProvider).fresh(_uid, 'company');
   @override
   Future<Loaded<Company?>> fetchRemote() => ref.read(employerRepositoryProvider).fetchCompany(_uid);
 
-  Future<Company> register(Company draft) async {
-    final c = await ref.read(employerBackendProvider).registerCompany(draft);
-    await refresh();
-    return c;
+  /// Creates the company, then adds its logo and referral code before the
+  /// dashboard opens. A failed logo or referral doesn't undo the sign-up; the
+  /// reason is returned so the screen can explain it.
+  Future<CompanySignUp> register(Company draft, {Uint8List? logoBytes, String logoName = 'logo.jpg', String referralCode = ''}) async {
+    final backend = ref.read(employerBackendProvider);
+    var c = await backend.registerCompany(draft);
+    String? logoError, referralError;
+    if (logoBytes != null) {
+      try {
+        c = await backend.uploadLogo(c, logoBytes, logoName);
+      } catch (e) {
+        logoError = AppException.describe(e);
+      }
+    }
+    if (ReferralCode.normalize(referralCode).isNotEmpty) {
+      try {
+        await ref.read(referralBackendProvider).claim(referralCode, c.id);
+      } catch (e) {
+        referralError = AppException.describe(e);
+      }
+      await PendingReferral.clear(ref.read(localStoreProvider));
+    }
+    // Show the dashboard straight away with the company just created and keep
+    // it on the device, so a slower background check can't send the employer
+    // back to the setup screen.
+    await _keep(c);
+    // Jobs and applicants were loaded while there was no company; load them for this one.
+    ref.invalidate(employerJobsProvider);
+    ref.invalidate(candidatesProvider);
+    return (company: c, logoError: logoError, referralError: referralError);
+  }
+
+  Future<void> _keep(Company c) async {
+    setData(c);
+    await ref.read(employerRepositoryProvider).cacheCompany(_uid, c);
   }
 
   Future<Company> save(Company company) async {
     final c = await ref.read(employerBackendProvider).updateCompany(company);
-    setData(c);
+    await _keep(c);
     return c;
   }
 
   Future<Company> uploadLogo(Company company, Uint8List bytes, String fileName) async {
     final c = await ref.read(employerBackendProvider).uploadLogo(company, bytes, fileName);
-    setData(c);
+    await _keep(c);
     // Job lists embed the company, so refresh them to show the new logo.
     ref.invalidate(employerJobsProvider);
     return c;
@@ -58,6 +96,9 @@ class CompanyController extends CacheFirstNotifier<Company?> {
 }
 
 final companyProvider = AsyncNotifierProvider<CompanyController, Loaded<Company?>>(CompanyController.new);
+
+/// Result of creating a company: the company plus any part that didn't save.
+typedef CompanySignUp = ({Company company, String? logoError, String? referralError});
 
 /// The company, or throws if not loaded / not registered. For screens behind onboarding.
 Company requireCompany(Ref ref) {
@@ -167,6 +208,18 @@ final employerInvoicesProvider = FutureProvider.autoDispose<List<Invoice>>((ref)
   final company = (await ref.watch(companyProvider.future)).data;
   if (company == null) return const [];
   return ref.watch(employerBackendProvider).invoices(company.id);
+});
+
+/// Free postings left under the launch offer (refreshes when jobs change).
+final launchOfferProvider = FutureProvider.autoDispose<LaunchOffer>((ref) {
+  ref.watch(employerJobsProvider);
+  return ref.watch(employerBackendProvider).launchOffer();
+});
+
+/// The company's team (owner and recruiters).
+final teamProvider = FutureProvider.autoDispose<List<TeamMember>>((ref) {
+  ref.watch(companyProvider);
+  return ref.watch(employerBackendProvider).team();
 });
 
 final applicantProfileProvider = FutureProvider.autoDispose.family<AppUser?, String>(

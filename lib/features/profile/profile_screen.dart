@@ -12,6 +12,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/models.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/session_providers.dart';
+import '../../services/cv_pdf.dart';
 import '../../widgets/common.dart';
 import '../../widgets/document_viewer.dart';
 import 'cv_autofill.dart';
@@ -102,6 +103,29 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
     }
   }
 
+  /// Makes a PDF CV from the profile and saves it as the user's CV.
+  Future<void> _createCv() async {
+    final problem = CvPdf.missing(widget.user);
+    if (problem.isNotEmpty) {
+      showSnack(context, problem, error: true);
+      return;
+    }
+    setState(() => _uploadingCv = true);
+    try {
+      final bytes = await CvPdf.build(widget.user);
+      final name = CvPdf.fileName(widget.user);
+      final path = await ref.read(userRepositoryProvider).uploadDocument(widget.user.id, name, bytes);
+      final resume = Resume(id: const Uuid().v4(), fileName: name, sizeBytes: bytes.length, uploadedAt: DateTime.now(), format: DocumentFormat.pdf, storagePath: path);
+      await _save(widget.user.copyWith(resume: () => resume), 'Your CV was created from your profile');
+    } on NetworkException {
+      if (mounted) showSnack(context, 'You\'re offline. Connect to the internet to create your CV.', error: true);
+    } catch (e) {
+      if (mounted) showError(context, e);
+    } finally {
+      if (mounted) setState(() => _uploadingCv = false);
+    }
+  }
+
   /// Offers to fill empty profile sections from the CV just uploaded.
   Future<void> _offerAutofill(AppUser user, Uint8List bytes, DocumentFormat? format) async {
     final ok = await confirmDialog(
@@ -174,6 +198,32 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
           ),
           const SizedBox(height: 20),
           _CompletionCard(user: u, onEdit: _edit),
+          Card(
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: context.colors.primaryContainer,
+                child: Icon(Icons.handshake_rounded, color: context.colors.primary),
+              ),
+              title: const Text('Refer an employer'),
+              subtitle: const Text('Share your code with companies that are hiring. Their sign-up and every job they post count for you.'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/refer'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: context.colors.primaryContainer,
+                child: Icon(Icons.lightbulb_outline_rounded, color: context.colors.primary),
+              ),
+              title: const Text('Career tips'),
+              subtitle: const Text('CVs, cover letters, interviews and staying safe from job scams.'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/pages/career-tips'),
+            ),
+          ),
+          const SizedBox(height: 8),
           _Section(
             title: 'About',
             onEdit: () => _edit('about'),
@@ -216,7 +266,16 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                   icon: _uploadingCv
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.upload_file_rounded),
-                  label: Text(_uploadingCv ? 'Uploading…' : (u.resume == null ? 'Upload CV (PDF, DOC, DOCX)' : 'Replace CV')),
+                  label: Text(_uploadingCv ? 'Working…' : (u.resume == null ? 'Upload CV (PDF)' : 'Replace CV')),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: _uploadingCv ? null : _createCv,
+                  icon: const Icon(Icons.picture_as_pdf_rounded),
+                  label: Text(u.resume == null ? 'No PDF CV? Create one from my profile' : 'Create a new CV from my profile'),
                 ),
               ),
             ]),

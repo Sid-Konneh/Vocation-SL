@@ -11,10 +11,12 @@ import 'app.dart';
 import 'core/config/app_config.dart';
 import 'core/dev_settings.dart';
 import 'core/network/connectivity_service.dart';
+import 'core/platform/deep_link.dart';
 import 'core/storage/local_store.dart';
 import 'data/backend/backend.dart';
 import 'data/backend/demo_backend.dart';
 import 'data/backend/message_backend.dart';
+import 'data/backend/referral_backend.dart';
 import 'data/backend/supabase_backend.dart';
 import 'employer/data/demo_employer_backend.dart';
 import 'employer/data/employer_backend.dart';
@@ -24,10 +26,13 @@ import 'models/models.dart';
 import 'providers/core_providers.dart';
 import 'providers/message_providers.dart';
 import 'providers/push_providers.dart';
+import 'providers/referral_providers.dart';
 import 'services/push_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Shared links (app.vocationsl.com/job/123) open the right page on the web.
+  movePathLinkToFragment();
 
   final store = await LocalStore.open();
 
@@ -45,6 +50,7 @@ Future<void> main() async {
   final EmployerBackend employerBackend;
   final AdminBackend adminBackend;
   final MessageBackend messageBackend;
+  final ReferralBackend referralBackend;
   PushService? push;
   if (AppConfig.useSupabase) {
     await Supabase.initialize(url: AppConfig.supabaseUrl, publishableKey: AppConfig.supabaseKey);
@@ -52,12 +58,14 @@ Future<void> main() async {
     employerBackend = SupabaseEmployerBackend(Supabase.instance.client);
     adminBackend = SupabaseAdminBackend(Supabase.instance.client);
     messageBackend = SupabaseMessageBackend(Supabase.instance.client);
+    referralBackend = SupabaseReferralBackend(Supabase.instance.client);
     push = await PushService.start(Supabase.instance.client);
   } else {
     backend = DemoBackend(store: store, connectivity: connectivity, devSettings: () => DevSettings.load(store));
     employerBackend = DemoEmployerBackend(withSamples: true);
     adminBackend = DemoAdminBackend();
     messageBackend = DemoMessageBackend();
+    referralBackend = DemoReferralBackend();
   }
 
   runApp(ProviderScope(
@@ -68,6 +76,7 @@ Future<void> main() async {
       employerBackendProvider.overrideWithValue(employerBackend),
       adminBackendProvider.overrideWithValue(adminBackend),
       messageBackendProvider.overrideWithValue(messageBackend),
+      referralBackendProvider.overrideWithValue(referralBackend),
       pushServiceProvider.overrideWithValue(push),
     ],
     child: const VocationApp(),

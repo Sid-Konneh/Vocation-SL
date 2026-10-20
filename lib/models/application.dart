@@ -69,6 +69,8 @@ class JobApplication {
     required this.applicant,
     required this.resume,
     this.coverLetter,
+    this.supportingDocuments = const [],
+    this.screeningAnswers = const {},
     this.note,
     this.interviewAt,
     this.nextStepDeadline,
@@ -86,6 +88,18 @@ class JobApplication {
   final ApplicantInfo applicant;
   final Resume resume;
   final CoverLetter? coverLetter;
+
+  /// Optional extra PDFs (only when the job asks for them).
+  final List<SupportingDocument> supportingDocuments;
+
+  /// Answers to the job's screening questions: question id -> yes (true) / no (false).
+  final Map<String, bool> screeningAnswers;
+
+  /// How many of the job's questions with a wanted answer this candidate matches.
+  ({int matched, int total}) screeningMatch(Job? j) {
+    final scored = (j ?? job)?.screening.where((q) => q.wanted != null).toList() ?? const <ScreeningQuestion>[];
+    return (matched: scored.where((q) => screeningAnswers[q.id] == q.wanted).length, total: scored.length);
+  }
   final String? note;
   final DateTime? interviewAt;
   final DateTime? nextStepDeadline;
@@ -116,6 +130,8 @@ class JobApplication {
         applicant: applicant,
         resume: resume,
         coverLetter: coverLetter,
+        supportingDocuments: supportingDocuments,
+        screeningAnswers: screeningAnswers,
         note: note,
         interviewAt: interviewAt != null ? interviewAt() : this.interviewAt,
         nextStepDeadline: nextStepDeadline != null ? nextStepDeadline() : this.nextStepDeadline,
@@ -138,6 +154,13 @@ class JobApplication {
         coverLetter: j['cover_letter'] == null
             ? null
             : CoverLetter.fromJson(Map<String, dynamic>.from(j['cover_letter'] as Map)),
+        screeningAnswers: {
+          for (final e in Map<String, dynamic>.from(j['screening_answers'] as Map? ?? const {}).entries)
+            if (e.value is bool) e.key: e.value as bool,
+        },
+        supportingDocuments: [
+          for (final d in (j['supporting_documents'] as List? ?? const [])) SupportingDocument.fromJson(Map<String, dynamic>.from(d as Map))
+        ],
         note: j['note'] as String?,
         interviewAt: j['interview_at'] == null ? null : DateTime.parse(j['interview_at'] as String),
         nextStepDeadline: j['next_step_deadline'] == null ? null : DateTime.parse(j['next_step_deadline'] as String),
@@ -156,6 +179,8 @@ class JobApplication {
         'applicant': applicant.toJson(),
         'resume': resume.toJson(),
         'cover_letter': coverLetter?.toJson(),
+        'supporting_documents': supportingDocuments.map((d) => d.toJson()).toList(),
+        'screening_answers': screeningAnswers,
         'note': note,
         'interview_at': interviewAt?.toIso8601String(),
         'next_step_deadline': nextStepDeadline?.toIso8601String(),

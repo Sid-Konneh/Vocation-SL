@@ -51,7 +51,15 @@ class EmployerShell extends ConsumerWidget {
       }
       return const ShellSkeleton();
     }
-    if (companyAsync.value!.data == null) return const CompanySetupScreen();
+    final loaded = companyAsync.value!;
+    if (loaded.data == null) {
+      // Couldn't reach the server: don't ask an existing employer to set up
+      // their company again; let them retry.
+      if (loaded.isOfflineCopy) {
+        return Scaffold(body: ErrorState(error: loaded.error!, onRetry: () => ref.invalidate(companyProvider)));
+      }
+      return const CompanySetupScreen();
+    }
 
     final toReview = ref.watch(candidatesProvider).value?.data.where((a) => a.status == ApplicationStatus.applied).length ?? 0;
     Widget icon(int i, bool selected) {

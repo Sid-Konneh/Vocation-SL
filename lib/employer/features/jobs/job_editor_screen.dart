@@ -35,6 +35,13 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
   final _benefits = TextEditingController();
   final _salaryMin = TextEditingController();
   final _salaryMax = TextEditingController();
+  final _documentsNote = TextEditingController();
+  final _applyUrl = TextEditingController();
+  bool _external = false;
+
+  /// Screening questions being edited: text, the answer wanted (null = any), and a stable id.
+  final List<({TextEditingController text, bool? wanted, String id})> _questions = [];
+  bool _documentsRequested = false;
   String _location = 'Freetown';
   EmploymentType _type = EmploymentType.fullTime;
   WorkMode _mode = WorkMode.onsite;
@@ -44,7 +51,10 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
 
   @override
   void dispose() {
-    for (final c in [_title, _about, _description, _responsibilities, _requirements, _preferred, _skills, _benefits, _salaryMin, _salaryMax]) {
+    for (final q in _questions) {
+      q.text.dispose();
+    }
+    for (final c in [_title, _about, _description, _responsibilities, _requirements, _preferred, _skills, _benefits, _salaryMin, _salaryMax, _documentsNote, _applyUrl]) {
       c.dispose();
     }
     super.dispose();
@@ -75,6 +85,11 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
     _industry = j.industry;
     _level = j.experienceLevel;
     _deadline = j.deadline;
+    _documentsRequested = j.documentsRequested;
+    _documentsNote.text = j.documentsNote;
+    _external = j.appliesExternally;
+    _applyUrl.text = j.applyUrl;
+    _questions.addAll([for (final q in j.screening) (text: TextEditingController(text: q.text), wanted: q.wanted, id: q.id)]);
   }
 
   /// Already submitted, live or closed (declined jobs are edited and resubmitted).
@@ -106,6 +121,15 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
         skills: _lines(_skills),
         benefits: _lines(_benefits),
         status: _original?.status ?? JobStatus.draft,
+        documentsRequested: !_external && _documentsRequested,
+        documentsNote: !_external && _documentsRequested ? _documentsNote.text.trim() : '',
+        applyUrl: _external ? (Job.normalizeApplyUrl(_applyUrl.text) ?? '') : '',
+        screening: _external
+            ? const []
+            : [
+                for (final q in _questions)
+                  if (q.text.text.trim().isNotEmpty) ScreeningQuestion(id: q.id, text: q.text.text.trim(), wanted: q.wanted),
+              ],
       );
 
   Future<void> _save(Company company, {required bool post}) async {
@@ -288,6 +312,116 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
               listField(_skills, 'Skills *', 'Excel\nQuickBooks', required: true),
               gap(),
               listField(_benefits, 'Benefits', 'NASSIT pension contributions\nMedical cover'),
+            ]),
+            section('How candidates apply', [
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('On Vocation SL'), icon: Icon(Icons.inbox_outlined)),
+                  ButtonSegment(value: true, label: Text('On our website'), icon: Icon(Icons.open_in_new_rounded)),
+                ],
+                selected: {_external},
+                showSelectedIcon: false,
+                onSelectionChanged: (v) => setState(() => _external = v.first),
+              ),
+              const SizedBox(height: 12),
+              if (_external) ...[
+                Text(
+                  'Candidates tap "Apply on company website" and go straight to your link. Their applications go to your own system, '
+                  'so they won\'t appear in Candidates here.',
+                  style: context.text.bodyMedium?.copyWith(color: context.palette.muted),
+                ),
+                gap(),
+                TextFormField(
+                  controller: _applyUrl,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  decoration: const InputDecoration(
+                    labelText: 'Application link *',
+                    hintText: 'e.g. https://careers.yourcompany.com/jobs/123',
+                    prefixIcon: Icon(Icons.link_rounded),
+                  ),
+                  validator: (v) => !_external
+                      ? null
+                      : Job.normalizeApplyUrl(v ?? '') == null
+                          ? 'Enter a full web address, e.g. https://yourcompany.com/apply'
+                          : null,
+                ),
+              ] else ...[
+                Text('Every applicant sends a CV (PDF) and can add a cover letter. You review them in Candidates.',
+                    style: context.text.bodyMedium?.copyWith(color: context.palette.muted)),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _documentsRequested,
+                  onChanged: (v) => setState(() => _documentsRequested = v),
+                  title: const Text('Ask for supporting documents'),
+                  subtitle: const Text('Applicants can attach up to 5 PDFs, such as certificates, transcripts or ID. Optional for them.'),
+                ),
+                if (_documentsRequested)
+                  TextFormField(
+                    controller: _documentsNote,
+                    maxLength: 200,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      labelText: 'Which documents? *',
+                      hintText: 'e.g. Degree certificate, NASSIT card and a copy of your ID',
+                    ),
+                    validator: (v) => _documentsRequested && (v ?? '').trim().isEmpty ? 'Tell applicants which documents to attach' : null,
+                  ),
+                const Divider(height: 32),
+                Text('Screening questions (optional)', style: context.text.titleSmall),
+                const SizedBox(height: 4),
+                Text('Yes/no questions applicants must answer, e.g. "Do you have a valid driving licence?". Set the answer you want to see who matches.',
+                    style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+                const SizedBox(height: 8),
+                for (var i = 0; i < _questions.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _questions[i].text,
+                          maxLength: 160,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: InputDecoration(labelText: 'Question ${i + 1}', isDense: true),
+                          validator: (v) => (v ?? '').trim().isEmpty ? 'Write the question or remove it' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 130,
+                        child: DropdownButtonFormField<bool?>(
+                          initialValue: _questions[i].wanted,
+                          isExpanded: true,
+                          decoration: const InputDecoration(labelText: 'Wanted', isDense: true),
+                          items: const [
+                            DropdownMenuItem(value: null, child: Text('Any')),
+                            DropdownMenuItem(value: true, child: Text('Yes')),
+                            DropdownMenuItem(value: false, child: Text('No')),
+                          ],
+                          onChanged: (v) => setState(() => _questions[i] = (text: _questions[i].text, wanted: v, id: _questions[i].id)),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Remove question',
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => setState(() => _questions.removeAt(i).text.dispose()),
+                      ),
+                    ]),
+                  ),
+                if (_questions.length < ScreeningQuestion.maxPerJob)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => setState(() => _questions.add((
+                            text: TextEditingController(),
+                            wanted: true,
+                            id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
+                          ))),
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(_questions.isEmpty ? 'Add a screening question' : 'Add another question'),
+                    ),
+                  ),
+              ],
             ]),
             const SizedBox(height: 40),
           ]),

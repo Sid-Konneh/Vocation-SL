@@ -102,7 +102,7 @@ class JobCard extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Hero(tag: 'logo-${job.id}', child: CompanyLogo(company: job.company, size: 48)),
+                    CompanyLogo(company: job.company, size: 48),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -231,19 +231,24 @@ class FeaturedJobCard extends StatelessWidget {
                   ),
                 ]),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(job.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.titleMedium),
-                  const SizedBox(height: 2),
-                  Text('${job.companyName} · ${job.location}',
-                      maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodyMedium?.copyWith(color: context.palette.muted)),
-                  const SizedBox(height: 10),
-                  Row(children: [
-                    Expanded(child: Text(Fmt.salary(job, short: true), style: context.text.titleSmall)),
-                    TagChip(job.workMode == WorkMode.onsite ? job.employmentType.label : job.workMode.label, dense: true),
+              // Fills the rest of the fixed-height card; with very large text
+              // the bottom is trimmed instead of overflowing.
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(job.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.titleMedium),
+                    const SizedBox(height: 2),
+                    Text('${job.companyName} · ${job.location}',
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodyMedium?.copyWith(color: context.palette.muted)),
+                    const SizedBox(height: 10),
+                    Row(children: [
+                      Expanded(child: Text(Fmt.salary(job, short: true), style: context.text.titleSmall)),
+                      TagChip(job.workMode == WorkMode.onsite ? job.employmentType.label : job.workMode.label, dense: true),
+                    ]),
                   ]),
-                ]),
+                ),
               ),
             ],
           ),

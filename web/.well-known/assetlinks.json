@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.vocationsl.vocation_sl",
+      "sha256_cert_fingerprints": [
+        "1D:2D:DA:3D:91:C5:08:85:D3:75:84:79:77:23:BE:8E:70:14:4E:56:0F:C5:78:33:02:70:23:7E:B7:E2:A6:A3",
+        "28:10:D7:D5:F5:CC:38:15:10:24:47:88:48:A1:FE:29:7B:2C:E7:47:BC:3E:6D:5A:D0:7A:31:25:CB:E5:F3:52"
+      ]
+    }
+  }
+]

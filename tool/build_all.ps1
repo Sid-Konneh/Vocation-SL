@@ -25,9 +25,11 @@ if ($fb.apiKey) {
   Write-Output "   push alerts off: run flutterfire configure first"
 }
 flutter build web --release --no-wasm-dry-run @defs | Select-Object -Last 1
-if (-not (Test-Path deploy\web)) { New-Item -ItemType Directory deploy\web | Out-Null }
-Get-ChildItem deploy\web | ForEach-Object { Remove-Item -Recurse -Force $_.FullName }
-Copy-Item -Recurse -Force build\web\* deploy\web
+# Mirror (copies changes, removes old files, retries locked ones) instead of
+# delete-then-copy, which stopped the script when a file was briefly locked.
+robocopy build\web deploy\web /MIR /R:5 /W:2 /NFL /NDL /NJH /NJS /NP | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "Copying the web build to deploy\web failed (robocopy $LASTEXITCODE)" }
+$global:LASTEXITCODE = 0
 
 if (-not $SkipApk) {
   Write-Output "== Android APK"

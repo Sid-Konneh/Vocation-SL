@@ -165,6 +165,10 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
         applicationId: a.id,
         asEmployer: true,
         otherName: a.applicant.fullName.split(' ').first,
+        templates: {
+          for (final e in messageTemplates.entries)
+            e.key.label: fillTemplate(e.value, name: a.applicant.fullName, job: a.job?.title ?? 'the job', company: ref.read(companyProvider).value?.data?.name ?? 'our company'),
+        },
         legacyEmployerMessage: a.employerMessage,
         enabled: canAct,
         // Keep the latest message on the application for list previews.
@@ -201,6 +205,43 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
         ],
         if (a.coverLetter == null)
           Align(alignment: Alignment.centerLeft, child: Text('No cover letter', style: context.text.bodySmall?.copyWith(color: context.palette.muted))),
+        if (a.supportingDocuments.isNotEmpty) ...[
+          const Divider(),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Supporting documents (${a.supportingDocuments.length})', style: context.text.labelLarge),
+          ),
+          for (final d in a.supportingDocuments)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.danger),
+              title: Text(d.fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text('PDF · ${Fmt.fileSize(d.sizeBytes)}'),
+              trailing: const Icon(Icons.visibility_outlined),
+              onTap: () => openDocument(context, ref, d.storagePath,
+                  fileName: d.fileName, format: DocumentFormat.pdf, title: '${a.applicant.fullName} · ${d.fileName}'),
+            ),
+        ] else if (a.job?.documentsRequested ?? false)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text('No supporting documents attached', style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+          ),
+        if (a.job != null && a.job!.screening.isNotEmpty) ...[
+          const Divider(),
+          Align(alignment: Alignment.centerLeft, child: Text('Screening answers', style: context.text.labelLarge)),
+          for (final q in a.job!.screening)
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: Text(q.text),
+              trailing: Builder(builder: (_) {
+                final ans = a.screeningAnswers[q.id];
+                final ok = q.wanted == null || ans == q.wanted;
+                return Text(ans == null ? '—' : (ans ? 'Yes' : 'No'),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: ans == null ? null : (ok ? AppColors.green : AppColors.warning)));
+              }),
+            ),
+        ],
         if (a.note != null) ...[
           const Divider(),
           Align(alignment: Alignment.centerLeft, child: Text('Note from candidate', style: context.text.labelLarge)),

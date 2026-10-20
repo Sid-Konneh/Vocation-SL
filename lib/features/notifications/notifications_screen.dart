@@ -23,6 +23,8 @@ IconData notificationIcon(NotificationType t) => switch (t) {
       NotificationType.message => Icons.mail_rounded,
       NotificationType.deadline => Icons.timer_rounded,
       NotificationType.newApplicant => Icons.person_add_alt_1_rounded,
+      NotificationType.referral => Icons.handshake_rounded,
+      NotificationType.team => Icons.groups_rounded,
     };
 
 Color notificationColor(NotificationType t) => switch (t) {
@@ -34,6 +36,8 @@ Color notificationColor(NotificationType t) => switch (t) {
       NotificationType.message => const Color(0xFF16808F),
       NotificationType.deadline => AppColors.warning,
       NotificationType.newApplicant => AppColors.green,
+      NotificationType.referral => AppColors.purple,
+      NotificationType.team => AppColors.info,
     };
 
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -48,7 +52,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   void _open(AppNotification n) {
     if (!n.read) ref.read(notificationsProvider.notifier).markRead([n.id]);
-    if (n.applicationId != null) {
+    if (n.type == NotificationType.referral) {
+      context.push('/refer');
+    } else if (n.applicationId != null) {
       context.push('/application/${n.applicationId}');
     } else if (n.jobId != null) {
       context.push('/job/${n.jobId}');

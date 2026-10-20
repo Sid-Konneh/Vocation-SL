@@ -11,6 +11,7 @@ import '../../employer/widgets.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
 import '../../widgets/invoice_pdf.dart';
+import '../../services/export_service.dart';
 import '../../widgets/states.dart';
 import '../admin_providers.dart';
 import '../admin_shell.dart';
@@ -65,8 +66,15 @@ class _AdminInvoicesScreenState extends ConsumerState<AdminInvoicesScreen> {
     final now = DateTime.now();
     return EmployerPage(
       title: 'Invoices',
-      subtitle: 'A draft invoice is created for every job when it goes live. Enter the cost, issue it, then record the payment.',
+      subtitle: 'An invoice is created for every job when it goes live (free during the launch offer). Issue it, then record the payment.',
       onRefresh: () async => ref.invalidate(adminInvoicesProvider),
+      actions: [
+        OutlinedButton.icon(
+          onPressed: () => showDialog<void>(context: context, builder: (_) => _MonthlyReport(invoices: ref.read(adminInvoicesProvider).value ?? const [])),
+          icon: const Icon(Icons.summarize_outlined),
+          label: const Text('Monthly report'),
+        ),
+      ],
       children: [
         AdminAsync<List<Invoice>>(
           value: async,
@@ -542,4 +550,96 @@ String invoiceText(Invoice i) {
       ..writeln(i.notes);
   }
   return b.toString().trimRight();
+}
+
+/// Revenue, GST and payments for one month, for the accountant and the NRA
+/// GST return. Downloads as a spreadsheet (CSV).
+class _MonthlyReport extends StatefulWidget {
+  const _MonthlyReport({required this.invoices});
+  final List<Invoice> invoices;
+
+  @override
+  State<_MonthlyReport> createState() => _MonthlyReportState();
+}
+
+class _MonthlyReportState extends State<_MonthlyReport> {
+  late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+
+  bool _inMonth(DateTime? d) => d != null && d.year == _month.year && d.month == _month.month;
+
+  @override
+  Widget build(BuildContext context) {
+    final months = [for (var i = 0; i < 12; i++) DateTime(DateTime.now().year, DateTime.now().month - i)];
+    final issued = widget.invoices.where((i) => i.status != InvoiceStatus.voided && !i.launchFree && _inMonth(i.issueDate)).toList();
+    final paid = widget.invoices.where((i) => i.status == InvoiceStatus.paid && !i.launchFree && _inMonth(i.paidAt)).toList();
+    final free = widget.invoices.where((i) => i.launchFree && _inMonth(i.createdAt)).length;
+    final monthEnd = DateTime(_month.year, _month.month + 1);
+    final outstanding = widget.invoices
+        .where((i) => !i.launchFree && i.issueDate != null && i.issueDate!.isBefore(monthEnd) && i.status == InvoiceStatus.issued)
+        .toList();
+    double sum(Iterable<Invoice> l, double Function(Invoice) f) => l.fold(0, (s, i) => s + f(i));
+    final label = DateFormat('MMMM yyyy').format(_month);
+
+    Widget row(String k, String v, {bool strong = false}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(children: [
+            Expanded(child: Text(k, style: strong ? const TextStyle(fontWeight: FontWeight.w700) : null)),
+            Text(v, style: TextStyle(fontWeight: strong ? FontWeight.w800 : FontWeight.w600)),
+          ]),
+        );
+
+    return AlertDialog(
+      title: const Text('Monthly report'),
+      content: SizedBox(
+        width: 480,
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          DropdownButtonFormField<DateTime>(
+            initialValue: _month,
+            decoration: const InputDecoration(labelText: 'Month'),
+            items: [for (final m in months) DropdownMenuItem(value: m, child: Text(DateFormat('MMMM yyyy').format(m)))],
+            onChanged: (v) => setState(() => _month = v ?? _month),
+          ),
+          const SizedBox(height: 16),
+          Text('Invoiced in $label', style: context.text.titleSmall),
+          row('Invoices issued', '${issued.length}'),
+          row('Revenue (excl. GST)', money(sum(issued, (i) => i.taxable))),
+          row('GST charged (15%)', money(sum(issued, (i) => i.taxAmount))),
+          row('Total invoiced', money(sum(issued, (i) => i.total)), strong: true),
+          const Divider(height: 24),
+          Text('Money received in $label', style: context.text.titleSmall),
+          row('Invoices paid', '${paid.length}'),
+          row('Received (incl. GST)', money(sum(paid, (i) => i.total)), strong: true),
+          row('of which GST to pay the NRA', money(sum(paid, (i) => i.taxAmount))),
+          const Divider(height: 24),
+          row('Still unpaid at month end', '${outstanding.length} · ${money(sum(outstanding, (i) => i.total))}'),
+          row('Free launch-offer postings', '$free'),
+          const SizedBox(height: 8),
+          Text('GST is shown on invoices issued in the month; check with your accountant whether your return is based on invoices or payments.',
+              style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        FilledButton.icon(
+          onPressed: () {
+            final all = widget.invoices.where((i) => _inMonth(i.issueDate) || _inMonth(i.paidAt) || (i.launchFree && _inMonth(i.createdAt))).toList();
+            String d(DateTime? x) => x == null ? '' : DateFormat('yyyy-MM-dd').format(x);
+            ExportService.save(
+              'vocation-sl-invoices-${DateFormat('yyyy-MM').format(_month)}.csv',
+              ExportService.csv(
+                ['Invoice', 'Issued', 'Company', 'Description', 'Revenue excl GST', 'GST', 'Total', 'Status', 'Paid on', 'Method', 'Reference', 'Launch offer'],
+                [
+                  for (final i in all)
+                    [i.number, d(i.issueDate), i.billToName, i.description, i.taxable.toStringAsFixed(2), i.taxAmount.toStringAsFixed(2), i.total.toStringAsFixed(2),
+                      i.status.label, d(i.paidAt), i.paymentMethod, i.paymentReference, i.launchFree ? 'Free' : ''],
+                ],
+              ),
+            );
+          },
+          icon: const Icon(Icons.download_rounded),
+          label: const Text('Download spreadsheet'),
+        ),
+      ],
+    );
+  }
 }

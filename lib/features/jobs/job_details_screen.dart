@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
@@ -82,7 +83,7 @@ class _JobDetailsView extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(AppSpacing.gutter, 8, AppSpacing.gutter, 32),
         children: [
           if (offline) CacheNotice(syncedAt: syncedAt, onRetry: onRefresh),
-          Hero(tag: 'logo-${job.id}', child: Align(alignment: Alignment.centerLeft, child: CompanyLogo(company: c, size: 68))),
+          Align(alignment: Alignment.centerLeft, child: CompanyLogo(company: c, size: 68)),
           const SizedBox(height: 16),
           Semantics(header: true, child: Text(job.title, style: context.text.headlineSmall)),
           const SizedBox(height: 6),
@@ -141,6 +142,25 @@ class _JobDetailsView extends ConsumerWidget {
               ]),
             ),
           if (job.benefits.isNotEmpty) _Section('Benefits', child: BulletList(job.benefits, icon: Icons.card_giftcard_rounded)),
+          if (job.appliesExternally)
+            _Section(
+              'How to apply',
+              child: BulletList([
+                'Apply on the employer\'s website: ${job.applyHost}',
+                'Genuine employers never ask you to pay to apply. Report the job if they do.',
+              ], icon: Icons.open_in_new_rounded),
+            )
+          else
+          _Section(
+            'How to apply',
+            child: BulletList([
+              'Your CV as a PDF',
+              'A cover letter (optional): write it in the app or upload a PDF',
+              if (job.documentsRequested)
+                'Supporting documents (optional, up to ${SupportingDocument.maxPerApplication} PDFs)'
+                    '${job.documentsNote.trim().isEmpty ? '' : ': ${job.documentsNote.trim()}'}',
+            ], icon: Icons.attach_file_rounded),
+          ),
           _Section(
             'Salary, location & deadline',
             child: Column(children: [
@@ -323,13 +343,13 @@ class _CompanyCard extends StatelessWidget {
       );
 }
 
-class _ApplyBar extends StatelessWidget {
+class _ApplyBar extends ConsumerWidget {
   const _ApplyBar({required this.job, required this.application});
   final Job job;
   final JobApplication? application;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final Widget action;
     if (application != null) {
       action = OutlinedButton.icon(
@@ -339,6 +359,12 @@ class _ApplyBar extends StatelessWidget {
       );
     } else if (job.isClosed) {
       action = const FilledButton(onPressed: null, child: Text('Applications closed'));
+    } else if (job.appliesExternally) {
+      action = FilledButton.icon(
+        onPressed: () => openExternalApply(context, job, onContinue: () => ref.read(backendProvider).recordApplyClick(job.id)),
+        icon: const Icon(Icons.open_in_new_rounded, size: 20),
+        label: const Text('Apply on website', overflow: TextOverflow.ellipsis),
+      );
     } else {
       action = FilledButton.icon(
         onPressed: () => context.push('/job/${job.id}/apply'),
@@ -417,4 +443,30 @@ class _ReportDialogState extends State<_ReportDialog> {
           ),
         ],
       );
+}
+
+/// Jobs with an external application link: confirm, then open the employer's site.
+Future<void> openExternalApply(BuildContext context, Job job, {Future<void> Function()? onContinue}) async {
+  final go = await showDialog<bool>(
+    context: context,
+    builder: (d) => AlertDialog(
+      icon: const Icon(Icons.open_in_new_rounded),
+      title: const Text('Apply on the employer\'s website'),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('${job.companyName} takes applications on its own website:'),
+        const SizedBox(height: 8),
+        SelectableText(job.applyHost, style: const TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
+        const Text('A genuine employer will never ask you to pay to apply. If they do, come back and report the job.'),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
+        FilledButton.icon(onPressed: () => Navigator.pop(d, true), icon: const Icon(Icons.open_in_new_rounded, size: 18), label: const Text('Continue')),
+      ],
+    ),
+  );
+  if (go != true) return;
+  await onContinue?.call();
+  final ok = await launchUrl(Uri.parse(job.applyUrl), mode: LaunchMode.externalApplication);
+  if (!ok && context.mounted) showSnack(context, 'Couldn\'t open the link. It is: ${job.applyUrl}', error: true);
 }

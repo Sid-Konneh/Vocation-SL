@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '../../../core/errors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/models.dart';
 import '../../../services/file_service.dart';
@@ -15,8 +14,12 @@ const _brandColors = [0xFF1F6FEB, 0xFF0E7C66, 0xFF3F7A1F, 0xFF7A4CC2, 0xFFD1435B
 /// Edits every employer-writable company field. Call [CompanyFormState.build]
 /// via a GlobalKey to validate and read the result.
 class CompanyForm extends StatefulWidget {
-  const CompanyForm({super.key, this.initial});
+  const CompanyForm({super.key, this.initial, this.askReferral = false, this.initialReferral});
   final Company? initial;
+
+  /// Sign-up only: asks who referred the company (prefilled from a referral link).
+  final bool askReferral;
+  final String? initialReferral;
 
   @override
   State<CompanyForm> createState() => CompanyFormState();
@@ -30,6 +33,7 @@ class CompanyFormState extends State<CompanyForm> {
   late final _email = TextEditingController(text: widget.initial?.email);
   late final _phone = TextEditingController(text: widget.initial?.phone);
   late final _address = TextEditingController(text: widget.initial?.address);
+  late final _referral = TextEditingController(text: widget.initialReferral == null ? '' : ReferralCode.display(widget.initialReferral!));
   late final _founded = TextEditingController(text: (widget.initial?.founded ?? 0) > 0 ? '${widget.initial!.founded}' : '');
   late Industry _industry = widget.initial?.industry ?? Industry.technology;
   late String _location = sierraLeoneLocations.contains(widget.initial?.location) ? widget.initial!.location : 'Freetown';
@@ -41,12 +45,8 @@ class CompanyFormState extends State<CompanyForm> {
 
   Future<void> _pickLogo() async {
     try {
-      final f = await FileService().pickPhoto();
+      final f = await FileService().pickPhoto(dialogTitle: 'Choose your company logo');
       if (f == null) return;
-      final ext = f.name.split('.').last.toLowerCase();
-      if (!['png', 'jpg', 'jpeg', 'webp'].contains(ext)) {
-        throw const ValidationException('Choose a PNG, JPG or WebP image.');
-      }
       setState(() => pickedLogo = f);
     } catch (e) {
       if (mounted) showError(context, e);
@@ -55,11 +55,14 @@ class CompanyFormState extends State<CompanyForm> {
 
   @override
   void dispose() {
-    for (final c in [_name, _about, _website, _email, _phone, _address, _founded]) {
+    for (final c in [_name, _about, _website, _email, _phone, _address, _founded, _referral]) {
       c.dispose();
     }
     super.dispose();
   }
+
+  /// The referral code typed or prefilled at sign-up ('' if none).
+  String get referralCode => _referral.text;
 
   /// Validates and returns the edited company, or null if invalid.
   Company? result() {
@@ -123,7 +126,7 @@ class CompanyFormState extends State<CompanyForm> {
               ),
               const SizedBox(height: 6),
               Text(
-                pickedLogo != null ? '${pickedLogo!.name} · saved when you save the profile' : 'PNG, JPG or WebP, up to 2 MB. Square images look best.',
+                pickedLogo != null ? '${pickedLogo!.name} · saved when you save the profile' : 'PNG or JPG. Large images are resized automatically. Square images look best.',
                 style: context.text.bodySmall?.copyWith(color: context.palette.muted),
               ),
             ]),
@@ -259,6 +262,25 @@ class CompanyFormState extends State<CompanyForm> {
           decoration: const InputDecoration(labelText: 'Business address *'),
           validator: (v) => _required(v, 'your business address'),
         ),
+        if (widget.askReferral) ...[
+          heading('Referred by someone?'),
+          TextFormField(
+            controller: _referral,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              labelText: 'Referral code (optional)',
+              hintText: 'e.g. VSL-7KQ2M',
+              prefixIcon: Icon(Icons.handshake_outlined),
+            ),
+            validator: (v) {
+              final c = ReferralCode.normalize(v ?? '');
+              return c.isEmpty || (c.length >= 6 && c.length <= 12) ? null : 'Check the code, e.g. VSL-7KQ2M';
+            },
+          ),
+          const SizedBox(height: 6),
+          Text('If a job seeker told you about Vocation SL, enter their code so they get credit.',
+              style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+        ],
       ]),
     );
   }

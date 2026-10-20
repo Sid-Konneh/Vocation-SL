@@ -1,8 +1,8 @@
 name: vocation_sl
-description: "Vocation SL — job discovery and applications for Sierra Leone."
+description: "Vocation SL â€” job discovery and applications for Sierra Leone."
 publish_to: 'none'
 
-version: 1.0.4+5
+version: 1.1.1+12
 
 environment:
   sdk: ^3.13.4
@@ -31,6 +31,7 @@ dependencies:
   printing: ^5.15.1
   archive: ^4.3.0
   web: ^1.1.1
+  image: ^4.10.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

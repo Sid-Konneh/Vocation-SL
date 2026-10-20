@@ -413,9 +413,24 @@ class PlatformSettings {
     this.maintenanceEnabled = false,
     this.maintenanceMessage = '',
     this.supportEmail = 'vocationxsl@gmail.com',
+    this.postingPrice = 5000,
+    this.featuredPrice = 1500,
+    this.launchFreePosts = 5,
+    this.launchUntil,
   });
 
   final bool requireCompanyApproval;
+
+  /// Price per job posting, excluding GST (SLE). New invoices start at this price.
+  final int postingPrice;
+
+  /// Price to feature a job on the home screen, excluding GST (SLE).
+  final int featuredPrice;
+
+  /// Launch offer: free postings per employer until [launchUntil] (inclusive).
+  final int launchFreePosts;
+  final DateTime? launchUntil;
+  bool launchActiveOn(DateTime day) => launchUntil != null && !DateTime(day.year, day.month, day.day).isAfter(launchUntil!);
 
   /// Every new or resubmitted job waits for an admin before going live.
   final bool requireJobApproval;
@@ -423,25 +438,44 @@ class PlatformSettings {
   final String maintenanceMessage;
   final String supportEmail;
 
-  PlatformSettings copyWith({bool? requireCompanyApproval, bool? requireJobApproval, bool? maintenanceEnabled, String? maintenanceMessage, String? supportEmail}) =>
+  PlatformSettings copyWith({
+    bool? requireCompanyApproval,
+    bool? requireJobApproval,
+    bool? maintenanceEnabled,
+    String? maintenanceMessage,
+    String? supportEmail,
+    int? postingPrice,
+    int? featuredPrice,
+    int? launchFreePosts,
+    DateTime? Function()? launchUntil,
+  }) =>
       PlatformSettings(
         requireCompanyApproval: requireCompanyApproval ?? this.requireCompanyApproval,
         requireJobApproval: requireJobApproval ?? this.requireJobApproval,
         maintenanceEnabled: maintenanceEnabled ?? this.maintenanceEnabled,
         maintenanceMessage: maintenanceMessage ?? this.maintenanceMessage,
         supportEmail: supportEmail ?? this.supportEmail,
+        postingPrice: postingPrice ?? this.postingPrice,
+        featuredPrice: featuredPrice ?? this.featuredPrice,
+        launchFreePosts: launchFreePosts ?? this.launchFreePosts,
+        launchUntil: launchUntil == null ? this.launchUntil : launchUntil(),
       );
 
   /// From platform_settings rows ({key, value}).
   factory PlatformSettings.fromRows(List<Map<String, dynamic>> rows) {
     final m = {for (final r in rows) r['key'] as String: r['value']};
     final maint = m['maintenance'] is Map ? Map<String, dynamic>.from(m['maintenance'] as Map) : const <String, dynamic>{};
+    final launch = m['launch_offer'] is Map ? Map<String, dynamic>.from(m['launch_offer'] as Map) : const <String, dynamic>{};
     return PlatformSettings(
       requireCompanyApproval: m['require_company_approval'] as bool? ?? true,
       requireJobApproval: m['require_job_approval'] as bool? ?? true,
       maintenanceEnabled: maint['enabled'] as bool? ?? false,
       maintenanceMessage: maint['message'] as String? ?? '',
       supportEmail: m['support_email'] as String? ?? 'vocationxsl@gmail.com',
+      postingPrice: (m['posting_price'] as num?)?.toInt() ?? 5000,
+      featuredPrice: (m['featured_price'] as num?)?.toInt() ?? 1500,
+      launchFreePosts: (launch['free_posts'] as num?)?.toInt() ?? 0,
+      launchUntil: DateTime.tryParse('${launch['until'] ?? ''}'),
     );
   }
 
@@ -450,6 +484,17 @@ class PlatformSettings {
         {'key': 'require_job_approval', 'value': requireJobApproval},
         {'key': 'maintenance', 'value': {'enabled': maintenanceEnabled, 'message': maintenanceMessage}},
         {'key': 'support_email', 'value': supportEmail},
+        {'key': 'posting_price', 'value': postingPrice},
+        {'key': 'featured_price', 'value': featuredPrice},
+        {
+          'key': 'launch_offer',
+          'value': {
+            'free_posts': launchFreePosts,
+            'until': launchUntil == null
+                ? null
+                : '${launchUntil!.year}-${launchUntil!.month.toString().padLeft(2, '0')}-${launchUntil!.day.toString().padLeft(2, '0')}',
+          },
+        },
       ];
 }
 
@@ -679,6 +724,7 @@ class Invoice {
     this.paymentMethod = '',
     this.paymentReference = '',
     this.notes = '',
+    this.launchFree = false,
   });
 
   final String id;
@@ -705,6 +751,9 @@ class Invoice {
   final String paymentReference;
   final String notes;
   final DateTime createdAt;
+
+  /// A free posting under the launch offer (a SLE 0 invoice, marked paid).
+  final bool launchFree;
 
   static double _round2(double v) => (v * 100).roundToDouble() / 100;
 
@@ -760,6 +809,7 @@ class Invoice {
         paymentMethod: paymentMethod ?? this.paymentMethod,
         paymentReference: paymentReference ?? this.paymentReference,
         notes: notes ?? this.notes,
+        launchFree: launchFree,
       );
 
   static DateTime? _date(Object? v) => v == null ? null : DateTime.tryParse('$v');
@@ -789,6 +839,7 @@ class Invoice {
         paymentMethod: j['payment_method'] as String? ?? '',
         paymentReference: j['payment_reference'] as String? ?? '',
         notes: j['notes'] as String? ?? '',
+        launchFree: j['launch_free'] as bool? ?? false,
         createdAt: _date(j['created_at']) ?? DateTime.now(),
       );
 

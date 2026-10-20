@@ -241,6 +241,9 @@ class DemoBackend implements VocationBackend {
   @override
   Future<void> recordJobView(String jobId) async {}
 
+  @override
+  Future<void> recordApplyClick(String jobId) async {}
+
   // ---- Profile ---------------------------------------------------------------
 
   @override

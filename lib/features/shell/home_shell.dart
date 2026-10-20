@@ -138,6 +138,18 @@ class _Sidebar extends ConsumerWidget {
                       onTap: () => switchRole(context, ref, UserRole.employer),
                     ),
                     _SidebarItem(
+                      icon: const Icon(Icons.lightbulb_outline_rounded),
+                      label: 'Career tips',
+                      semantics: 'Career tips',
+                      onTap: () => context.push('/pages/career-tips'),
+                    ),
+                    _SidebarItem(
+                      icon: const Icon(Icons.handshake_outlined),
+                      label: 'Refer an employer',
+                      semantics: 'Refer an employer',
+                      onTap: () => context.push('/refer'),
+                    ),
+                    _SidebarItem(
                       icon: const Icon(Icons.info_outline_rounded),
                       label: 'About',
                       semantics: 'About Vocation SL',

@@ -103,3 +103,25 @@ class CoverLetter {
         'storage_path': storagePath,
       };
 }
+
+/// An extra PDF an applicant attaches when the employer asks for supporting
+/// documents (certificates, transcripts, ID...). Up to [maxPerApplication].
+class SupportingDocument {
+  const SupportingDocument({required this.id, required this.fileName, required this.sizeBytes, this.storagePath});
+
+  static const maxPerApplication = 5;
+
+  final String id;
+  final String fileName;
+  final int sizeBytes;
+  final String? storagePath;
+
+  factory SupportingDocument.fromJson(Map<String, dynamic> j) => SupportingDocument(
+        id: j['id'] as String? ?? '',
+        fileName: j['file_name'] as String? ?? 'Document.pdf',
+        sizeBytes: (j['size_bytes'] as num?)?.toInt() ?? 0,
+        storagePath: j['storage_path'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {'id': id, 'file_name': fileName, 'size_bytes': sizeBytes, 'storage_path': storagePath};
+}

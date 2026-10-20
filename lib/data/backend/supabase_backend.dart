@@ -248,6 +248,15 @@ class SupabaseBackend implements VocationBackend {
     }
   }
 
+  @override
+  Future<void> recordApplyClick(String jobId) async {
+    try {
+      await _client.rpc('record_apply_click', params: {'p_job': jobId});
+    } catch (_) {
+      // Analytics only.
+    }
+  }
+
   // ---- Profile ---------------------------------------------------------------
 
   @override
@@ -292,7 +301,9 @@ class SupabaseBackend implements VocationBackend {
   @override
   Future<String> uploadDocument({required String userId, required String fileName, required Uint8List bytes}) => _run(() async {
         final path = '$userId/${_uuid.v4()}-$fileName';
-        await _client.storage.from(_bucket).uploadBinary(path, bytes);
+        // Documents are PDF only; say so, so the storage bucket's PDF-only rule accepts them.
+        final type = fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream';
+        await _client.storage.from(_bucket).uploadBinary(path, bytes, fileOptions: sb.FileOptions(contentType: type));
         return path;
       });
 

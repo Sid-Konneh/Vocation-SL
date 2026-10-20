@@ -183,7 +183,8 @@
     .warning b { color: var(--ink); }
 
     /* Download */
-    .download { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    .download { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    @media (max-width: 1000px) and (min-width: 761px) { .download { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 760px) { .download { grid-template-columns: 1fr; } }
     .dl { display: flex; flex-direction: column; gap: 14px; }
     .dl .btn { margin-top: auto; align-self: flex-start; }
@@ -299,7 +300,7 @@
     <symbol id="i-check" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7Z"/></symbol>
   </svg>
 
-  <div class="announce">The Vocation SL Android app is available now.<a href="#download">Download it →</a></div>
+  <div class="announce">Vocation SL is live on the web. Google Play and App Store coming soon.<a href="https://app.vocationsl.com">Open the app →</a></div>
   <header>
     <nav class="wrap nav" aria-label="Main">
       <a class="brand" href="#top" aria-label="Vocation SL home">
@@ -342,11 +343,7 @@
           <h1 style="margin-top:14px">Find work.<br><span>Hire the right people.</span></h1>
           <p class="lead">Vocation SL brings job openings from Freetown to Kailahun into one place. Search, apply with your CV, follow every application and hear back from employers, on your phone or on the web.</p>
           <div class="cta-row">
-            <a class="btn btn-primary" href="https://github.com/Sid-Konneh/Vocation-SL/raw/main/release/vocation-sl-v1.0.2.apk" download>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.6 9.48 19.44 6.3a.38.38 0 0 0-.66-.38l-1.87 3.23a11.6 11.6 0 0 0-9.82 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52ZM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/></svg>
-              Download for Android
-            </a>
-            <a class="btn btn-outline" href="https://app.vocationsl.com">
+            <a class="btn btn-primary" href="https://app.vocationsl.com">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.9 6h-2.95a15.6 15.6 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.9 8ZM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96ZM4.26 14a8.2 8.2 0 0 1 0-4h3.38a16.5 16.5 0 0 0 0 4H4.26Zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A8 8 0 0 1 5.08 16Zm2.95-8H5.08a8 8 0 0 1 4.33-3.56A15.6 15.6 0 0 0 8.03 8ZM12 19.96A14.1 14.1 0 0 1 10.09 16h3.82A14.1 14.1 0 0 1 12 19.96ZM14.34 14H9.66a14.7 14.7 0 0 1 0-4h4.68a14.7 14.7 0 0 1 0 4Zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56ZM16.36 14a16.5 16.5 0 0 0 0-4h3.38a8.2 8.2 0 0 1 0 4h-3.38Z"/></svg>
               Use on the web
             </a>
@@ -361,7 +358,7 @@
               <span class="soon">Soon</span>
             </span>
           </div>
-          <p class="note">Free for job seekers. Android app available now as a direct download; Google Play and App Store listings are coming soon.</p>
+          <p class="note">Free for job seekers. Use Vocation SL on the web today on any phone or computer. Google Play and App Store apps are coming soon; on iPhone you can add the web app to your Home Screen now.</p>
         </div>
 
         <div class="phone-stage" aria-hidden="true">
@@ -433,7 +430,7 @@
           <div class="card">
             <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.5V8h4.5L14 3.5ZM8 12v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></div>
             <h3>Apply in a few steps</h3>
-            <p>Send your CV, a cover letter and a note to the employer. PDF, DOC and DOCX files are accepted.</p>
+            <p>Send your CV, a cover letter and any supporting documents the employer asks for, all as PDFs, plus a note.</p>
           </div>
           <div class="card">
             <div class="icon"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h2v-2H3v2Zm0 4h2v-2H3v2Zm0-8h2V7H3v2Zm4 4h14v-2H7v2Zm0 4h14v-2H7v2ZM7 7v2h14V7H7Z"/></svg></div>
@@ -605,41 +602,32 @@
         </div>
         <div class="download">
           <div class="card dl">
-            <span class="tag">Available now</span>
-            <h3>Android app (APK)</h3>
-            <p style="color:var(--muted)">Version 1.0.2 · about 83 MB. Install directly on any Android phone.</p>
-            <ol>
-              <li>Tap <b>Download APK</b>.</li>
-              <li>Open the downloaded file.</li>
-              <li>If asked, allow your browser to <b>install unknown apps</b>, then tap <b>Install</b>.</li>
-            </ol>
-            <a class="btn btn-primary" href="https://github.com/Sid-Konneh/Vocation-SL/raw/main/release/vocation-sl-v1.0.2.apk" download>Download APK</a>
-          </div>
-          <div class="card dl">
-            <span class="tag">Available now</span>
-            <h3>Web app</h3>
-            <p style="color:var(--muted)">Nothing to install. Works in Chrome, Edge, Firefox and Safari on phones and computers, with alerts in supported browsers.</p>
-            <a class="btn btn-outline" href="https://app.vocationsl.com">Open app.vocationsl.com</a>
+            <span class="tag soon-tag">Coming soon</span>
+            <h3>Android: Google Play</h3>
+            <p style="color:var(--muted)">Vocation SL is in final testing on Google Play. Until it is published, Android users can use the web app in Chrome.</p>
+            <div class="badges-soon" aria-label="Google Play (coming soon)">
+              <img class="play" src="assets/google-play-badge.png" alt="Get it on Google Play (coming soon)">
+            </div>
           </div>
           <div class="card dl" id="iphone">
-            <span class="tag">Available now</span>
+            <span class="tag">Available now on the web</span>
             <h3>iPhone &amp; iPad</h3>
-            <p style="color:var(--muted)">Add Vocation SL to your Home Screen. It opens full screen like an app.</p>
+            <p style="color:var(--muted)">App Store version coming soon. Today, add Vocation SL to your Home Screen and it opens full screen like an app.</p>
             <ol>
               <li>Open <b>app.vocationsl.com</b> in <b>Safari</b>.</li>
               <li>Tap the <b>Share</b> button (the square with an arrow).</li>
               <li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
             </ol>
+            <div class="badges-soon" aria-label="App Store (coming soon)">
+              <img src="assets/app-store-badge.svg" alt="Download on the App Store (coming soon)">
+            </div>
             <a class="btn btn-outline" href="https://app.vocationsl.com">Open in Safari</a>
           </div>
           <div class="card dl">
-            <span class="tag soon-tag">Coming soon</span>
-            <h3>Google Play &amp; App Store</h3>
-            <p style="color:var(--muted)">We're preparing Vocation SL for the official stores. Until then, use the Android download or the web app.</p>
-            <div class="badges-soon" aria-label="Store badges (coming soon)">
-              <img class="play" src="assets/google-play-badge.png" alt="Get it on Google Play (coming soon)">
-              <img src="assets/app-store-badge.svg" alt="Download on the App Store (coming soon)">
-            </div>
+            <span class="tag">Available now</span>
+            <h3>Web app</h3>
+            <p style="color:var(--muted)">Nothing to install. Works in Chrome, Edge, Firefox and Safari on phones and computers, with alerts in supported browsers.</p>
+            <a class="btn btn-primary" href="https://app.vocationsl.com">Open app.vocationsl.com</a>
           </div>
         </div>
       </div>
@@ -674,7 +662,7 @@
           <details><summary>Which parts of Sierra Leone are covered?</summary><p>All 16 districts, from Western Area Urban and Rural to Kailahun, Kono, Falaba, Karene and Pujehun, plus main towns like Makeni, Koidu and Lunsar.</p></details>
           <details><summary>Do I need a good internet connection?</summary><p>No. The app saves jobs and your applications on your phone, so you can keep browsing offline. Anything you change is sent when you reconnect.</p></details>
           <details><summary>Can I use Vocation SL on an iPhone?</summary><p>Yes. Open <b>app.vocationsl.com</b> in Safari, tap the Share button, then <b>Add to Home Screen</b>. It opens full screen like an app. An App Store version will follow.</p></details>
-          <details><summary>Why isn't the app on Google Play yet?</summary><p>We're preparing the store listing. The Android app on this page is the same app, offered as a direct download in the meantime.</p></details>
+          <details><summary>Why isn't the app on Google Play yet?</summary><p>It is in final testing with Google and will be published soon. Until then, Android users can use the full web app at <b>app.vocationsl.com</b> in Chrome.</p></details>
           <details><summary>How do employers join?</summary><p>Sign in and choose <b>Hire talent</b>, then register your company. New companies and every job are reviewed by our team before going live.</p></details>
           <details><summary>How do I get help?</summary><p>Email us at <a href="mailto:vocationxsl@gmail.com">vocationxsl@gmail.com</a>.</p></details>
         </div>
@@ -702,11 +690,11 @@
       <div class="wrap band">
         <div>
           <h2>Your next opportunity is on Vocation SL</h2>
-          <p>Join on Android or the web. It takes a minute to get started.</p>
+          <p>Join on the web today; Google Play and App Store apps are coming soon.</p>
         </div>
         <div class="cta-row">
-          <a class="btn btn-primary" href="https://github.com/Sid-Konneh/Vocation-SL/raw/main/release/vocation-sl-v1.0.2.apk" download>Download for Android</a>
-          <a class="btn btn-outline" href="https://app.vocationsl.com">Use on the web</a>
+          <a class="btn btn-primary" href="https://app.vocationsl.com">Use on the web</a>
+          <a class="btn btn-outline" href="#download">iPhone &amp; Android</a>
         </div>
       </div>
     </section>

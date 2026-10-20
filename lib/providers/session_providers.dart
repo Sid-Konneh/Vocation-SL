@@ -68,8 +68,11 @@ class RoleNotifier extends Notifier<UserRole?> {
     final intent = UserRole.values.where((r) => r.name == pending).firstOrNull;
     if (intent != null) {
       Future.microtask(() async {
-        await store.removeSetting(_pendingKey);
-        await choose(intent);
+        final removal = store.removeSetting(_pendingKey);
+        // Save the sign-in choice, unless the user has already switched sides
+        // (e.g. tapped "Switch to employer" straight after signing in).
+        if (state == intent) await choose(intent);
+        await removal;
       });
       return intent;
     }

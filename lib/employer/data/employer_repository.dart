@@ -19,9 +19,16 @@ class EmployerRepository extends CachedRepository {
   Future<Loaded<Company?>> fetchCompany(String uid) => fetchAndCache(
         key: _k(uid, 'company'),
         fetch: backend.myCompany,
-        encode: (c) => c == null ? null : {...c.toJson(), ...c.toEmployerJson(), 'status': c.status.name, 'owner_id': c.ownerId},
+        encode: _encodeCompany,
         decode: (j) => j == null ? null : Company.fromJson(Map<String, dynamic>.from(j as Map)),
       );
+
+  /// Saves a company just created or edited, so the next app start opens the
+  /// dashboard instead of an out-of-date "set up your company" screen.
+  Future<void> cacheCompany(String uid, Company c) => store.write(_k(uid, 'company'), _encodeCompany(c));
+
+  static Object? _encodeCompany(Company? c) =>
+      c == null ? null : {...c.toJson(), ...c.toEmployerJson(), 'status': c.status.name, 'owner_id': c.ownerId};
 
   // Jobs
   Loaded<List<Job>>? peekJobs(String uid) => peek(_k(uid, 'jobs'), _decodeJobs);

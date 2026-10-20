@@ -282,17 +282,36 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   PlatformSettings? _draft;
   final _message = TextEditingController();
   final _email = TextEditingController();
+  final _postingPrice = TextEditingController();
+  final _featuredPrice = TextEditingController();
+  final _freePosts = TextEditingController();
   bool _saving = false;
 
   @override
   void dispose() {
     _message.dispose();
     _email.dispose();
+    _postingPrice.dispose();
+    _featuredPrice.dispose();
+    _freePosts.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    final d = _draft!.copyWith(maintenanceMessage: _message.text.trim(), supportEmail: _email.text.trim());
+    final posting = int.tryParse(_postingPrice.text.replaceAll(',', '').trim());
+    final featured = int.tryParse(_featuredPrice.text.replaceAll(',', '').trim());
+    final free = int.tryParse(_freePosts.text.trim());
+    if (posting == null || posting < 0 || featured == null || featured < 0 || free == null || free < 0 || free > 50) {
+      showSnack(context, 'Enter prices and free postings as whole numbers.', error: true);
+      return;
+    }
+    final d = _draft!.copyWith(
+      maintenanceMessage: _message.text.trim(),
+      supportEmail: _email.text.trim(),
+      postingPrice: posting,
+      featuredPrice: featured,
+      launchFreePosts: free,
+    );
     if (!d.supportEmail.contains('@')) {
       showSnack(context, 'Enter a valid support email.', error: true);
       return;
@@ -328,6 +347,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               _draft = s;
               _message.text = s.maintenanceMessage;
               _email.text = s.supportEmail;
+              _postingPrice.text = '${s.postingPrice}';
+              _featuredPrice.text = '${s.featuredPrice}';
+              _freePosts.text = '${s.launchFreePosts}';
             }
             final d = _draft!;
             return ConstrainedBox(
@@ -351,6 +373,64 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                       value: d.requireJobApproval,
                       onChanged: canEdit ? (v) => setState(() => _draft = d.copyWith(requireJobApproval: v)) : null,
                     ),
+                  ]),
+                ),
+                const SizedBox(height: 16),
+                SectionCard(
+                  title: 'Prices and launch offer',
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Row(children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _postingPrice,
+                          enabled: canEdit,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Job posting price', prefixText: 'SLE ', helperText: 'Excluding 15% GST. New invoices start at this price.'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _featuredPrice,
+                          enabled: canEdit,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Featured listing price', prefixText: 'SLE ', helperText: 'Excluding GST. Charged when an employer asks to feature a job.'),
+                        ),
+                      ),
+                    ]),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      SizedBox(
+                        width: 200,
+                        child: TextField(
+                          controller: _freePosts,
+                          enabled: canEdit,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Free postings per employer'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: !canEdit
+                              ? null
+                              : () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: d.launchUntil ?? DateTime(2026, 12, 31),
+                                    firstDate: DateTime(2026),
+                                    lastDate: DateTime(2030),
+                                  );
+                                  if (picked != null) setState(() => _draft = d.copyWith(launchUntil: () => picked));
+                                },
+                          icon: const Icon(Icons.event_outlined),
+                          label: Text(d.launchUntil == null ? 'Launch offer: no end date' : 'Launch offer until ${Fmt.date(d.launchUntil!)}'),
+                        ),
+                      ),
+                    ]),
+                    const SizedBox(height: 6),
+                    Text('During the launch offer, each employer\'s first free postings get a SLE 0 invoice automatically.',
+                        style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
                   ]),
                 ),
                 const SizedBox(height: 16),

@@ -132,7 +132,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 184,
+                  // Grows with the phone's text size so the cards stay readable.
+                  height: 112 + MediaQuery.textScalerOf(context).scale(72),
                   child: ListView.separated(
                     padding: pad,
                     scrollDirection: Axis.horizontal,

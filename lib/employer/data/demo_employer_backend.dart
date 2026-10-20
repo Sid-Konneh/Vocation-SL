@@ -24,8 +24,16 @@ class DemoEmployerBackend implements EmployerBackend {
   @override
   Future<Company?> myCompany() async => company;
 
+  /// How many companies were actually created (one per account, like the database).
+  int companiesCreated = 0;
+
   @override
   Future<Company> registerCompany(Company draft) async {
+    // One company per account: a second submit updates the existing one.
+    if (company != null) {
+      return company = company!.copyWith(name: draft.name, about: draft.about, email: draft.email, phone: draft.phone, address: draft.address);
+    }
+    companiesCreated++;
     company = Company(
       id: 'co-1',
       name: draft.name,
@@ -221,4 +229,36 @@ class DemoEmployerBackend implements EmployerBackend {
     apps.insert(0, app);
     return app;
   }
+
+  /// Demo team and offer state.
+  final teamMembers = <TeamMember>[const TeamMember(userId: 'demo-user', role: 'owner', name: 'You', email: 'demo@vocationsl.app')];
+  final featureRequests = <String>{};
+
+  @override
+  Future<LaunchOffer> launchOffer() async => LaunchOffer(
+        freePosts: 5,
+        used: jobs.where((j) => j.status == JobStatus.published).length.clamp(0, 5),
+        until: DateTime(2026, 12, 31),
+        active: !DateTime.now().isAfter(DateTime(2026, 12, 31, 23, 59)),
+      );
+
+  @override
+  Future<String> requestFeatured(String jobId) async {
+    if (!featureRequests.add(jobId)) throw const ValidationException('You\'ve already asked to feature this job.');
+    return 'VSL-2026-DEMO${featureRequests.length}';
+  }
+
+  @override
+  Future<List<TeamMember>> team() async => List.of(teamMembers);
+
+  @override
+  Future<void> addTeamMember(String email) async {
+    final e = email.trim().toLowerCase();
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e)) throw const ValidationException('Enter a valid email address.');
+    if (teamMembers.any((m) => m.email == e)) throw const ValidationException('That account already belongs to a company.');
+    teamMembers.add(TeamMember(userId: 'u-$e', role: 'recruiter', name: e.split('@').first, email: e, addedAt: DateTime.now()));
+  }
+
+  @override
+  Future<void> removeTeamMember(String userId) async => teamMembers.removeWhere((m) => m.userId == userId && !m.isOwner);
 }

@@ -13,6 +13,10 @@ abstract class CacheFirstNotifier<T> extends AsyncNotifier<Loaded<T>> {
   bool get cacheIsFresh;
 
   bool _refreshing = false;
+  bool _again = false;
+
+  /// Bumped by [setData]; a fetch that started before a local write is stale.
+  int _writes = 0;
 
   @override
   Future<Loaded<T>> build() async {
@@ -25,12 +29,19 @@ abstract class CacheFirstNotifier<T> extends AsyncNotifier<Loaded<T>> {
   }
 
   /// Fetches fresh data. Keeps showing current data if the refresh fails.
+  /// A call made while a refresh is running fetches again afterwards, so a
+  /// change saved meanwhile (e.g. a company just created) is never missed.
   Future<void> refresh() async {
-    if (_refreshing) return;
+    if (_refreshing) {
+      _again = true;
+      return;
+    }
     _refreshing = true;
+    final writesAtStart = _writes;
     try {
       final result = await fetchRemote();
-      if (ref.mounted) state = AsyncData(result);
+      // Don't let an older fetch overwrite data saved locally since it began.
+      if (ref.mounted && writesAtStart == _writes) state = AsyncData(result);
     } catch (e, st) {
       if (!ref.mounted) return;
       final current = state.value;
@@ -42,11 +53,16 @@ abstract class CacheFirstNotifier<T> extends AsyncNotifier<Loaded<T>> {
       }
     } finally {
       _refreshing = false;
+      if (_again && ref.mounted) {
+        _again = false;
+        scheduleMicrotask(refresh);
+      }
     }
   }
 
   /// Replaces the data locally (after an optimistic write).
   void setData(T data) {
+    _writes++;
     final current = state.value;
     state = AsyncData(current == null ? Loaded(data, syncedAt: DateTime.now()) : current.withData(data));
   }

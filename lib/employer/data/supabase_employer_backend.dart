@@ -22,13 +22,26 @@ class SupabaseEmployerBackend implements EmployerBackend {
 
   @override
   Future<Company?> myCompany() => guardSupabase(() async {
-        final rows = await _client.from('company_members').select('company:companies(*)').eq('user_id', _uid()).limit(1);
-        if (rows.isEmpty || rows.first['company'] == null) return null;
-        return Company.fromJson(Map<String, dynamic>.from(rows.first['company'] as Map));
+        final uid = _uid();
+        final rows = await _client.from('company_members').select('company:companies(*)').eq('user_id', uid).limit(1);
+        if (rows.isNotEmpty && rows.first['company'] != null) {
+          return Company.fromJson(Map<String, dynamic>.from(rows.first['company'] as Map));
+        }
+        // Fallback: a company this account created (owner) even if its
+        // membership row is missing.
+        final owned = await _client.from('companies').select().eq('owner_id', uid).order('created_at').limit(1);
+        return owned.isEmpty ? null : Company.fromJson(owned.first);
       });
 
   @override
   Future<Company> registerCompany(Company draft) => guardSupabase(() async {
+        // An account has one company: if it already has one (e.g. the form was
+        // submitted twice), update that company instead of creating another.
+        final existing = await myCompany();
+        if (existing != null) {
+          final updated = await _client.from('companies').update(draft.toEmployerJson()).eq('id', existing.id).select().single();
+          return Company.fromJson(updated);
+        }
         final row = await _client.from('companies').insert(draft.toEmployerJson()).select().single();
         return Company.fromJson(row);
       });
@@ -43,9 +56,12 @@ class SupabaseEmployerBackend implements EmployerBackend {
   Future<Company> uploadLogo(Company company, Uint8List bytes, String fileName) => guardSupabase(() async {
         final ext = fileName.split('.').last.toLowerCase();
         final type = switch (ext) { 'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg' };
-        // A new file name each time so browsers and CDNs never show a stale logo.
-        final path = '${company.id}/logo-${DateTime.now().millisecondsSinceEpoch}.${ext == 'jpeg' ? 'jpg' : ext}';
-        await _client.storage.from('logos').uploadBinary(path, bytes, fileOptions: sb.FileOptions(contentType: type, upsert: true));
+        // Stored under the uploader's own folder (logos/<user id>/...), which the
+        // storage policy allows for any signed-in user, so a brand-new company
+        // can add its logo straight away. A new file name each time means
+        // browsers and CDNs never show a stale logo.
+        final path = '${_uid()}/${company.id}-logo-${DateTime.now().millisecondsSinceEpoch}.${ext == 'jpeg' ? 'jpg' : ext}';
+        await _client.storage.from('logos').uploadBinary(path, bytes, fileOptions: sb.FileOptions(contentType: type));
         final url = _client.storage.from('logos').getPublicUrl(path);
         final row = await _client.from('companies').update({'logo_url': url}).eq('id', company.id).select().single();
         return Company.fromJson(row);
@@ -77,6 +93,10 @@ class SupabaseEmployerBackend implements EmployerBackend {
         'preferred': j.preferred,
         'skills': j.skills,
         'benefits': j.benefits,
+        'documents_requested': j.documentsRequested,
+        'documents_note': j.documentsRequested ? j.documentsNote.trim() : '',
+        'apply_url': j.applyUrl.trim(),
+        'screening': j.screening.map((q) => q.toJson()).toList(),
         'status': status.name,
       };
 
@@ -162,4 +182,30 @@ class SupabaseEmployerBackend implements EmployerBackend {
   @override
   Future<String> documentUrl(String storagePath) =>
       guardSupabase(() => _client.storage.from(_bucket).createSignedUrl(storagePath, 60 * 30));
+
+  @override
+  Future<LaunchOffer> launchOffer() async {
+    try {
+      final r = await _client.rpc('launch_offer_status');
+      return r is Map ? LaunchOffer.fromJson(Map<String, dynamic>.from(r)) : LaunchOffer.none;
+    } catch (_) {
+      return LaunchOffer.none; // function not installed yet
+    }
+  }
+
+  @override
+  Future<String> requestFeatured(String jobId) =>
+      guardSupabase(() async => '${await _client.rpc('request_featured', params: {'p_job': jobId})}');
+
+  @override
+  Future<List<TeamMember>> team() => guardSupabase(() async {
+        final rows = await _client.rpc('team_members') as List;
+        return [for (final r in rows) TeamMember.fromJson(Map<String, dynamic>.from(r as Map))];
+      });
+
+  @override
+  Future<void> addTeamMember(String email) => guardSupabase(() => _client.rpc('add_team_member', params: {'p_email': email.trim()}));
+
+  @override
+  Future<void> removeTeamMember(String userId) => guardSupabase(() => _client.rpc('remove_team_member', params: {'p_user': userId}));
 }

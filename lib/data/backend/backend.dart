@@ -58,6 +58,9 @@ abstract interface class VocationBackend {
   /// Counts a job-detail view for employer insights. Best effort.
   Future<void> recordJobView(String jobId);
 
+  /// Counts a tap on "Apply on website" for employer insights. Best effort.
+  Future<void> recordApplyClick(String jobId);
+
   // Profile
   Future<AppUser> fetchUser(String userId);
   Future<AppUser> updateUser(AppUser user);

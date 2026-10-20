@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../scam_flags.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../employer/widgets.dart';
@@ -36,6 +38,8 @@ class AdminJobsScreen extends ConsumerStatefulWidget {
 
 class _AdminJobsScreenState extends ConsumerState<AdminJobsScreen> {
   JobStatus? _status = JobStatus.pending;
+  bool _flaggedOnly = false;
+  bool _featureOnly = false;
   String _q = '';
 
   Future<void> _do(Job j, String action) async {
@@ -87,6 +91,8 @@ class _AdminJobsScreenState extends ConsumerState<AdminJobsScreen> {
             final q = _q.trim().toLowerCase();
             final jobs = all
                 .where((j) => (_status == null || j.status == _status) &&
+                    (!_flaggedOnly || scamFlags(j).isNotEmpty) &&
+                    (!_featureOnly || j.featureRequested) &&
                     (q.isEmpty || '${j.title} ${j.companyName} ${j.location}'.toLowerCase().contains(q)))
                 .toList();
             return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -97,6 +103,18 @@ class _AdminJobsScreenState extends ConsumerState<AdminJobsScreen> {
                     selected: _status == s,
                     onSelected: (_) => setState(() => _status = s),
                   ),
+                FilterChip(
+                  avatar: const Icon(Icons.warning_amber_rounded, size: 18),
+                  label: Text('Flagged (${all.where((j) => scamFlags(j).isNotEmpty).length})'),
+                  selected: _flaggedOnly,
+                  onSelected: (v) => setState(() => _flaggedOnly = v),
+                ),
+                FilterChip(
+                  avatar: const Icon(Icons.star_half_rounded, size: 18),
+                  label: Text('Feature requests (${all.where((j) => j.featureRequested).length})'),
+                  selected: _featureOnly,
+                  onSelected: (v) => setState(() => _featureOnly = v),
+                ),
                 _search('Search title, company or town', (v) => setState(() => _q = v)),
               ]),
               const SizedBox(height: 16),
@@ -122,6 +140,16 @@ class _AdminJobsScreenState extends ConsumerState<AdminJobsScreen> {
                         constraints: const BoxConstraints(maxWidth: 260),
                         child: Row(children: [
                           if (j.featured) const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.star_rounded, size: 16, color: AppColors.warning)),
+                          if (scamFlags(j).isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Tooltip(message: scamFlags(j).join('\n'), child: const Icon(Icons.warning_amber_rounded, size: 18, color: AppColors.danger)),
+                            ),
+                          if (j.featureRequested)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 6),
+                              child: Tooltip(message: 'Employer asked to feature this job (invoice issued)', child: Icon(Icons.star_half_rounded, size: 16, color: AppColors.info)),
+                            ),
                           Flexible(child: Text(j.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
                         ]),
                       )),
@@ -171,6 +199,27 @@ class _JobDialog extends StatelessWidget {
               Text('${job.companyName} · ${job.location} · ${job.employmentType.label} · ${Fmt.salary(job)}', style: context.text.bodyMedium),
               const SizedBox(height: 8),
               Wrap(spacing: 8, children: [JobStatusPill(job.status), TagChip('Closes ${Fmt.date(job.deadline)}', dense: true)]),
+              if (scamFlags(job).isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: AppColors.danger.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Check before approving', style: context.text.titleSmall?.copyWith(color: AppColors.danger)),
+                    ]),
+                    for (final f in scamFlags(job)) Text('• $f'),
+                  ]),
+                ),
+              ],
+              if (job.featureRequested) ...[
+                const SizedBox(height: 8),
+                Text('The employer asked to feature this job on ${Fmt.date(job.featureRequestedAt!)}. Switch on "Feature on home screen" once the invoice is paid.',
+                    style: context.text.bodySmall?.copyWith(color: AppColors.info, fontWeight: FontWeight.w600)),
+              ],
               if (job.reviewNote.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text('Review note: ${job.reviewNote}', style: context.text.bodySmall),
@@ -179,6 +228,12 @@ class _JobDialog extends StatelessWidget {
               Text(job.about, style: context.text.titleSmall),
               const SizedBox(height: 8),
               Text(job.description, style: context.text.bodyMedium),
+              if (job.appliesExternally) ...[
+                const SizedBox(height: 12),
+                Text('Applications go to an external link', style: context.text.labelLarge),
+                SelectableText(job.applyUrl, style: context.text.bodyMedium?.copyWith(color: AppColors.warning, fontWeight: FontWeight.w600)),
+                Text('Check the link is genuine and doesn\'t ask candidates for money.', style: context.text.bodySmall),
+              ],
               if (job.requirements.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text('Requirements', style: context.text.labelLarge),

@@ -7,6 +7,8 @@ class AppMessage {
     required this.body,
     required this.createdAt,
     this.readAt,
+    this.attachmentPath,
+    this.attachmentName,
   });
 
   final String id;
@@ -16,6 +18,12 @@ class AppMessage {
   final DateTime createdAt;
   final DateTime? readAt;
 
+  /// A PDF sent with the message (offer letter, contract, signed copy...).
+  final String? attachmentPath;
+  final String? attachmentName;
+
+  bool get hasAttachment => (attachmentName ?? '').isNotEmpty;
+
   factory AppMessage.fromJson(Map<String, dynamic> j) => AppMessage(
         id: '${j['id']}',
         applicationId: j['application_id'] as String,
@@ -23,5 +31,7 @@ class AppMessage {
         body: j['body'] as String? ?? '',
         createdAt: DateTime.parse('${j['created_at']}'),
         readAt: j['read_at'] == null ? null : DateTime.tryParse('${j['read_at']}'),
+        attachmentPath: j['attachment_path'] as String?,
+        attachmentName: j['attachment_name'] as String?,
       );
 }

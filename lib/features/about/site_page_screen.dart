@@ -5,11 +5,13 @@ import '../../admin/admin_providers.dart';
 import '../../core/config/app_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../models/models.dart';
 import '../../widgets/common.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
+import 'career_tips.dart';
 
-const _titles = {'help': 'Help & FAQs', 'terms': 'Terms of Use', 'privacy': 'Privacy Policy'};
+const _titles = {'help': 'Help & FAQs', 'terms': 'Terms of Use', 'privacy': 'Privacy Policy', 'career-tips': 'Career tips'};
 
 /// Help, Terms and Privacy pages, written by admins in Content management.
 class SitePageScreen extends ConsumerWidget {
@@ -26,7 +28,11 @@ class SitePageScreen extends ConsumerWidget {
         child: page.when(
           loading: () => const SingleChildScrollView(child: JobDetailSkeleton()),
           error: (e, _) => ErrorState(error: e, onRetry: () => ref.invalidate(sitePageProvider(slug))),
-          data: (p) {
+          data: (page) {
+            // Career tips have built-in content until an admin publishes their own.
+            final p = slug == 'career-tips' && (page == null || page.body.trim().isEmpty)
+                ? SitePage(slug: slug, title: 'Career tips', body: defaultCareerTips)
+                : page;
             if (p == null || p.body.trim().isEmpty) {
               return EmptyState(
                 icon: Icons.article_outlined,

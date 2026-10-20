@@ -37,11 +37,16 @@ import '../../features/profile/delete_account_screen.dart';
 import '../../features/profile/edit_profile_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/profile/settings_screen.dart';
+import '../../features/referrals/referral_landing_screen.dart';
+import '../../features/referrals/referral_screen.dart';
+import '../../admin/features/referrals.dart';
+import '../../admin/features/traction.dart';
 import '../../features/saved/saved_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/splash/splash_screen.dart';
 import '../config/app_config.dart';
 import '../../models/models.dart';
+import '../../providers/core_providers.dart';
 import '../../providers/session_providers.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -72,7 +77,10 @@ GoRoute _pushed(String path, Widget Function(GoRouterState s) build, {List<Route
     );
 
 /// Pages both kinds of user can open.
-const _shared = ['/about', '/settings/password', '/choose-role', '/account/delete', '/pages/', '/suspended', '/admin'];
+const _shared = ['/about', '/settings/password', '/choose-role', '/account/delete', '/pages/', '/suspended', '/admin', '/r/'];
+
+/// A shared job link opened while signed out; reopened after sign-in.
+const _pendingLinkKey = 'pending_link';
 
 /// Where each role lands after signing in.
 String homeFor(UserRole? role) => switch (role) {
@@ -98,10 +106,24 @@ final routerProvider = Provider<GoRouter>((ref) {
       final role = ref.read(roleProvider);
       final loc = state.matchedLocation;
       if (loc == '/') return null; // splash decides
-      // Terms, Privacy and Help can be read before signing in.
-      if (!signedIn) return loc == '/login' || loc.startsWith('/pages/') ? null : '/login';
+      final store = ref.read(localStoreProvider);
+      // Terms, Privacy, Help and referral links work before signing in.
+      if (!signedIn) {
+        if (loc == '/login' || loc.startsWith('/pages/') || loc.startsWith('/r/')) return null;
+        // A shared job link: remember it and open it once signed in.
+        if (loc.startsWith('/job/')) store.setSetting(_pendingLinkKey, state.uri.toString());
+        return '/login';
+      }
       // admin.vocationsl.com goes straight to the dashboard after sign-in.
-      if (loc == '/login') return AppConfig.adminSite ? '/admin' : homeFor(role);
+      if (loc == '/login') {
+        if (AppConfig.adminSite) return '/admin';
+        final pending = store.setting<String>(_pendingLinkKey);
+        if (pending != null) {
+          store.removeSetting(_pendingLinkKey);
+          if (role == UserRole.seeker) return pending;
+        }
+        return homeFor(role);
+      }
       final suspended = ref.read(suspendedProvider).value ?? false;
       if (suspended && !loc.startsWith('/suspended') && !loc.startsWith('/pages/') && !loc.startsWith('/account/delete')) return '/suspended';
       if (!suspended && loc.startsWith('/suspended')) return homeFor(role);
@@ -116,6 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', pageBuilder: (c, s) => _page(s, const SplashScreen())),
       GoRoute(path: '/login', pageBuilder: (c, s) => _page(s, const LoginScreen())),
       GoRoute(path: '/choose-role', pageBuilder: (c, s) => _page(s, const RoleChoiceScreen())),
+      GoRoute(path: '/r/:code', pageBuilder: (c, s) => _page(s, ReferralLandingScreen(code: s.pathParameters['code']!))),
 
       // ---- Job seeker -------------------------------------------------------
       StatefulShellRoute.indexedStack(
@@ -142,6 +165,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       _pushed('/profile/edit', (s) => EditProfileScreen(section: s.uri.queryParameters['section'])),
       _pushed('/settings', (s) => const SettingsScreen()),
       _pushed('/settings/notifications', (s) => const NotificationSettingsScreen()),
+      _pushed('/refer', (s) => const ReferralScreen()),
 
       // ---- Employer ---------------------------------------------------------
       StatefulShellRoute.indexedStack(
@@ -174,6 +198,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/admin/overview', pageBuilder: (c, s) => _page(s, const AdminOverviewScreen())),
           GoRoute(path: '/admin/insights', pageBuilder: (c, s) => _page(s, const AdminInsightsScreen())),
+          GoRoute(path: '/admin/traction', pageBuilder: (c, s) => _page(s, const AdminTractionScreen())),
           GoRoute(path: '/admin/jobs', pageBuilder: (c, s) => _page(s, const AdminJobsScreen())),
           GoRoute(path: '/admin/employers', pageBuilder: (c, s) => _page(s, const AdminEmployersScreen())),
           GoRoute(path: '/admin/users', pageBuilder: (c, s) => _page(s, const AdminUsersScreen())),
@@ -183,6 +208,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/admin/settings', pageBuilder: (c, s) => _page(s, const AdminSettingsScreen())),
           GoRoute(path: '/admin/team', pageBuilder: (c, s) => _page(s, const AdminTeamScreen())),
           GoRoute(path: '/admin/invoices', pageBuilder: (c, s) => _page(s, const AdminInvoicesScreen())),
+          GoRoute(path: '/admin/referrals', pageBuilder: (c, s) => _page(s, const AdminReferralsScreen())),
           GoRoute(path: '/admin/activity', pageBuilder: (c, s) => _page(s, const AdminActivityScreen())),
         ],
       ),

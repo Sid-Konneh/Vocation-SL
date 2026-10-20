@@ -6,6 +6,8 @@
     <application
         android:label="Vocation SL"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -34,6 +36,18 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="org.vocationsl.app" android:host="login-callback"/>
+            </intent-filter>
+            <!-- Shared job links and employer referral links open in the app
+                 (verified by /.well-known/assetlinks.json on these hosts). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"/>
+                <data android:host="app.vocationsl.com"/>
+                <data android:host="employers.vocationsl.com"/>
+                <data android:pathPrefix="/job/"/>
+                <data android:pathPrefix="/r/"/>
             </intent-filter>
         </activity>
         <!-- Push alerts: small monochrome icon and brand colour. -->

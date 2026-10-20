@@ -43,4 +43,15 @@ abstract interface class EmployerBackend {
 
   /// Invoices for the company's job listings, once issued (drafts stay with admins).
   Future<List<Invoice>> invoices(String companyId);
+
+  /// Free postings left under the launch offer.
+  Future<LaunchOffer> launchOffer();
+
+  /// Asks for a live job to be featured; returns the invoice number issued.
+  Future<String> requestFeatured(String jobId);
+
+  // Team access (the owner adds colleagues by email)
+  Future<List<TeamMember>> team();
+  Future<void> addTeamMember(String email);
+  Future<void> removeTeamMember(String userId);
 }

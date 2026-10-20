@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/formatters.dart';
 import '../models/models.dart';
+import '../providers/core_providers.dart';
 import '../providers/message_providers.dart';
+import '../services/file_service.dart';
 import 'common.dart';
+import 'document_viewer.dart';
 import 'skeletons.dart';
 
 /// The employer ⇄ candidate conversation on an application, with a reply box.
@@ -19,6 +22,7 @@ class MessageThread extends ConsumerStatefulWidget {
     this.legacyEmployerMessage,
     this.onSent,
     this.enabled = true,
+    this.templates = const {},
   });
 
   final String applicationId;
@@ -32,6 +36,9 @@ class MessageThread extends ConsumerStatefulWidget {
   final ValueChanged<String>? onSent;
   final bool enabled;
 
+  /// Ready-made messages (label -> text) the writer can start from.
+  final Map<String, String> templates;
+
   @override
   ConsumerState<MessageThread> createState() => _MessageThreadState();
 }
@@ -39,6 +46,7 @@ class MessageThread extends ConsumerStatefulWidget {
 class _MessageThreadState extends ConsumerState<MessageThread> {
   final _text = TextEditingController();
   bool _sending = false;
+  PickedFile? _file;
 
   @override
   void initState() {
@@ -57,16 +65,29 @@ class _MessageThreadState extends ConsumerState<MessageThread> {
     if (widget.asEmployer && mounted) ref.invalidate(unreadRepliesProvider);
   }
 
+  Future<void> _pickPdf() async {
+    try {
+      final f = await ref.read(fileServiceProvider).pickDocument();
+      if (f != null) setState(() => _file = f);
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
   Future<void> _send() async {
     final body = _text.text.trim();
-    if (body.isEmpty) return;
+    final file = _file;
+    if (body.isEmpty && file == null) return;
     setState(() => _sending = true);
     try {
-      await ref.read(messageBackendProvider).send(widget.applicationId, body, asEmployer: widget.asEmployer);
+      final backend = ref.read(messageBackendProvider);
+      final attachment = file == null ? null : await backend.uploadAttachment(file.name, file.bytes);
+      final sent = await backend.send(widget.applicationId, body, asEmployer: widget.asEmployer, attachment: attachment);
       _text.clear();
+      setState(() => _file = null);
       ref.invalidate(messageThreadProvider(widget.applicationId));
-      widget.onSent?.call(body);
-      if (mounted) showSnack(context, 'Message sent');
+      widget.onSent?.call(sent.body);
+      if (mounted) showSnack(context, file == null ? 'Message sent' : 'Message and ${file.name} sent');
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -101,10 +122,23 @@ class _MessageThreadState extends ConsumerState<MessageThread> {
       if (showLegacy) _Bubble(body: legacy, mine: widget.asEmployer, label: widget.asEmployer ? 'You' : widget.otherName, at: null),
       for (final m in messages)
         _Bubble(
-          body: m.body,
+          body: m.hasAttachment && m.body == 'Sent a document: ${m.attachmentName}' ? '' : m.body,
           mine: m.fromEmployer == widget.asEmployer,
           label: m.fromEmployer == widget.asEmployer ? 'You' : widget.otherName,
           at: m.createdAt,
+          attachment: !m.hasAttachment
+              ? null
+              : _AttachmentTile(
+                  name: m.attachmentName!,
+                  onOpen: () => viewDocument(
+                    context,
+                    title: m.attachmentName!,
+                    fileName: m.attachmentName!,
+                    format: DocumentFormat.pdf,
+                    storagePath: m.attachmentPath,
+                    loadUrl: ref.read(messageBackendProvider).attachmentUrl,
+                  ),
+                ),
         ),
       Align(
         alignment: Alignment.centerLeft,
@@ -130,28 +164,85 @@ class _MessageThreadState extends ConsumerState<MessageThread> {
             alignLabelWithHint: true,
           ),
         ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: FilledButton.tonalIcon(
+        if (_file != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: InputChip(
+              avatar: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.danger, size: 18),
+              label: Text('${_file!.name} · ${(_file!.size / 1024).ceil()} KB', overflow: TextOverflow.ellipsis),
+              onDeleted: _sending ? null : () => setState(() => _file = null),
+              deleteButtonTooltipMessage: 'Remove file',
+            ),
+          ),
+        Row(children: [
+          IconButton(
+            tooltip: widget.asEmployer ? 'Attach a PDF (offer letter, contract...)' : 'Attach a PDF',
+            onPressed: _sending ? null : _pickPdf,
+            icon: Icon(Icons.attach_file_rounded, color: context.colors.primary),
+          ),
+          if (widget.templates.isNotEmpty)
+            PopupMenuButton<String>(
+              tooltip: 'Use a template',
+              onSelected: (t) => setState(() => _text.text = t),
+              itemBuilder: (_) => [for (final e in widget.templates.entries) PopupMenuItem(value: e.value, child: Text(e.key))],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.text_snippet_outlined, size: 18, color: context.colors.primary),
+                  const SizedBox(width: 6),
+                  Text('Template', style: context.text.labelLarge?.copyWith(color: context.colors.primary)),
+                ]),
+              ),
+            ),
+          const Spacer(),
+          FilledButton.tonalIcon(
             onPressed: _sending ? null : _send,
             icon: _sending
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.send_rounded, size: 18),
             label: Text(widget.asEmployer ? 'Send message' : 'Send reply'),
           ),
-        ),
+        ]),
       ] else if (widget.enabled && !widget.asEmployer && messages.isNotEmpty)
         Text('You can reply once the employer has written to you.', style: context.text.bodySmall?.copyWith(color: muted)),
     ]);
   }
 }
 
+class _AttachmentTile extends StatelessWidget {
+  const _AttachmentTile({required this.name, required this.onOpen});
+  final String name;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: context.palette.surface,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onOpen,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+            decoration: BoxDecoration(border: Border.all(color: context.palette.border), borderRadius: BorderRadius.circular(10)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.picture_as_pdf_outlined, color: AppColors.danger),
+              const SizedBox(width: 8),
+              Flexible(child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.text.titleSmall)),
+              const SizedBox(width: 8),
+              Text('Open', style: context.text.labelLarge?.copyWith(color: context.colors.primary)),
+            ]),
+          ),
+        ),
+      );
+}
+
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.body, required this.mine, required this.label, required this.at});
+  const _Bubble({required this.body, required this.mine, required this.label, required this.at, this.attachment});
   final String body;
   final bool mine;
   final String label;
   final DateTime? at;
+  final Widget? attachment;
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +268,11 @@ class _Bubble extends StatelessWidget {
             Text(at == null ? label : '$label · ${Fmt.ago(at!)}',
                 style: context.text.labelSmall?.copyWith(color: context.palette.muted, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
-            SelectableText(body, style: context.text.bodyMedium),
+            if (body.isNotEmpty) SelectableText(body, style: context.text.bodyMedium),
+            if (attachment != null) ...[
+              if (body.isNotEmpty) const SizedBox(height: 8),
+              attachment!,
+            ],
           ]),
         ),
       ),

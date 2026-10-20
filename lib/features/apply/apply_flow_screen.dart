@@ -11,16 +11,20 @@ import '../../providers/core_providers.dart';
 import '../../providers/job_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
+import '../../services/cv_pdf.dart';
 import '../../services/file_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/company_logo.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
+import '../jobs/job_details_screen.dart' show openExternalApply;
 
 enum _Step {
   personal('Personal info', Icons.person_outline_rounded),
   cv('CV / resume', Icons.description_outlined),
   cover('Cover letter', Icons.edit_note_rounded),
+  documents('Documents', Icons.attach_file_rounded),
+  questions('Questions', Icons.quiz_outlined),
   note('Note', Icons.chat_bubble_outline_rounded),
   review('Review', Icons.fact_check_outlined);
 
@@ -68,6 +72,19 @@ class ApplyFlowScreen extends ConsumerWidget {
         ),
       );
     }
+    if (job.value!.data.appliesExternally) {
+      final j = job.value!.data;
+      return Scaffold(
+        appBar: AppBar(title: const Text('Apply')),
+        body: EmptyState(
+          icon: Icons.open_in_new_rounded,
+          title: 'Apply on the employer\'s website',
+          message: '${j.companyName} takes applications for ${j.title} on its own website (${j.applyHost}).',
+          action: 'Apply on website',
+          onAction: () => openExternalApply(context, j),
+        ),
+      );
+    }
     return _ApplyFlow(job: job.value!.data, user: profile.value!.data);
   }
 }
@@ -96,6 +113,15 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
   bool _uploading = false;
   _CoverMode _coverMode = _CoverMode.write;
   CoverLetter? _coverFile;
+  final List<SupportingDocument> _supporting = [];
+
+  /// The documents step only appears when the employer asks for supporting documents.
+  late final List<_Step> _steps = [
+    for (final s in _Step.values)
+      if ((s != _Step.documents || widget.job.documentsRequested) && (s != _Step.questions || widget.job.screening.isNotEmpty)) s
+  ];
+  final Map<String, bool> _answers = {};
+  int get _stepIndex => _steps.indexOf(_step);
   bool _confirmed = false;
   bool _submitting = false;
   String? _stepError;
@@ -114,7 +140,7 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
     super.dispose();
   }
 
-  bool get _dirty => _step.index > 0 || _coverText.text.isNotEmpty || _note.text.isNotEmpty;
+  bool get _dirty => _stepIndex > 0 || _supporting.isNotEmpty || _coverText.text.isNotEmpty || _note.text.isNotEmpty;
 
   // ---- Navigation ------------------------------------------------------------
 
@@ -137,6 +163,12 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
           setState(() => _stepError = 'Write at least 50 characters, or choose Skip.');
           return false;
         }
+      case _Step.questions:
+        if (widget.job.screening.any((q) => !_answers.containsKey(q.id))) {
+          setState(() => _stepError = 'Answer every question to continue.');
+          return false;
+        }
+      case _Step.documents:
       case _Step.note:
       case _Step.review:
         break;
@@ -150,17 +182,17 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
     if (_step == _Step.review) {
       _submit();
     } else {
-      setState(() => _step = _Step.values[_step.index + 1]);
+      setState(() => _step = _steps[_stepIndex + 1]);
     }
   }
 
   void _back() {
-    if (_step.index == 0) {
+    if (_stepIndex == 0) {
       _maybeLeave();
     } else {
       setState(() {
         _stepError = null;
-        _step = _Step.values[_step.index - 1];
+        _step = _steps[_stepIndex - 1];
       });
     }
   }
@@ -216,6 +248,32 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
     });
   }
 
+  /// No PDF CV? Make one from the profile.
+  Future<void> _createCv() async {
+    final problem = CvPdf.missing(widget.user);
+    if (problem.isNotEmpty) {
+      setState(() => _stepError = problem);
+      return;
+    }
+    setState(() => _uploading = true);
+    try {
+      final bytes = await CvPdf.build(widget.user);
+      final name = CvPdf.fileName(widget.user);
+      final path = await ref.read(userRepositoryProvider).uploadDocument(widget.user.id, name, bytes);
+      if (!mounted) return;
+      setState(() {
+        _stepError = null;
+        _resume = Resume(id: const Uuid().v4(), fileName: name, sizeBytes: bytes.length, uploadedAt: DateTime.now(), format: DocumentFormat.pdf, storagePath: path);
+      });
+    } on NetworkException {
+      if (mounted) showSnack(context, 'You\'re offline. Connect to create your CV.', error: true);
+    } catch (e) {
+      if (mounted) showError(context, e);
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
   Future<void> _uploadCover() async {
     final r = await _pickAndUpload();
     if (r == null) return;
@@ -229,6 +287,19 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
         format: r.$1.format,
         storagePath: r.$2,
       );
+    });
+  }
+
+  Future<void> _uploadSupporting() async {
+    if (_supporting.length >= SupportingDocument.maxPerApplication) {
+      setState(() => _stepError = 'You can attach up to ${SupportingDocument.maxPerApplication} documents. Remove one to add another.');
+      return;
+    }
+    final r = await _pickAndUpload();
+    if (r == null) return;
+    setState(() {
+      _stepError = null;
+      _supporting.add(SupportingDocument(id: const Uuid().v4(), fileName: r.$1.name, sizeBytes: r.$1.size, storagePath: r.$2));
     });
   }
 
@@ -274,6 +345,8 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
       applicant: ApplicantInfo(fullName: _name.text.trim(), email: _email.text.trim(), phone: _phone.text.trim(), location: _location),
       resume: _resume!,
       coverLetter: _coverLetter,
+      supportingDocuments: List.of(_supporting),
+      screeningAnswers: Map.of(_answers),
       note: _note.text.trim().isEmpty ? null : _note.text.trim(),
       job: widget.job,
     );
@@ -313,7 +386,7 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
           title: Text('Apply · ${widget.job.companyName}', overflow: TextOverflow.ellipsis),
         ),
         body: Column(children: [
-          _StepHeader(current: _step),
+          _StepHeader(current: _step, steps: _steps),
           Expanded(
             child: Align(
               alignment: Alignment.topCenter,
@@ -336,6 +409,8 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
                           _Step.personal => _personal(),
                           _Step.cv => _cv(),
                           _Step.cover => _cover(),
+                          _Step.documents => _documents(),
+                          _Step.questions => _questionsStep(),
                           _Step.note => _noteStep(),
                           _Step.review => _review(),
                         },
@@ -416,7 +491,7 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
       );
 
   Widget _cv() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _title('Your CV', 'Upload a PDF, DOC or DOCX file up to 5 MB.'),
+        _title('Your CV', 'Upload your CV as a PDF, up to 5 MB.'),
         if (_resume != null)
           _DocumentTile(
             icon: Icons.picture_as_pdf_outlined,
@@ -429,6 +504,14 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
           busy: _uploading,
           label: _resume == null ? 'Upload your CV' : 'Upload a different CV',
           onTap: _uploadCv,
+        ),
+        const SizedBox(height: 4),
+        Center(
+          child: TextButton.icon(
+            onPressed: _uploading ? null : _createCv,
+            icon: const Icon(Icons.picture_as_pdf_rounded),
+            label: const Text('No PDF CV? Create one from my profile'),
+          ),
         ),
         if (_resume != null && _resume!.id != widget.user.resume?.id) ...[
           const SizedBox(height: 8),
@@ -498,6 +581,62 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
         },
       ]);
 
+  Widget _documents() {
+    final note = widget.job.documentsNote.trim();
+    final full = _supporting.length >= SupportingDocument.maxPerApplication;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _title('Supporting documents', 'Optional. ${widget.job.companyName} asks applicants to attach these. Add up to ${SupportingDocument.maxPerApplication} PDFs, or continue without them.'),
+      if (note.isNotEmpty)
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: context.palette.accentTint, borderRadius: BorderRadius.circular(AppSpacing.radius)),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.assignment_outlined, color: context.colors.primary),
+            const SizedBox(width: 12),
+            Expanded(child: Text('The employer asks for: $note', style: context.text.bodyMedium?.copyWith(fontWeight: FontWeight.w600))),
+          ]),
+        ),
+      for (final d in _supporting) ...[
+        _DocumentTile(
+          icon: Icons.picture_as_pdf_outlined,
+          name: d.fileName,
+          detail: 'PDF · ${Fmt.fileSize(d.sizeBytes)}',
+          onRemove: () => setState(() => _supporting.remove(d)),
+        ),
+        const SizedBox(height: 8),
+      ],
+      Text('${_supporting.length} of ${SupportingDocument.maxPerApplication} attached', style: context.text.labelMedium?.copyWith(color: context.palette.muted)),
+      const SizedBox(height: 12),
+      if (!full) _UploadBox(busy: _uploading, label: _supporting.isEmpty ? 'Upload a document' : 'Upload another document', onTap: _uploadSupporting),
+    ]);
+  }
+
+  Widget _questionsStep() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _title('A few questions', '${widget.job.companyName} asks every applicant these. Answer honestly.'),
+        for (final q in widget.job.screening)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(q.text, style: context.text.titleSmall),
+                const SizedBox(height: 10),
+                SegmentedButton<bool>(
+                  segments: const [ButtonSegment(value: true, label: Text('Yes')), ButtonSegment(value: false, label: Text('No'))],
+                  selected: _answers.containsKey(q.id) ? {_answers[q.id]!} : const <bool>{},
+                  emptySelectionAllowed: true,
+                  showSelectedIcon: false,
+                  onSelectionChanged: (v) => setState(() {
+                    if (v.isNotEmpty) _answers[q.id] = v.first;
+                    _stepError = null;
+                  }),
+                ),
+              ]),
+            ),
+          ),
+      ]);
+
   Widget _noteStep() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         _title('Message to the employer', 'Optional. Mention your availability, notice period or anything else they should know.'),
         TextField(
@@ -538,6 +677,24 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
           if (cover?.kind == CoverLetterKind.written) Text(cover!.text ?? '', maxLines: 5, overflow: TextOverflow.ellipsis),
         ],
       ),
+      if (widget.job.screening.isNotEmpty)
+        _ReviewCard(
+          title: 'Questions',
+          onEdit: () => _goTo(_Step.questions),
+          children: [
+            for (final q in widget.job.screening)
+              Text('${q.text}  ·  ${_answers[q.id] == null ? 'Not answered' : (_answers[q.id]! ? 'Yes' : 'No')}'),
+          ],
+        ),
+      if (widget.job.documentsRequested)
+        _ReviewCard(
+          title: 'Supporting documents',
+          onEdit: () => _goTo(_Step.documents),
+          children: [
+            if (_supporting.isEmpty) const Text('None attached'),
+            for (final d in _supporting) Text(d.fileName, style: context.text.titleSmall),
+          ],
+        ),
       _ReviewCard(
         title: 'Message to employer',
         onEdit: () => _goTo(_Step.note),
@@ -570,19 +727,20 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
 }
 
 class _StepHeader extends StatelessWidget {
-  const _StepHeader({required this.current});
+  const _StepHeader({required this.current, required this.steps});
   final _Step current;
+  final List<_Step> steps;
 
   @override
   Widget build(BuildContext context) {
-    final i = current.index;
+    final i = steps.indexOf(current);
     return Semantics(
-      label: 'Step ${i + 1} of ${_Step.values.length}: ${current.label}',
+      label: 'Step ${i + 1} of ${steps.length}: ${current.label}',
       child: Padding(
         padding: const EdgeInsets.fromLTRB(AppSpacing.gutter, 4, AppSpacing.gutter, 12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            for (var s = 0; s < _Step.values.length; s++) ...[
+            for (var s = 0; s < steps.length; s++) ...[
               if (s > 0) const SizedBox(width: 6),
               Expanded(
                 child: AnimatedContainer(
@@ -597,7 +755,7 @@ class _StepHeader extends StatelessWidget {
             ],
           ]),
           const SizedBox(height: 8),
-          Text('Step ${i + 1} of ${_Step.values.length} · ${current.label}', style: context.text.labelMedium?.copyWith(color: context.palette.muted)),
+          Text('Step ${i + 1} of ${steps.length} · ${current.label}', style: context.text.labelMedium?.copyWith(color: context.palette.muted)),
         ]),
       ),
     );
@@ -657,7 +815,7 @@ class _UploadBox extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(label, style: context.text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text('PDF, DOC or DOCX · max 5 MB', style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+                Text('PDF only · max 5 MB', style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
               ],
             ]),
           ),
@@ -722,7 +880,8 @@ class _BottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final last = step == _Step.review;
-    final optional = step == _Step.note;
+    final optional = step == _Step.note || step == _Step.documents;
+    // Questions are required, so their step keeps the usual "Next" label.
     return DecoratedBox(
       decoration: BoxDecoration(color: context.colors.surface, border: Border(top: BorderSide(color: context.palette.border))),
       child: SafeArea(
@@ -730,7 +889,7 @@ class _BottomBar extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.gutter, 12, AppSpacing.gutter, 12),
           child: Row(children: [
-            if (step.index > 0)
+            if (step != _Step.personal)
               TextButton(
                 onPressed: busy ? null : onBack,
                 style: TextButton.styleFrom(foregroundColor: context.colors.onSurface),

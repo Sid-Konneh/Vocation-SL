@@ -110,6 +110,7 @@ class DashboardScreen extends ConsumerWidget {
         const AnnouncementBanner(audience: AnnouncementAudience.employer),
         const PushPrompt(),
         if (company != null) ApprovalBanner(company: company),
+        const LaunchOfferBanner(),
         StatGrid(children: [
           StatTile(label: 'Live jobs', value: '${stats.liveJobs}', detail: stats.pendingJobs > 0 ? '${stats.pendingJobs} awaiting approval' : '${stats.draftJobs} drafts', icon: Icons.work_outline_rounded, onTap: () => context.go('/employer/jobs')),
           StatTile(label: 'Applicants', value: '${stats.totalApplicants}', detail: '${stats.newThisWeek} this week', icon: Icons.people_outline_rounded, onTap: () => context.go('/employer/candidates')),
