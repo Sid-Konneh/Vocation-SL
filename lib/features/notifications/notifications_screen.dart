@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/models.dart';
 import '../../providers/user_data_providers.dart';
+import '../../services/job_source.dart';
 import '../../widgets/common.dart';
 import '../../widgets/push_prompt.dart';
 import '../../widgets/skeletons.dart';
@@ -25,6 +26,9 @@ IconData notificationIcon(NotificationType t) => switch (t) {
       NotificationType.newApplicant => Icons.person_add_alt_1_rounded,
       NotificationType.referral => Icons.handshake_rounded,
       NotificationType.team => Icons.groups_rounded,
+      NotificationType.invite => Icons.mark_email_unread_rounded,
+      NotificationType.support || NotificationType.supportAdmin => Icons.support_agent_rounded,
+      NotificationType.digest => Icons.summarize_rounded,
     };
 
 Color notificationColor(NotificationType t) => switch (t) {
@@ -38,6 +42,9 @@ Color notificationColor(NotificationType t) => switch (t) {
       NotificationType.newApplicant => AppColors.green,
       NotificationType.referral => AppColors.purple,
       NotificationType.team => AppColors.info,
+      NotificationType.invite => AppColors.purple,
+      NotificationType.support || NotificationType.supportAdmin => const Color(0xFF16808F),
+      NotificationType.digest => AppColors.info,
     };
 
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -54,10 +61,19 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (!n.read) ref.read(notificationsProvider.notifier).markRead([n.id]);
     if (n.type == NotificationType.referral) {
       context.push('/refer');
+    } else if (n.type == NotificationType.support) {
+      context.push('/support');
+    } else if (n.type == NotificationType.supportAdmin) {
+      context.go('/admin/support');
+    } else if (n.type == NotificationType.digest) {
+      context.go('/admin/digest');
     } else if (n.applicationId != null) {
       context.push('/application/${n.applicationId}');
     } else if (n.jobId != null) {
+      JobSource.noteFromNotification(n.jobId!, n.type);
       context.push('/job/${n.jobId}');
+    } else if (n.type == NotificationType.savedSearch) {
+      context.go('/saved');
     }
   }
 

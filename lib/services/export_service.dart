@@ -26,4 +26,13 @@ class ExportService {
     }
     await SharePlus.instance.share(ShareParams(files: [XFile.fromData(bytes, name: fileName, mimeType: 'text/csv')], fileNameOverrides: [fileName]));
   }
+
+  /// Downloads (web) or shares (phones) a PDF.
+  static Future<void> savePdf(String fileName, Uint8List bytes) async {
+    if (downloadSupported) {
+      downloadBytes(fileName, bytes, 'application/pdf');
+      return;
+    }
+    await SharePlus.instance.share(ShareParams(files: [XFile.fromData(bytes, name: fileName, mimeType: 'application/pdf')], fileNameOverrides: [fileName]));
+  }
 }

@@ -8,6 +8,7 @@ import '../../core/config/app_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/backend/demo_backend.dart';
 import '../../providers/core_providers.dart';
+import '../../providers/hiring_providers.dart';
 import '../../providers/job_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
@@ -74,6 +75,25 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: const Text('Accounts created with Google can set one here too'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => context.push('/settings/password'),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.person_search_outlined),
+            title: const Text('Let employers find me'),
+            subtitle: const Text('Approved employers can see your headline, skills, experience and education, and invite you to apply. '
+                'Your phone, email and CV stay private until you apply.'),
+            isThreeLine: true,
+            value: ref.watch(discoverableProvider).value ?? false,
+            onChanged: ref.watch(discoverableProvider).isLoading
+                ? null
+                : (v) async {
+                    try {
+                      await ref.read(hiringBackendProvider).setDiscoverable(v);
+                      ref.invalidate(discoverableProvider);
+                      if (context.mounted) showSnack(context, v ? 'Employers can now find you' : 'You\'re hidden from talent search');
+                    } catch (e) {
+                      if (context.mounted) showError(context, e);
+                    }
+                  },
           ),
           ListTile(
             leading: const Icon(Icons.notifications_outlined),
@@ -159,8 +179,15 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.push('/about'),
           ),
           ListTile(
+            leading: const Icon(Icons.forum_outlined),
+            title: const Text('Contact support'),
+            subtitle: const Text('Ask the Vocation SL team a question and get a reply in the app'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/support'),
+          ),
+          ListTile(
             leading: const Icon(Icons.support_agent_outlined),
-            title: const Text('Help & support'),
+            title: const Text('Support email'),
             subtitle: const SelectableText(AppConfig.supportEmail),
             trailing: IconButton(
               tooltip: 'Copy email address',

@@ -7,6 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../core/config/app_config.dart';
 import '../firebase_options.dart';
+import '../models/models.dart';
+import 'job_source.dart';
 
 enum PushPermission { unsupported, notAsked, granted, denied }
 
@@ -67,6 +69,11 @@ class PushService {
 
   void _opened(RemoteMessage m) {
     final route = m.data['route'];
+    final jobId = m.data['job_id'];
+    if (jobId is String && jobId.isNotEmpty) {
+      final type = NotificationType.values.where((t) => t.name == m.data['type']).firstOrNull;
+      if (type != null) JobSource.noteFromNotification(jobId, type);
+    }
     _taps.add(route is String && route.startsWith('/') ? route : '/alerts');
   }
 

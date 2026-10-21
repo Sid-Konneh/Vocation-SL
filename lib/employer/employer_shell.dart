@@ -28,6 +28,7 @@ const _items = [
   _Item('Candidates', Icons.people_outline_rounded, Icons.people_rounded),
   _Item('Company profile', Icons.business_outlined, Icons.business_rounded),
   _Item('Invoices', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
+  _Item('Find talent', Icons.person_search_outlined, Icons.person_search_rounded),
 ];
 
 /// Phone bottom bar shows these branches, plus "More" for the rest.
@@ -120,6 +121,12 @@ class EmployerShell extends ConsumerWidget {
                                 onTap: () => switchRole(context, ref, UserRole.seeker),
                               ),
                               _NavRow(
+                                icon: const Icon(Icons.forum_outlined),
+                                label: 'Help & support',
+                                semantics: 'Help and support',
+                                onTap: () => context.push('/support'),
+                              ),
+                              _NavRow(
                                 icon: const Icon(Icons.info_outline_rounded),
                                 label: 'About',
                                 semantics: 'About Vocation SL',
@@ -194,7 +201,7 @@ class EmployerShell extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final i in [1, 4, 5])
+            for (final i in [6, 1, 4, 5])
               ListTile(
                 leading: Icon(_items[i].icon),
                 title: Text(_items[i].label),
@@ -218,6 +225,14 @@ class EmployerShell extends ConsumerWidget {
               onTap: () {
                 Navigator.pop(sheet);
                 switchRole(context, ref, UserRole.seeker);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.forum_outlined),
+              title: const Text('Help & support'),
+              onTap: () {
+                Navigator.pop(sheet);
+                context.push('/support');
               },
             ),
             ListTile(

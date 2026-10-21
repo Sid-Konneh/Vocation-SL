@@ -10,6 +10,7 @@ import '../../providers/core_providers.dart';
 import '../../providers/job_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
+import '../../services/job_source.dart';
 import '../../widgets/common.dart';
 import '../../widgets/company_logo.dart';
 import '../../widgets/job_card.dart';
@@ -22,6 +23,8 @@ class JobDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Idempotent: records whether this job came from a link (first page on screen).
+    JobSource.noteOpened(jobId, firstPage: !Navigator.of(context).canPop());
     final async = ref.watch(jobDetailProvider(jobId));
     return async.when(
       loading: () => Scaffold(appBar: AppBar(), body: const SingleChildScrollView(child: JobDetailSkeleton())),

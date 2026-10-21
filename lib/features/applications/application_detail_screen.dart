@@ -9,6 +9,8 @@ import '../../providers/user_data_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/company_logo.dart';
 import '../../widgets/document_viewer.dart';
+import '../../widgets/interview_slots.dart';
+import 'application_tracker.dart';
 import '../../widgets/message_thread.dart';
 import '../../providers/core_providers.dart';
 import '../../widgets/skeletons.dart';
@@ -118,6 +120,8 @@ class _DetailState extends ConsumerState<_Detail> {
                 ]),
                 const SizedBox(height: 8),
                 Text(a.status.description, style: context.text.bodyLarge),
+                if (a.status.isActive) ApplicationTracker(application: a),
+                ChooseInterviewCard(application: a, onChosen: () => ref.read(applicationsProvider.notifier).refresh()),
                 if (a.pendingSync) ...[
                   const SizedBox(height: 16),
                   const _Callout(

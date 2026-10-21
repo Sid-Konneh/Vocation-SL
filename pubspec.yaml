@@ -1,8 +1,8 @@
 name: vocation_sl
-description: "Vocation SL â€” job discovery and applications for Sierra Leone."
+description: "Vocation SL: job discovery and applications for Sierra Leone."
 publish_to: 'none'
 
-version: 1.1.1+12
+version: 1.2.1+14
 
 environment:
   sdk: ^3.13.4

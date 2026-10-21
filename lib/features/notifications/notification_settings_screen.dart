@@ -19,6 +19,8 @@ const _descriptions = {
   NotificationType.statusChange: 'Other application status updates',
   NotificationType.message: 'Messages from employers',
   NotificationType.deadline: 'Reminders before saved jobs close',
+  NotificationType.invite: 'Employers who found you in talent search',
+  NotificationType.support: 'Replies from the Vocation SL team',
 };
 
 class NotificationSettingsScreen extends ConsumerWidget {

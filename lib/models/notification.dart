@@ -10,7 +10,11 @@ enum NotificationType {
   deadline('Deadline reminder'),
   newApplicant('New applicant'),
   referral('Referral update'),
-  team('Team update');
+  team('Team update'),
+  invite('Invitation to apply'),
+  support('Support reply'),
+  supportAdmin('Support request'),
+  digest('Weekly digest');
 
   const NotificationType(this.label);
   final String label;

@@ -21,6 +21,7 @@ class AdminSection {
 
 const adminSections = [
   AdminSection('/admin/overview', 'Overview', Icons.space_dashboard_outlined),
+  AdminSection('/admin/digest', 'Weekly digest', Icons.summarize_outlined),
   AdminSection('/admin/insights', 'Insights', Icons.insights_outlined),
   AdminSection('/admin/traction', 'Traction', Icons.trending_up_rounded),
   AdminSection('/admin/jobs', 'Job moderation', Icons.fact_check_outlined),
@@ -28,6 +29,7 @@ const adminSections = [
   AdminSection('/admin/users', 'Users', Icons.people_outline_rounded),
   AdminSection('/admin/applications', 'Applications', Icons.assignment_outlined),
   AdminSection('/admin/reports', 'Reports', Icons.flag_outlined),
+  AdminSection('/admin/support', 'Support inbox', Icons.support_agent_outlined),
   AdminSection('/admin/invoices', 'Invoices', Icons.receipt_long_outlined),
   AdminSection('/admin/referrals', 'Referrals', Icons.handshake_outlined),
   AdminSection('/admin/content', 'Content', Icons.campaign_outlined),

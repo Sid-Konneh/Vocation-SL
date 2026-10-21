@@ -79,6 +79,8 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
           if (mounted) showSnack(context, 'Request sent. Invoice $number is in Invoices.');
         case 'applicants':
           context.go('/employer/candidates?job=${job.id}');
+        case 'report':
+          context.push('/employer/jobs/${job.id}/report');
         case 'preview':
           context.push('/employer/jobs/${job.id}/edit?preview=1');
         case 'close':
@@ -242,6 +244,8 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                           if (j.status == JobStatus.published && !j.featured && !j.featureRequested)
                             const PopupMenuItem(value: 'feature', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.star_outline_rounded), title: Text('Feature this job'))),
                           if (j.status != JobStatus.draft && !j.appliesExternally) const PopupMenuItem(value: 'applicants', child: Text('View applicants')),
+                          if (j.status == JobStatus.published || j.status == JobStatus.closed)
+                            const PopupMenuItem(value: 'report', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.bar_chart_rounded), title: Text('Hiring report'))),
                           if (j.status == JobStatus.published) const PopupMenuItem(value: 'close', child: Text('Close job')),
                           if (j.status == JobStatus.closed) const PopupMenuItem(value: 'reopen', child: Text('Reopen')),
                           if (const {JobStatus.draft, JobStatus.declined, JobStatus.rejected}.contains(j.status))

@@ -156,7 +156,9 @@ void main() {
 
     // Open the candidate: opening marks them viewed.
     await tester.tap(find.text('Fatmata Kamara'));
-    await waitFor(tester, find.text('Schedule interview'));
+    await waitFor(tester, find.text('Offer interview times'));
+    expect(find.text('Set one time'), findsOneWidget);
+    expect(find.text('Offer letter'), findsOneWidget);
     await settle(tester, 400);
     expect(fake.apps.single.status, ApplicationStatus.viewed);
 

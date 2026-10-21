@@ -75,9 +75,13 @@ class JobApplication {
     this.interviewAt,
     this.nextStepDeadline,
     this.employerMessage,
+    this.source,
     this.pendingSync = false,
     this.job,
   });
+
+  /// Where the applicant found the job (an [ApplicationSource] name), for the employer's report.
+  final String? source;
 
   final String id;
   final String jobId;
@@ -136,6 +140,7 @@ class JobApplication {
         interviewAt: interviewAt != null ? interviewAt() : this.interviewAt,
         nextStepDeadline: nextStepDeadline != null ? nextStepDeadline() : this.nextStepDeadline,
         employerMessage: employerMessage != null ? employerMessage() : this.employerMessage,
+        source: source,
         pendingSync: pendingSync ?? this.pendingSync,
         job: job != null ? job() : this.job,
       );
@@ -165,6 +170,7 @@ class JobApplication {
         interviewAt: j['interview_at'] == null ? null : DateTime.parse(j['interview_at'] as String),
         nextStepDeadline: j['next_step_deadline'] == null ? null : DateTime.parse(j['next_step_deadline'] as String),
         employerMessage: j['employer_message'] as String?,
+        source: j['source'] as String?,
         pendingSync: j['pending_sync'] as bool? ?? false,
         job: j['job'] is Map ? Job.fromJson(Map<String, dynamic>.from(j['job'] as Map)) : null,
       );
@@ -185,6 +191,7 @@ class JobApplication {
         'interview_at': interviewAt?.toIso8601String(),
         'next_step_deadline': nextStepDeadline?.toIso8601String(),
         'employer_message': employerMessage,
+        if (source != null) 'source': source,
         if (includeLocal) 'pending_sync': pendingSync,
         if (includeJob && job != null) 'job': job!.toJson(),
       };

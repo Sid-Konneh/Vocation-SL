@@ -15,6 +15,7 @@ import 'core/platform/deep_link.dart';
 import 'core/storage/local_store.dart';
 import 'data/backend/backend.dart';
 import 'data/backend/demo_backend.dart';
+import 'data/backend/hiring_backend.dart';
 import 'data/backend/message_backend.dart';
 import 'data/backend/referral_backend.dart';
 import 'data/backend/supabase_backend.dart';
@@ -24,6 +25,7 @@ import 'employer/data/supabase_employer_backend.dart';
 import 'employer/providers.dart';
 import 'models/models.dart';
 import 'providers/core_providers.dart';
+import 'providers/hiring_providers.dart';
 import 'providers/message_providers.dart';
 import 'providers/push_providers.dart';
 import 'providers/referral_providers.dart';
@@ -51,6 +53,7 @@ Future<void> main() async {
   final AdminBackend adminBackend;
   final MessageBackend messageBackend;
   final ReferralBackend referralBackend;
+  final HiringBackend hiringBackend;
   PushService? push;
   if (AppConfig.useSupabase) {
     await Supabase.initialize(url: AppConfig.supabaseUrl, publishableKey: AppConfig.supabaseKey);
@@ -59,13 +62,15 @@ Future<void> main() async {
     adminBackend = SupabaseAdminBackend(Supabase.instance.client);
     messageBackend = SupabaseMessageBackend(Supabase.instance.client);
     referralBackend = SupabaseReferralBackend(Supabase.instance.client);
-    push = await PushService.start(Supabase.instance.client);
+    hiringBackend = SupabaseHiringBackend(Supabase.instance.client);
+    push =await PushService.start(Supabase.instance.client);
   } else {
     backend = DemoBackend(store: store, connectivity: connectivity, devSettings: () => DevSettings.load(store));
     employerBackend = DemoEmployerBackend(withSamples: true);
     adminBackend = DemoAdminBackend();
     messageBackend = DemoMessageBackend();
     referralBackend = DemoReferralBackend();
+    hiringBackend = DemoHiringBackend();
   }
 
   runApp(ProviderScope(
@@ -77,6 +82,7 @@ Future<void> main() async {
       adminBackendProvider.overrideWithValue(adminBackend),
       messageBackendProvider.overrideWithValue(messageBackend),
       referralBackendProvider.overrideWithValue(referralBackend),
+      hiringBackendProvider.overrideWithValue(hiringBackend),
       pushServiceProvider.overrideWithValue(push),
     ],
     child: const VocationApp(),

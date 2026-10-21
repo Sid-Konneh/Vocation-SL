@@ -13,6 +13,7 @@ import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
 import '../../services/cv_pdf.dart';
 import '../../services/file_service.dart';
+import '../../services/job_source.dart';
 import '../../widgets/common.dart';
 import '../../widgets/company_logo.dart';
 import '../../widgets/skeletons.dart';
@@ -348,6 +349,7 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
       supportingDocuments: List.of(_supporting),
       screeningAnswers: Map.of(_answers),
       note: _note.text.trim().isEmpty ? null : _note.text.trim(),
+      source: JobSource.of(widget.job.id).name,
       job: widget.job,
     );
     try {

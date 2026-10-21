@@ -7,11 +7,13 @@ import '../../../features/applications/application_detail_screen.dart' show Appl
 import '../../../models/models.dart';
 import '../../../providers/message_providers.dart';
 import '../../../widgets/common.dart';
+import '../../../widgets/interview_slots.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/message_thread.dart';
 import '../../../widgets/states.dart';
 import '../../providers.dart';
 import '../../widgets.dart';
+import '../offer/offer_letter.dart';
 import 'candidates_screen.dart';
 
 class CandidateDetailScreen extends ConsumerStatefulWidget {
@@ -75,6 +77,24 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
         ref.invalidate(messageThreadProvider(a.id));
       } catch (_) {}
     }, 'Interview scheduled. ${a.applicant.fullName} has been notified.');
+  }
+
+  Future<void> _offerTimes(JobApplication a) async {
+    final company = ref.read(companyProvider).value?.data;
+    final sent = await offerInterviewTimes(context, ref, a, defaultPlace: company?.address ?? '');
+    // Earlier stages move to Interview on the server.
+    if (sent) await ref.read(candidatesProvider.notifier).refresh();
+  }
+
+  Future<void> _offerLetter(JobApplication a) async {
+    final company = ref.read(companyProvider).value?.data;
+    if (company == null) return;
+    final sent = await sendOfferLetter(context, ref, a, company);
+    if (sent && a.status != ApplicationStatus.offer && a.status != ApplicationStatus.hired && mounted) {
+      final move = await confirmDialog(context,
+          title: 'Move to Offer?', message: 'Move ${a.applicant.fullName} to the Offer stage as well?', confirmLabel: 'Move to Offer');
+      if (move) await _run(() => ref.read(candidatesProvider.notifier).updateCandidate(a, status: ApplicationStatus.offer), 'Moved to Offer');
+    }
   }
 
   @override
@@ -141,10 +161,22 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
                     child: Text(s.label),
                   ),
                 FilledButton.icon(
+                  onPressed: _busy ? null : () => _offerTimes(a),
+                  icon: const Icon(Icons.event_note_rounded, size: 18),
+                  label: const Text('Offer interview times'),
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                ),
+                OutlinedButton.icon(
                   onPressed: _busy ? null : () => _schedule(a),
                   icon: const Icon(Icons.event_rounded, size: 18),
-                  label: Text(a.interviewAt == null ? 'Schedule interview' : 'Reschedule interview'),
-                  style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                  label: Text(a.interviewAt == null ? 'Set one time' : 'Reschedule'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : () => _offerLetter(a),
+                  icon: const Icon(Icons.description_outlined, size: 18),
+                  label: const Text('Offer letter'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
                 ),
                 TextButton(
                   onPressed: _busy || a.status == ApplicationStatus.rejected ? null : () => _move(a, ApplicationStatus.rejected),
@@ -156,6 +188,7 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
                 const SizedBox(height: 12),
                 InfoRow(icon: Icons.event_available_rounded, label: 'Interview', value: '${Fmt.dateTime(a.interviewAt!)} (${Fmt.countdown(a.interviewAt!)})'),
               ],
+              InterviewOfferStatus(applicationId: a.id, candidateName: a.applicant.fullName.split(' ').first),
             ]),
     );
 

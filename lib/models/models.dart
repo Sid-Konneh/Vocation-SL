@@ -4,6 +4,7 @@ export 'company.dart';
 export 'cv_extract.dart';
 export 'documents.dart';
 export 'enums.dart';
+export 'hiring.dart';
 export 'job.dart';
 export 'job_filter.dart';
 export 'message.dart';

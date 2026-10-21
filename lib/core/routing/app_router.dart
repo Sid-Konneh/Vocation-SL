@@ -9,6 +9,7 @@ import '../../admin/features/moderation.dart';
 import '../../admin/features/overview_insights.dart';
 import '../../admin/features/people.dart';
 import '../../admin/features/platform.dart';
+import '../../admin/features/support_digest.dart';
 import '../../employer/employer_shell.dart';
 import '../../employer/features/candidates/candidate_detail_screen.dart';
 import '../../employer/features/candidates/candidates_screen.dart';
@@ -16,7 +17,10 @@ import '../../employer/features/company/company_screens.dart';
 import '../../employer/features/dashboard/dashboard_screens.dart';
 import '../../employer/features/invoices/employer_invoices_screen.dart';
 import '../../employer/features/jobs/job_editor_screen.dart';
+import '../../employer/features/jobs/job_report_screen.dart';
 import '../../employer/features/jobs/my_jobs_screen.dart';
+import '../../employer/features/talent/talent_profile_screen.dart';
+import '../../employer/features/talent/talent_search_screen.dart';
 import '../../features/about/about_screen.dart';
 import '../../features/about/site_page_screen.dart';
 import '../../features/applications/application_detail_screen.dart';
@@ -44,6 +48,7 @@ import '../../admin/features/traction.dart';
 import '../../features/saved/saved_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/splash/splash_screen.dart';
+import '../../features/support/support_screens.dart';
 import '../config/app_config.dart';
 import '../../models/models.dart';
 import '../../providers/core_providers.dart';
@@ -77,7 +82,7 @@ GoRoute _pushed(String path, Widget Function(GoRouterState s) build, {List<Route
     );
 
 /// Pages both kinds of user can open.
-const _shared = ['/about', '/settings/password', '/choose-role', '/account/delete', '/pages/', '/suspended', '/admin', '/r/'];
+const _shared = ['/about', '/settings/password', '/choose-role', '/account/delete', '/pages/', '/suspended', '/admin', '/r/', '/support'];
 
 /// A shared job link opened while signed out; reopened after sign-in.
 const _pendingLinkKey = 'pending_link';
@@ -179,8 +184,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           ]),
           StatefulShellBranch(routes: [GoRoute(path: '/employer/company', builder: (c, s) => const CompanyProfileScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: '/employer/invoices', builder: (c, s) => const EmployerInvoicesScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/employer/talent', builder: (c, s) => const TalentSearchScreen())]),
         ],
       ),
+      _pushed('/employer/jobs/:id/report', (s) => JobReportScreen(jobId: s.pathParameters['id']!)),
+      _pushed('/employer/talent/:id', (s) => TalentProfileScreen(
+            userId: s.pathParameters['id']!,
+            invitedJobIds: s.extra is List<String> ? s.extra as List<String> : const [],
+          )),
       _pushed('/employer/jobs/new', (s) => const JobEditorScreen()),
       _pushed('/employer/jobs/:id/edit', (s) => JobEditorScreen(jobId: s.pathParameters['id'])),
       _pushed('/employer/candidates/:id', (s) => CandidateDetailScreen(applicationId: s.pathParameters['id']!)),
@@ -189,6 +200,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       _pushed('/about', (s) => const AboutScreen()),
       _pushed('/account/delete', (s) => const DeleteAccountScreen()),
       _pushed('/pages/:slug', (s) => SitePageScreen(slug: s.pathParameters['slug']!)),
+      _pushed('/support', (s) => const SupportScreen(), routes: [
+        GoRoute(path: 'new', parentNavigatorKey: rootNavigatorKey, pageBuilder: (c, s) => _page(s, const NewSupportRequestScreen())),
+        GoRoute(
+          path: ':ticket',
+          parentNavigatorKey: rootNavigatorKey,
+          pageBuilder: (c, s) => _page(s, SupportThreadScreen(ticketId: s.pathParameters['ticket']!)),
+        ),
+      ]),
       GoRoute(path: '/suspended', pageBuilder: (c, s) => _page(s, const SuspendedScreen())),
 
       // ---- Admin ------------------------------------------------------------
@@ -210,6 +229,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/admin/invoices', pageBuilder: (c, s) => _page(s, const AdminInvoicesScreen())),
           GoRoute(path: '/admin/referrals', pageBuilder: (c, s) => _page(s, const AdminReferralsScreen())),
           GoRoute(path: '/admin/activity', pageBuilder: (c, s) => _page(s, const AdminActivityScreen())),
+          GoRoute(path: '/admin/support', pageBuilder: (c, s) => _page(s, const AdminSupportScreen())),
+          GoRoute(path: '/admin/digest', pageBuilder: (c, s) => _page(s, const AdminDigestScreen())),
         ],
       ),
       _pushed('/settings/password', (s) => ChangePasswordScreen(fromReset: s.uri.queryParameters['reset'] == '1')),

@@ -10,6 +10,7 @@ import '../../widgets/common.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
 import '../jobs/job_list_sliver.dart';
+import 'new_alert_sheet.dart';
 
 class SavedScreen extends StatelessWidget {
   const SavedScreen({super.key});
@@ -89,24 +90,32 @@ class _SavedSearches extends ConsumerWidget {
       error: (e, _) => ErrorState(error: e, onRetry: () => ref.invalidate(alertsProvider)),
       data: (loaded) {
         final alerts = loaded.data;
+        final newAlert = Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.tonalIcon(
+            onPressed: () => showNewAlertSheet(context),
+            icon: const Icon(Icons.add_alert_outlined),
+            label: const Text('New job alert'),
+          ),
+        );
         return RefreshIndicator(
           onRefresh: () => ref.read(alertsProvider.notifier).refresh(),
           child: alerts.isEmpty
-              ? ListView(children: [
+              ? ListView(padding: pad, children: [
                   const SizedBox(height: 40),
                   EmptyState(
                     icon: Icons.notifications_active_outlined,
-                    title: 'No saved searches',
-                    message: 'Search for jobs, then tap "Save search & get alerts" to hear about new matches.',
-                    action: 'Search jobs',
-                    onAction: () => context.push('/search'),
+                    title: 'No job alerts yet',
+                    message: 'Choose a category and a district, e.g. Accounting in Bo, and we\'ll notify you about new jobs.',
+                    action: 'New job alert',
+                    onAction: () => showNewAlertSheet(context),
                   ),
                 ])
               : ListView.separated(
                   padding: pad.copyWith(top: 16, bottom: 32),
-                  itemCount: alerts.length,
+                  itemCount: alerts.length + 1,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (_, i) => _AlertCard(alert: alerts[i]),
+                  itemBuilder: (_, i) => i == 0 ? newAlert : _AlertCard(alert: alerts[i - 1]),
                 ),
         );
       },

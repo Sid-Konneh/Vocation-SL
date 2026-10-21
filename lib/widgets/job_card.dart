@@ -7,6 +7,7 @@ import '../core/theme/app_theme.dart';
 import '../core/utils/formatters.dart';
 import '../models/models.dart';
 import '../providers/user_data_providers.dart';
+import '../services/job_source.dart';
 import 'common.dart';
 import 'company_logo.dart';
 
@@ -93,7 +94,7 @@ class JobCard extends StatelessWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onTap ?? () => context.push('/job/${job.id}'),
+          onTap: onTap ?? () => openJob(context, job.id),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 6, 16),
             child: Column(
@@ -203,7 +204,7 @@ class FeaturedJobCard extends StatelessWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => context.push('/job/${job.id}'),
+          onTap: () => openJob(context, job.id, source: ApplicationSource.featured),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
