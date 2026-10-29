@@ -1,6 +1,6 @@
 // Firebase settings for project vocation-sl-8c645 (Firebase → Project settings).
 // These identify the project; they are not secrets.
-// Android app: org.vocationsl.vocation_sl.
+// Android app: org.vocationsl.vocation_sl. iOS app: org.vocationsl.app.
 // ignore_for_file: type=lint
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
@@ -11,8 +11,10 @@ class DefaultFirebaseOptions {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
+      case TargetPlatform.iOS:
+        return ios;
       default:
-        throw UnsupportedError('Push alerts are set up for Android and the web only.');
+        throw UnsupportedError('Push alerts are set up for Android, iPhone and the web only.');
     }
   }
 
@@ -31,5 +33,13 @@ class DefaultFirebaseOptions {
     messagingSenderId: '598626797751',
     projectId: 'vocation-sl-8c645',
     storageBucket: 'vocation-sl-8c645.firebasestorage.app',
+  );
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyACxa_Z-al2yhPW0Ge4Nwth4KspxthyBtg',
+    appId: '1:598626797751:ios:312d03af2a10a711e7a532',
+    messagingSenderId: '598626797751',
+    projectId: 'vocation-sl-8c645',
+    storageBucket: 'vocation-sl-8c645.firebasestorage.app',
+    iosBundleId: 'org.vocationsl.app',
   );
 }

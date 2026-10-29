@@ -83,6 +83,10 @@
 		<string>Vocation SL uses your photos so you can add a profile photo or company logo.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>Vocation SL uses the camera so you can take a profile photo or a photo of a job advert.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+		</array>
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
 	</dict>

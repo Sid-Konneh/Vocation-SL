@@ -12,7 +12,7 @@ import 'job_source.dart';
 
 enum PushPermission { unsupported, notAsked, granted, denied }
 
-/// Push alerts through Firebase Cloud Messaging, on Android and the web.
+/// Push alerts through Firebase Cloud Messaging, on Android, iPhone and the web.
 ///
 /// The device's FCM token is stored in Supabase (push_tokens). The database
 /// sends every new alert to the "push" Edge Function, which delivers it even
@@ -32,14 +32,14 @@ class PushService {
   Stream<RemoteMessage> get foreground => _foreground.stream;
 
   /// Sets up Firebase, or returns null when push isn't configured or the
-  /// platform isn't supported (iOS needs an Apple developer account first).
+  /// platform isn't supported (desktop).
   static Future<PushService?> start(sb.SupabaseClient client) async {
     if (!AppConfig.useSupabase) return null;
     final FirebaseOptions options;
     try {
       options = DefaultFirebaseOptions.currentPlatform;
     } on UnsupportedError {
-      return null; // iOS and desktop aren't set up for push
+      return null; // Desktop isn't set up for push
     }
     if (options.apiKey.isEmpty || options.appId.isEmpty) return null; // flutterfire configure not run yet
     try {
@@ -53,6 +53,7 @@ class PushService {
   }
 
   FirebaseMessaging get _fm => FirebaseMessaging.instance;
+  bool get _isIos => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
   void _listen() {
     FirebaseMessaging.onMessage.listen(_foreground.add);
@@ -100,6 +101,13 @@ class PushService {
     if (_client.auth.currentUser == null) return;
     if (await permission() != PushPermission.granted) return;
     try {
+      // On iPhone, Firebase needs Apple's push token first; it can take a
+      // moment to arrive after permission is granted.
+      if (_isIos) {
+        for (var i = 0; i < 10 && await _fm.getAPNSToken() == null; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+        }
+      }
       final t = await _fm.getToken(vapidKey: kIsWeb && AppConfig.firebaseVapidKey.isNotEmpty ? AppConfig.firebaseVapidKey : null);
       if (t == null) return;
       _token = t;
@@ -112,7 +120,7 @@ class PushService {
   Future<void> _register(String token) async {
     if (_client.auth.currentUser == null) return;
     try {
-      await _client.rpc('register_push_token', params: {'p_token': token, 'p_platform': kIsWeb ? 'web' : 'android'});
+      await _client.rpc('register_push_token', params: {'p_token': token, 'p_platform': kIsWeb ? 'web' : (_isIos ? 'ios' : 'android')});
     } catch (e) {
       debugPrint('Push token not saved: $e');
     }
