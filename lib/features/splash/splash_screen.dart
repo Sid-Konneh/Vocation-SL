@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/config/app_config.dart';
@@ -5,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../providers/core_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../widgets/vocation_logo.dart';
 
@@ -26,8 +30,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     _c.forward().whenComplete(_continue);
   }
 
-  void _continue() {
+  Future<void> _continue() async {
     if (!mounted) return;
+    // Back from an email confirmation link or Google: wait for sign-in to
+    // finish so the sign-in screen doesn't flash up first.
+    final fromLink = Uri.base.queryParameters.containsKey('code') || emailLinkToken(Uri.base) != null;
+    if (ref.read(sessionProvider) == null && kIsWeb && fromLink) {
+      final done = Completer<void>();
+      final sub = ref.listenManual<String?>(sessionProvider, (_, uid) {
+        if (uid != null && !done.isCompleted) done.complete();
+      });
+      // A failed link stops the wait early: nothing more is coming.
+      final store = ref.read(localStoreProvider);
+      for (var i = 0; i < 40 && !done.isCompleted && store.setting<String>(authLinkErrorKey) == null; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+      sub.close();
+      if (!mounted) return;
+    }
     final signedIn = ref.read(sessionProvider) != null;
     context.go(signedIn ? (AppConfig.adminSite ? '/admin' : widget.signedInPath) : '/login');
   }

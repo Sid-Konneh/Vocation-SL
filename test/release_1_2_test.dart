@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocation_sl/data/backend/hiring_backend.dart';
 import 'package:vocation_sl/models/models.dart';
+import 'package:vocation_sl/providers/session_providers.dart';
 import 'package:vocation_sl/services/job_source.dart';
 
 void main() {
@@ -93,6 +94,13 @@ void main() {
       await b.inviteToApply('t-1', 'job-1');
       expect(() => b.inviteToApply('t-1', 'job-1'), throwsA(isA<Exception>()));
       expect((await b.searchTalent(query: 'accountant')).first.invitedJobIds, ['job-1']);
+    });
+
+    test('email confirmation links are read from any part of the address', () {
+      expect(emailLinkToken(Uri.parse('https://employers.vocationsl.com/?token_hash=abc123&type=email')), 'abc123');
+      expect(emailLinkToken(Uri.parse('https://app.vocationsl.com/?role=employer&token_hash=xyz&type=email')), 'xyz');
+      expect(emailLinkToken(Uri.parse('https://app.vocationsl.com/#/login?token_hash=t1')), 't1');
+      expect(emailLinkToken(Uri.parse('https://app.vocationsl.com/?code=123')), isNull);
     });
 
     test('the full talent profile never includes contact details or the CV', () async {

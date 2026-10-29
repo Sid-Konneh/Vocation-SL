@@ -60,7 +60,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   Widget build(BuildContext context) {
     final employer = ref.watch(roleProvider) == UserRole.employer;
     final items = [
-      'Your sign-in (email or Google) and your profile, including your CV and documents',
+      'Your sign-in (email, Google or Apple) and your profile, including your CV and documents',
       'Your job applications, saved jobs, saved searches and alerts',
       if (employer) 'If you are the only person on your company account: the company, its logo, its jobs and the applications to them',
     ];

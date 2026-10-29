@@ -127,10 +127,9 @@ class JobSearchController extends Notifier<JobSearchState> {
         syncedAt: cached.syncedAt,
         total: cached.data.total,
       );
-      if (repo.isPageFresh(f, 0)) {
-        state = state.copyWith(refreshing: false);
-        return;
-      }
+      // The first page is always re-checked (one small request), so a job an
+      // admin has just approved shows up straight away, even on a browser
+      // reload where the cached list is still within its TTL.
     } else {
       state = pullToRefresh
           ? state.copyWith(refreshing: true, error: () => null)

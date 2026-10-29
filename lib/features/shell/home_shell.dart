@@ -8,6 +8,7 @@ import '../../providers/user_data_providers.dart';
 import '../../widgets/vocation_logo.dart';
 import '../../models/models.dart';
 import '../auth/role_choice_screen.dart';
+import '../onboarding/onboarding_screen.dart';
 import '../profile/sign_out.dart';
 
 class _Dest {
@@ -34,6 +35,7 @@ class HomeShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    maybeShowOnboarding(context, ref, UserRole.seeker);
     final unread = ref.watch(unreadCountProvider);
     final activeApps = ref.watch(applicationsProvider).value?.data.where((a) => a.status.isActive && a.employerMessage != null).length ?? 0;
 

@@ -39,6 +39,9 @@ List<String> scamFlags(Job j) {
     }
     if (link.startsWith('http://')) flags.add('Application link is not secure (http)');
   }
+  if (j.hasAdvert && j.description.trim().isEmpty) {
+    flags.add('Details are only in the uploaded advert, so the checks above can\'t read it; read the advert');
+  }
   if ((j.salaryMax ?? 0) > 150000 && j.experienceLevel == ExperienceLevel.entry) {
     flags.add('Very high salary for an entry-level job');
   }

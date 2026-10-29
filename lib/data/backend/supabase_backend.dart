@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:uuid/uuid.dart';
 
@@ -52,6 +54,9 @@ class SupabaseBackend implements VocationBackend {
   }
 
   @override
+  DateTime? get accountCreatedAt => DateTime.tryParse(_client.auth.currentUser?.createdAt ?? '');
+
+  @override
   Future<void> setRole(UserRole role) => _run(() async {
         await _client.auth.updateUser(sb.UserAttributes(data: {'role': role.name}));
       });
@@ -69,24 +74,47 @@ class SupabaseBackend implements VocationBackend {
       });
 
   @override
-  Future<String> signUp({required String fullName, required String email, required String password}) => _run(() async {
+  Future<String> signUp({required String fullName, required String email, required String password, UserRole? role}) =>
+      _run(() async {
         final res = await _client.auth.signUp(
           email: email.trim(),
           password: password,
-          data: {'full_name': fullName.trim()},
-          emailRedirectTo: _redirect,
+          data: {'full_name': fullName.trim(), if (role != null) 'role': role.name},
+          emailRedirectTo: kIsWeb && role != null ? '$_redirect?role=${role.name}' : _redirect,
         );
         final user = res.user;
+        // Supabase answers a sign-up for an email that already has an account
+        // as if it worked (no identities, no email sent) and keeps the old
+        // password, so the new one would then fail at sign-in.
+        if (user != null && user.identities != null && user.identities!.isEmpty) {
+          throw const AuthException('An account with this email already exists. Sign in instead, or tap "Forgot password?" to set a new password.');
+        }
         if (user == null || res.session == null) throw EmailConfirmationRequired(email.trim());
         return user.id;
       });
 
   @override
-  Future<void> signInWithGoogle({UserRole? intent}) => _run(() async {
+  Future<void> signInWithGoogle({UserRole? intent}) => _oauth(sb.OAuthProvider.google, 'Google', intent);
+
+  @override
+  Future<void> signInWithApple({UserRole? intent}) => _oauth(sb.OAuthProvider.apple, 'Apple', intent);
+
+  Future<void> _oauth(sb.OAuthProvider provider, String label, UserRole? intent) => _run(() async {
         final redirect = kIsWeb && intent != null ? '$_redirect?role=${intent.name}' : _redirect;
-        final launched = await _client.auth.signInWithOAuth(sb.OAuthProvider.google, redirectTo: redirect);
-        if (!launched) throw const AuthException('Couldn\'t open Google sign-in. Try again.');
+        final launched = await _client.auth.signInWithOAuth(provider, redirectTo: redirect);
+        if (!launched) throw AuthException('Couldn\'t open $label sign-in. Try again.');
       });
+
+  @override
+  Future<bool> appleSignInAvailable() async {
+    try {
+      final res = await http.get(Uri.parse('${AppConfig.supabaseUrl}/auth/v1/settings'), headers: {'apikey': AppConfig.supabaseKey});
+      if (res.statusCode != 200) return false;
+      return (jsonDecode(res.body)['external'] as Map?)?['apple'] == true;
+    } catch (_) {
+      return false; // Offline: just hide the button.
+    }
+  }
 
   @override
   Future<void> sendPasswordReset(String email) => _run(() async {
@@ -430,6 +458,13 @@ Future<T> guardSupabase<T>(Future<T> Function() body) async {
   try {
     return await body();
   } on sb.AuthException catch (e) {
+    if (e.code == 'invalid_credentials' || e.message.toLowerCase().contains('invalid login credentials')) {
+      throw const AuthException('Wrong email or password. If you created this account with Google or Apple, use that button instead. '
+          'Otherwise tap "Forgot password?" to set a new password.');
+    }
+    if (e.code == 'email_not_confirmed' || e.message.toLowerCase().contains('email not confirmed')) {
+      throw const AuthException('Confirm your email first: open the link we sent you, then sign in.');
+    }
     throw AuthException(e.message);
   } on sb.PostgrestException catch (e) {
     if (e.code == 'PGRST116') throw const NotFoundException();

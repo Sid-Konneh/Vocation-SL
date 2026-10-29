@@ -20,6 +20,7 @@ import '../../employer/features/jobs/job_editor_screen.dart';
 import '../../employer/features/jobs/job_report_screen.dart';
 import '../../employer/features/jobs/my_jobs_screen.dart';
 import '../../employer/features/talent/talent_profile_screen.dart';
+import '../../features/onboarding/onboarding_screen.dart';
 import '../../employer/features/talent/talent_search_screen.dart';
 import '../../features/about/about_screen.dart';
 import '../../features/about/site_page_screen.dart';
@@ -82,7 +83,7 @@ GoRoute _pushed(String path, Widget Function(GoRouterState s) build, {List<Route
     );
 
 /// Pages both kinds of user can open.
-const _shared = ['/about', '/settings/password', '/choose-role', '/account/delete', '/pages/', '/suspended', '/admin', '/r/', '/support'];
+const _shared = ['/about', '/welcome/','/settings/password', '/choose-role', '/account/delete', '/pages/', '/suspended', '/admin', '/r/', '/support'];
 
 /// A shared job link opened while signed out; reopened after sign-in.
 const _pendingLinkKey = 'pending_link';
@@ -200,6 +201,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       _pushed('/about', (s) => const AboutScreen()),
       _pushed('/account/delete', (s) => const DeleteAccountScreen()),
       _pushed('/pages/:slug', (s) => SitePageScreen(slug: s.pathParameters['slug']!)),
+      _pushed('/welcome/:role', (s) => OnboardingScreen(
+            role: s.pathParameters['role'] == UserRole.employer.name ? UserRole.employer : UserRole.seeker,
+          )),
       _pushed('/support', (s) => const SupportScreen(), routes: [
         GoRoute(path: 'new', parentNavigatorKey: rootNavigatorKey, pageBuilder: (c, s) => _page(s, const NewSupportRequestScreen())),
         GoRoute(

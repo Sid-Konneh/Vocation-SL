@@ -72,7 +72,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.lock_outline_rounded),
             title: const Text('Change password'),
-            subtitle: const Text('Accounts created with Google can set one here too'),
+            subtitle: const Text('Accounts created with Google or Apple can set one here too'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => context.push('/settings/password'),
           ),
@@ -177,6 +177,13 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text('Version ${AppConfig.version}${isDemoBackend(backend) ? ' · demo mode' : ''}'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => context.push('/about'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.school_outlined),
+            title: const Text('How Vocation SL works'),
+            subtitle: const Text('A quick guide to finding and applying for jobs'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/welcome/seeker'),
           ),
           ListTile(
             leading: const Icon(Icons.forum_outlined),

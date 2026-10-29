@@ -26,13 +26,14 @@ class SessionNotifier extends Notifier<String?> {
   }
 
   Future<void> signInWithGoogle({UserRole? intent}) => ref.read(userRepositoryProvider).signInWithGoogle(intent: intent);
+  Future<void> signInWithApple({UserRole? intent}) => ref.read(userRepositoryProvider).signInWithApple(intent: intent);
 
   Future<void> signIn(String email, String password) async {
     state = await ref.read(userRepositoryProvider).signIn(email, password);
   }
 
-  Future<void> signUp(String name, String email, String password) async {
-    state = await ref.read(userRepositoryProvider).signUp(name, email, password);
+  Future<void> signUp(String name, String email, String password, {UserRole? role}) async {
+    state = await ref.read(userRepositoryProvider).signUp(name, email, password, role: role);
   }
 
   Future<void> signOut() async {
@@ -48,6 +49,14 @@ class SessionNotifier extends Notifier<String?> {
 
 final sessionProvider = NotifierProvider<SessionNotifier, String?>(SessionNotifier.new);
 
+/// Set when an email confirmation link can't sign the person in; the sign-in
+/// screen shows it once.
+const authLinkErrorKey = 'auth_link_error';
+
+/// The token from an email confirmation link (`?token_hash=...`). Read from
+/// the whole address so it is found even if the link was built oddly.
+String? emailLinkToken(Uri url) => RegExp(r'[?&#]token_hash=([^&#]+)').firstMatch(url.toString())?.group(1);
+
 /// The signed-in user's role (job seeker or employer), or null until chosen.
 ///
 /// The login screen records the user's intent ("Find a job" / "Hire talent")
@@ -55,6 +64,7 @@ final sessionProvider = NotifierProvider<SessionNotifier, String?>(SessionNotifi
 /// first time a user without a role signs in.
 class RoleNotifier extends Notifier<UserRole?> {
   static const _pendingKey = 'pending_role';
+  static const _fallbackKey = 'fallback_role';
 
   @override
   UserRole? build() {
@@ -76,12 +86,33 @@ class RoleNotifier extends Notifier<UserRole?> {
       });
       return intent;
     }
-    return ref.watch(backendProvider).currentRole;
+    final saved = ref.watch(backendProvider).currentRole;
+    final fallback = UserRole.values.where((r) => r.name == store.setting<String>(_fallbackKey)).firstOrNull;
+    if (fallback != null) {
+      Future.microtask(() async {
+        final removal = store.removeSetting(_fallbackKey);
+        if (saved == null && state == fallback) await choose(fallback);
+        await removal;
+      });
+    }
+    return saved ?? fallback;
   }
 
   /// Remembers the role picked on the login screen. It is applied once the
   /// session starts (also after a Google redirect) and then cleared.
-  Future<void> setIntent(UserRole role) => ref.read(localStoreProvider).setSetting(_pendingKey, role.name);
+  Future<void> setIntent(UserRole role) async {
+    final store = ref.read(localStoreProvider);
+    await store.removeSetting(_fallbackKey);
+    await store.setSetting(_pendingKey, role.name);
+  }
+
+  /// Signs in on the side the account already uses; [fallback] is used only
+  /// for an account that has never picked a side.
+  Future<void> setFallback(UserRole fallback) async {
+    final store = ref.read(localStoreProvider);
+    await store.removeSetting(_pendingKey);
+    await store.setSetting(_fallbackKey, fallback.name);
+  }
 
   Future<void> choose(UserRole role) async {
     state = role;

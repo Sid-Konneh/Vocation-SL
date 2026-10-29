@@ -147,7 +147,7 @@ class JobCard extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 10),
                   child: Text(Fmt.salary(job), style: context.text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                 ),
-                if (showDescription) ...[
+                if (showDescription && job.about.trim().isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Padding(
                     padding: const EdgeInsets.only(right: 10),

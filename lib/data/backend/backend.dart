@@ -19,16 +19,29 @@ abstract interface class VocationBackend {
 
   /// The signed-in user's chosen role, or null if they haven't chosen yet.
   UserRole? get currentRole;
+
+  /// When the signed-in account was created, if known.
+  DateTime? get accountCreatedAt;
   Future<void> setRole(UserRole role);
   Future<String> signIn({required String email, required String password});
 
   /// Throws [EmailConfirmationRequired] when the account must be verified first.
-  Future<String> signUp({required String fullName, required String email, required String password});
+  /// [role] is saved on the account, so the email confirmation link opens the
+  /// right side even in another browser.
+  Future<String> signUp({required String fullName, required String email, required String password, UserRole? role});
 
   /// Opens Google sign-in. The session arrives later through [authChanges].
   /// On the web, [intent] travels in the return URL (`?role=`) because a
   /// browser may drop storage writes when the page navigates to Google.
   Future<void> signInWithGoogle({UserRole? intent});
+
+  /// Whether Sign in with Apple is switched on for this project. Checked at
+  /// run time, so the button appears once Apple is enabled, without a release.
+  Future<bool> appleSignInAvailable();
+
+  /// Opens Sign in with Apple; works like [signInWithGoogle]. A new Apple ID
+  /// gets a new account, so the same call signs people up and in.
+  Future<void> signInWithApple({UserRole? intent});
   Future<void> sendPasswordReset(String email);
 
   /// Fires when the user opens a password-reset link and should choose a new password.

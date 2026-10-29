@@ -13,6 +13,7 @@ import '../../providers/user_data_providers.dart';
 import '../../services/job_source.dart';
 import '../../widgets/common.dart';
 import '../../widgets/company_logo.dart';
+import '../../widgets/job_advert.dart';
 import '../../widgets/job_card.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
@@ -127,8 +128,10 @@ class _JobDetailsView extends ConsumerWidget {
             const SizedBox(height: 16),
             _SkillMatch(matched: matched, total: job.skills.length),
           ],
-          _Section('About the job', child: Text(job.about, style: context.text.bodyLarge?.copyWith(fontWeight: FontWeight.w600))),
-          _Section('Description', child: Text(job.description, style: context.text.bodyLarge)),
+          if (job.hasAdvert) _Section('Job advert', child: JobAdvertView(url: job.advertUrl)),
+          if (job.about.trim().isNotEmpty)
+            _Section('About the job', child: Text(job.about, style: context.text.bodyLarge?.copyWith(fontWeight: FontWeight.w600))),
+          if (job.description.trim().isNotEmpty) _Section('Description', child: Text(job.description, style: context.text.bodyLarge)),
           if (job.responsibilities.isNotEmpty) _Section('Responsibilities', child: BulletList(job.responsibilities)),
           if (job.requirements.isNotEmpty)
             _Section('Eligibility & requirements', child: BulletList(job.requirements, icon: Icons.check_circle_outline_rounded)),
@@ -158,7 +161,7 @@ class _JobDetailsView extends ConsumerWidget {
             'How to apply',
             child: BulletList([
               'Your CV as a PDF',
-              'A cover letter (optional): write it in the app or upload a PDF',
+              'A cover letter as a PDF',
               if (job.documentsRequested)
                 'Supporting documents (optional, up to ${SupportingDocument.maxPerApplication} PDFs)'
                     '${job.documentsNote.trim().isEmpty ? '' : ': ${job.documentsNote.trim()}'}',

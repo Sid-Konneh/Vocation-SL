@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../admin/admin_providers.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/role_choice_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/sign_out.dart';
 import '../models/models.dart';
-import '../widgets/skeletons.dart';
 import '../widgets/states.dart';
 import '../widgets/vocation_logo.dart';
 import 'features/company/company_screens.dart';
@@ -50,7 +50,17 @@ class EmployerShell extends ConsumerWidget {
           body: ErrorState(error: companyAsync.error!, onRetry: () => ref.invalidate(companyProvider)),
         );
       }
-      return const ShellSkeleton();
+      // Not a dashboard skeleton: a new employer is about to see company
+      // setup, and a dashboard shape first looks like setup was skipped.
+      return Scaffold(
+        body: Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text('Getting your employer account ready…', style: context.text.bodyLarge?.copyWith(color: context.palette.muted)),
+          ]),
+        ),
+      );
     }
     final loaded = companyAsync.value!;
     if (loaded.data == null) {
@@ -61,6 +71,8 @@ class EmployerShell extends ConsumerWidget {
       }
       return const CompanySetupScreen();
     }
+    // First time on the dashboard after setting up the company.
+    maybeShowOnboarding(context, ref, UserRole.employer);
 
     final toReview = ref.watch(candidatesProvider).value?.data.where((a) => a.status == ApplicationStatus.applied).length ?? 0;
     Widget icon(int i, bool selected) {
@@ -119,6 +131,12 @@ class EmployerShell extends ConsumerWidget {
                                 label: 'Switch to job seeker',
                                 semantics: 'Switch to job seeker',
                                 onTap: () => switchRole(context, ref, UserRole.seeker),
+                              ),
+                              _NavRow(
+                                icon: const Icon(Icons.school_outlined),
+                                label: 'How it works',
+                                semantics: 'How Vocation SL works',
+                                onTap: () => context.push('/welcome/employer'),
                               ),
                               _NavRow(
                                 icon: const Icon(Icons.forum_outlined),
@@ -225,6 +243,14 @@ class EmployerShell extends ConsumerWidget {
               onTap: () {
                 Navigator.pop(sheet);
                 switchRole(context, ref, UserRole.seeker);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.school_outlined),
+              title: const Text('How Vocation SL works'),
+              onTap: () {
+                Navigator.pop(sheet);
+                context.push('/welcome/employer');
               },
             ),
             ListTile(

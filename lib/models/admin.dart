@@ -159,7 +159,7 @@ class UserLoginInfo {
   final AdminRole? adminRole;
   final int applications;
 
-  static String providerLabel(String p) => switch (p) { 'email' => 'Email and password', 'google' => 'Google', _ => p };
+  static String providerLabel(String p) => switch (p) { 'email' => 'Email and password', 'google' => 'Google', 'apple' => 'Apple', _ => p };
 
   factory UserLoginInfo.fromJson(Map<String, dynamic> j) {
     DateTime? d(Object? v) => v == null ? null : DateTime.tryParse('$v');

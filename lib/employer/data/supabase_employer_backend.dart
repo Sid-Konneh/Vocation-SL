@@ -68,6 +68,18 @@ class SupabaseEmployerBackend implements EmployerBackend {
       });
 
   @override
+  Future<String> uploadJobAdvert(Uint8List bytes, String fileName) => guardSupabase(() async {
+        var ext = fileName.split('.').last.toLowerCase();
+        if (ext == 'jpeg') ext = 'jpg';
+        final type = switch (ext) { 'pdf' => 'application/pdf', 'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg' };
+        // Same folder rule as logos (job-adverts/<user id>/...); a new name
+        // each time so a replaced advert is never served from cache.
+        final path = '${_uid()}/${DateTime.now().millisecondsSinceEpoch}-advert.$ext';
+        await _client.storage.from('job-adverts').uploadBinary(path, bytes, fileOptions: sb.FileOptions(contentType: type));
+        return _client.storage.from('job-adverts').getPublicUrl(path);
+      });
+
+  @override
   Future<List<Job>> myJobs(String companyId) => guardSupabase(() async {
         final rows = await _client.from('jobs').select(_jobSelect).eq('company_id', companyId).order('updated_at', ascending: false);
         return rows.map(Job.fromJson).toList();
@@ -96,6 +108,7 @@ class SupabaseEmployerBackend implements EmployerBackend {
         'documents_requested': j.documentsRequested,
         'documents_note': j.documentsRequested ? j.documentsNote.trim() : '',
         'apply_url': j.applyUrl.trim(),
+        'advert_url': j.advertUrl,
         'screening': j.screening.map((q) => q.toJson()).toList(),
         'status': status.name,
       };

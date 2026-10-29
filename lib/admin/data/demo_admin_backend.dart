@@ -203,6 +203,7 @@ class DemoAdminBackend implements AdminBackend {
         status: status ?? j.status,
         views: j.views,
         reviewNote: reviewNote ?? j.reviewNote,
+        advertUrl: j.advertUrl,
       );
 
   Company _companyWith(Company c, {CompanyStatus? status, bool? verified}) => Company(

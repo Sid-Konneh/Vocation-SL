@@ -13,6 +13,9 @@ import '../../widgets/common.dart';
 import '../../widgets/legal_links.dart';
 import '../../widgets/vocation_logo.dart';
 
+/// Whether to show the Apple button: only once Apple is enabled in Supabase.
+final appleSignInProvider = FutureProvider<bool>((ref) => ref.watch(userRepositoryProvider).appleSignInAvailable());
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -34,7 +37,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ? UserRole.employer
       : UserRole.values.where((r) => r.name == ref.read(localStoreProvider).setting<String>('last_role')).firstOrNull ?? UserRole.seeker;
 
+  /// Whether the person tapped "Find a job" / "Hire talent" themselves. When
+  /// they didn't, signing in opens the side the account already uses, so an
+  /// employer who hasn't set up their company yet goes straight to setup.
+  bool _intentChosen = false;
+
   bool get _hiring => _intent == UserRole.employer;
+
+  @override
+  void initState() {
+    super.initState();
+    // A confirmation link that failed (expired, or already used).
+    final store = ref.read(localStoreProvider);
+    final linkError = store.setting<String>(authLinkErrorKey);
+    if (linkError != null) {
+      _info = linkError;
+      store.removeSetting(authLinkErrorKey);
+    }
+  }
 
   @override
   void dispose() {
@@ -50,10 +70,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _password.text = demoPassword;
       _signUp = false;
     }
-    await _run(() async {
+    await _run(applyIntent: _signUp || _intentChosen || AppConfig.employerSite, () async {
       final session = ref.read(sessionProvider.notifier);
       if (_signUp) {
-        await session.signUp(_name.text, _email.text, _password.text);
+        await session.signUp(_name.text, _email.text, _password.text, role: _intent);
       } else {
         await session.signIn(_email.text, _password.text);
       }
@@ -62,6 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _google() => _run(() => ref.read(sessionProvider.notifier).signInWithGoogle(intent: _intent));
+  Future<void> _apple() => _run(() => ref.read(sessionProvider.notifier).signInWithApple(intent: _intent));
 
   Future<void> _forgotPassword() => _run(() async {
         await ref.read(userRepositoryProvider).sendPasswordReset(_email.text);
@@ -70,9 +91,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
       });
 
-  Future<void> _run(Future<void> Function() action) async {
+  Future<void> _run(Future<void> Function() action, {bool applyIntent = true}) async {
     // Remember which side they chose; applied once the session starts.
-    await ref.read(roleProvider.notifier).setIntent(_intent);
+    if (applyIntent) {
+      await ref.read(roleProvider.notifier).setIntent(_intent);
+    } else {
+      await ref.read(roleProvider.notifier).setFallback(_intent);
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -97,6 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final isDemo = isDemoBackend(ref.watch(backendProvider));
     final supportsGoogle = ref.watch(userRepositoryProvider).supportsGoogleSignIn;
+    final supportsApple = ref.watch(appleSignInProvider).value ?? false;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -119,6 +145,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ? null
                         : (s) => setState(() {
                               _intent = s.first;
+                              _intentChosen = true;
                               _error = null;
                             }),
                   ),
@@ -156,6 +183,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Text(_signUp ? 'Sign up with Google' : 'Continue with Google'),
                       ]),
                     ),
+                    if (supportsApple) ...[
+                      const SizedBox(height: 12),
+                      // Apple's guidelines: black button, white logo, "Sign up with" / "Continue with Apple".
+                      FilledButton(
+                        style: FilledButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
+                        onPressed: _busy ? null : _apple,
+                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          const _AppleMark(),
+                          const SizedBox(width: 12),
+                          Text(_signUp ? 'Sign up with Apple' : 'Continue with Apple'),
+                        ]),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     Row(children: [
                       const Expanded(child: Divider()),
@@ -291,6 +331,19 @@ class _GoogleMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       SvgPicture.string(_svg, width: 20, height: 20, semanticsLabel: 'Google');
+}
+
+/// Apple's logo, white, for the black Sign in with Apple button.
+class _AppleMark extends StatelessWidget {
+  const _AppleMark();
+
+  static const _svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+<path fill="#FFFFFF" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+</svg>''';
+
+  @override
+  Widget build(BuildContext context) => SvgPicture.string(_svg, width: 18, height: 20, semanticsLabel: 'Apple');
 }
 
 class _DemoCard extends StatelessWidget {

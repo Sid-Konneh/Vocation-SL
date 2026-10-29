@@ -27,7 +27,6 @@ class JobRepository extends CachedRepository {
   // ---- Search ----------------------------------------------------------------
 
   Loaded<PageResult<Job>>? peekPage(JobFilter f, int page) => peek(_pageKey(f, page), _decodePage);
-  bool isPageFresh(JobFilter f, int page) => isFresh(_pageKey(f, page), CacheTtl.jobs);
 
   Future<Loaded<PageResult<Job>>> searchJobs(JobFilter f, {int page = 0}) async {
     final key = _pageKey(f, page);

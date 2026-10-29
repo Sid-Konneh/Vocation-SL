@@ -14,6 +14,10 @@ abstract interface class EmployerBackend {
   /// Uploads a logo image (PNG/JPG/WebP, max 2 MB) and saves its URL on the company.
   Future<Company> uploadLogo(Company company, Uint8List bytes, String fileName);
 
+  /// Uploads a job advert (PDF or image, max 5 MB) and returns its public URL,
+  /// which is then saved on the job as [Job.advertUrl].
+  Future<String> uploadJobAdvert(Uint8List bytes, String fileName);
+
   /// All of the company's jobs, any status.
   Future<List<Job>> myJobs(String companyId);
 

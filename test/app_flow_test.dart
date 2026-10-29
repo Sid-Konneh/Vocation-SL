@@ -4,6 +4,7 @@
 // application tracking -> offline mode.
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +15,16 @@ import 'package:vocation_sl/core/dev_settings.dart';
 import 'package:vocation_sl/core/network/connectivity_service.dart';
 import 'package:vocation_sl/core/storage/local_store.dart';
 import 'package:vocation_sl/data/backend/demo_backend.dart';
+import 'package:vocation_sl/models/models.dart';
 import 'package:vocation_sl/providers/core_providers.dart';
+import 'package:vocation_sl/services/file_service.dart';
+
+/// Stands in for the platform file picker: always "picks" a small PDF.
+class _FakeFiles extends FileService {
+  @override
+  Future<PickedFile?> pickDocument() async =>
+      PickedFile(name: 'Cover_Letter.pdf', bytes: Uint8List.fromList('%PDF-1.4 test'.codeUnits), format: DocumentFormat.pdf);
+}
 
 /// Lets real timers (demo latency, Hive IO) run, then renders frames.
 Future<void> settle(WidgetTester tester, [int ms = 700]) async {
@@ -95,6 +105,7 @@ void main() {
         localStoreProvider.overrideWithValue(store),
         connectivityServiceProvider.overrideWithValue(connectivity),
         backendProvider.overrideWithValue(backend),
+        fileServiceProvider.overrideWithValue(_FakeFiles()),
       ]);
     });
 
@@ -146,8 +157,12 @@ void main() {
     await waitFor(tester, find.text('Your CV'));
     expect(find.text('Aminata_Sesay_CV.pdf'), findsOneWidget);
     await tapText(tester, 'Next'); // CV from profile
-    await waitFor(tester, find.text('Start from a template'));
-    await tapText(tester, 'Start from a template');
+    await waitFor(tester, find.text('Upload cover letter'));
+    expect(find.text('Skip'), findsNothing); // a PDF cover letter is required
+    await tapText(tester, 'Next');
+    await reveal(tester, find.text('Upload your cover letter as a PDF to continue.'));
+    await tapText(tester, 'Upload cover letter');
+    await waitFor(tester, find.text('Cover_Letter.pdf'));
     await tapText(tester, 'Next'); // cover letter
     await waitFor(tester, find.text('Message to the employer'));
     await tester.enterText(find.byType(TextField).first, 'I can start immediately.');

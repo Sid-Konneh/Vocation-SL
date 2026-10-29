@@ -22,6 +22,8 @@ class UserRepository extends CachedRepository {
   bool get supportsGoogleSignIn => backend.supportsGoogleSignIn;
 
   Future<void> signInWithGoogle({UserRole? intent}) => backend.signInWithGoogle(intent: intent);
+  Future<bool> appleSignInAvailable() => backend.appleSignInAvailable();
+  Future<void> signInWithApple({UserRole? intent}) => backend.signInWithApple(intent: intent);
   Stream<void> get passwordRecovery => backend.passwordRecovery;
 
   Future<void> updatePassword(String password, String confirm) {
@@ -45,13 +47,13 @@ class UserRepository extends CachedRepository {
     return backend.signIn(email: email, password: password);
   }
 
-  Future<String> signUp(String name, String email, String password) {
+  Future<String> signUp(String name, String email, String password, {UserRole? role}) {
     if (name.trim().length < 2) throw const ValidationException('Enter your full name.');
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email.trim())) {
       throw const ValidationException('Enter a valid email address.');
     }
     if (password.length < 8) throw const ValidationException('Use at least 8 characters for your password.');
-    return backend.signUp(fullName: name, email: email, password: password);
+    return backend.signUp(fullName: name, email: email, password: password, role: role);
   }
 
   /// Deletes the account on the server, then wipes this device's copy.

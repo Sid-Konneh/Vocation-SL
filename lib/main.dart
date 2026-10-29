@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +31,7 @@ import 'providers/hiring_providers.dart';
 import 'providers/message_providers.dart';
 import 'providers/push_providers.dart';
 import 'providers/referral_providers.dart';
+import 'providers/session_providers.dart';
 import 'services/push_service.dart';
 
 Future<void> main() async {
@@ -63,6 +66,18 @@ Future<void> main() async {
     messageBackend = SupabaseMessageBackend(Supabase.instance.client);
     referralBackend = SupabaseReferralBackend(Supabase.instance.client);
     hiringBackend = SupabaseHiringBackend(Supabase.instance.client);
+    // Opened from an email confirmation link (?token_hash=...): confirm the
+    // email and sign in. Unlike Supabase's default link this works in any
+    // browser, and link checkers in email apps can't use it up. The splash
+    // waits for the session; a failure is explained on the sign-in screen.
+    final linkToken = kIsWeb ? emailLinkToken(Uri.base) : null;
+    if (linkToken != null && Supabase.instance.client.auth.currentSession == null) {
+      unawaited(Supabase.instance.client.auth
+          .verifyOTP(tokenHash: linkToken, type: OtpType.email)
+          .then<void>((_) {}, onError: (Object e) => store.setSetting(authLinkErrorKey,
+              'This confirmation link has expired or was already used. If you confirmed already, sign in with your email and password. '
+              'If not, sign up again to get a new link.')));
+    }
     push =await PushService.start(Supabase.instance.client);
   } else {
     backend = DemoBackend(store: store, connectivity: connectivity, devSettings: () => DevSettings.load(store));

@@ -95,6 +95,11 @@ class DemoBackend implements VocationBackend {
     return UserRole.values.where((v) => v.name == r).firstOrNull;
   }
 
+  /// Demo accounts count as existing ones, so the welcome guide doesn't open
+  /// on its own (it can still be opened from Settings).
+  @override
+  DateTime? get accountCreatedAt => null;
+
   @override
   Future<void> setRole(UserRole role) async {
     if (_currentUserId != null) await store.setSetting('demo_role:$_currentUserId', role.name);
@@ -103,6 +108,13 @@ class DemoBackend implements VocationBackend {
   @override
   Future<void> signInWithGoogle({UserRole? intent}) async =>
       throw const AuthException('Google sign-in is available when the app is connected to Supabase.');
+
+  @override
+  Future<bool> appleSignInAvailable() async => false;
+
+  @override
+  Future<void> signInWithApple({UserRole? intent}) async =>
+      throw const AuthException('Sign in with Apple is available when the app is connected to Supabase.');
 
   @override
   Future<void> sendPasswordReset(String email) async {
@@ -139,7 +151,7 @@ class DemoBackend implements VocationBackend {
   }
 
   @override
-  Future<String> signUp({required String fullName, required String email, required String password}) async {
+  Future<String> signUp({required String fullName, required String email, required String password, UserRole? role}) async {
     await _call();
     final key = email.trim().toLowerCase();
     final accounts = Map<String, dynamic>.from(_state['accounts'] as Map);

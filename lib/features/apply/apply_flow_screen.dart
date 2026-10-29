@@ -34,8 +34,6 @@ enum _Step {
   final IconData icon;
 }
 
-enum _CoverMode { upload, write, skip }
-
 class ApplyFlowScreen extends ConsumerWidget {
   const ApplyFlowScreen({super.key, required this.jobId});
   final String jobId;
@@ -105,14 +103,12 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
   late final _email = TextEditingController(text: widget.user.email);
   late final _phone = TextEditingController(text: widget.user.phone);
   late String _location = sierraLeoneLocations.contains(widget.user.location) ? widget.user.location : sierraLeoneLocations.first;
-  final _coverText = TextEditingController();
   final _note = TextEditingController();
 
   _Step _step = _Step.personal;
   Resume? _resume;
   bool _saveCvToProfile = true;
   bool _uploading = false;
-  _CoverMode _coverMode = _CoverMode.write;
   CoverLetter? _coverFile;
   final List<SupportingDocument> _supporting = [];
 
@@ -135,13 +131,13 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
 
   @override
   void dispose() {
-    for (final c in [_name, _email, _phone, _coverText, _note]) {
+    for (final c in [_name, _email, _phone, _note]) {
       c.dispose();
     }
     super.dispose();
   }
 
-  bool get _dirty => _stepIndex > 0 || _supporting.isNotEmpty || _coverText.text.isNotEmpty || _note.text.isNotEmpty;
+  bool get _dirty => _stepIndex > 0 || _supporting.isNotEmpty || _coverFile != null || _note.text.isNotEmpty;
 
   // ---- Navigation ------------------------------------------------------------
 
@@ -156,12 +152,8 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
           return false;
         }
       case _Step.cover:
-        if (_coverMode == _CoverMode.upload && _coverFile == null) {
-          setState(() => _stepError = 'Upload a cover letter, write one, or choose Skip.');
-          return false;
-        }
-        if (_coverMode == _CoverMode.write && _coverText.text.trim().length < 50) {
-          setState(() => _stepError = 'Write at least 50 characters, or choose Skip.');
+        if (_coverFile == null) {
+          setState(() => _stepError = 'Upload your cover letter as a PDF to continue.');
           return false;
         }
       case _Step.questions:
@@ -304,30 +296,7 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
     });
   }
 
-  void _useTemplate() {
-    final u = widget.user;
-    final j = widget.job;
-    final topSkills = j.skills.where((s) => u.skills.map((e) => e.toLowerCase()).contains(s.toLowerCase())).take(3).toList();
-    final current = u.experience.isNotEmpty ? u.experience.first : null;
-    _coverText.text = 'Dear Hiring Manager,\n\n'
-        'I am writing to apply for the ${j.title} position at ${j.companyName}. '
-        '${current != null ? 'In my current role as ${current.title} at ${current.company}, I ' : 'I '}'
-        'have developed experience that matches what you are looking for'
-        '${topSkills.isNotEmpty ? ', including ${topSkills.join(', ')}' : ''}.\n\n'
-        '[Add one or two examples of results you achieved that are relevant to this role.]\n\n'
-        'I would welcome the chance to discuss how I can contribute to your team in ${j.location}. '
-        'Thank you for considering my application.\n\n'
-        'Yours sincerely,\n${_name.text}';
-    setState(() => _stepError = null);
-  }
-
   // ---- Submit ----------------------------------------------------------------
-
-  CoverLetter? get _coverLetter => switch (_coverMode) {
-        _CoverMode.upload => _coverFile,
-        _CoverMode.write => CoverLetter(id: const Uuid().v4(), kind: CoverLetterKind.written, text: _coverText.text.trim()),
-        _CoverMode.skip => null,
-      };
 
   Future<void> _submit() async {
     if (!_confirmed) {
@@ -345,7 +314,7 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
       history: [StatusEvent(status: ApplicationStatus.applied, at: now)],
       applicant: ApplicantInfo(fullName: _name.text.trim(), email: _email.text.trim(), phone: _phone.text.trim(), location: _location),
       resume: _resume!,
-      coverLetter: _coverLetter,
+      coverLetter: _coverFile,
       supportingDocuments: List.of(_supporting),
       screeningAnswers: Map.of(_answers),
       note: _note.text.trim().isEmpty ? null : _note.text.trim(),
@@ -528,59 +497,17 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
       ]);
 
   Widget _cover() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _title('Cover letter', 'A short letter explaining why you\'re a good fit can make your application stand out.'),
-        SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<_CoverMode>(
-            segments: const [
-              ButtonSegment(value: _CoverMode.write, label: Text('Write'), icon: Icon(Icons.edit_outlined)),
-              ButtonSegment(value: _CoverMode.upload, label: Text('Upload'), icon: Icon(Icons.upload_file_rounded)),
-              ButtonSegment(value: _CoverMode.skip, label: Text('Skip')),
-            ],
-            selected: {_coverMode},
-            showSelectedIcon: false,
-            onSelectionChanged: (s) => setState(() {
-              _coverMode = s.first;
-              _stepError = null;
-            }),
+        _title('Cover letter', 'Required. Upload a short letter as a PDF explaining why you\'re a good fit.'),
+        if (_coverFile != null) ...[
+          _DocumentTile(
+            icon: Icons.picture_as_pdf_outlined,
+            name: _coverFile!.fileName ?? 'Cover letter',
+            detail: '${_coverFile!.format?.label ?? ''} · ${Fmt.fileSize(_coverFile!.sizeBytes ?? 0)}',
+            onRemove: () => setState(() => _coverFile = null),
           ),
-        ),
-        const SizedBox(height: 20),
-        switch (_coverMode) {
-          _CoverMode.write => Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              TextField(
-                controller: _coverText,
-                minLines: 10,
-                maxLines: 18,
-                maxLength: 3000,
-                textCapitalization: TextCapitalization.sentences,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(hintText: 'Dear Hiring Manager,', alignLabelWithHint: true),
-              ),
-              TextButton.icon(onPressed: _useTemplate, icon: const Icon(Icons.auto_awesome_outlined, size: 18), label: const Text('Start from a template')),
-            ]),
-          _CoverMode.upload => Column(children: [
-              if (_coverFile != null) ...[
-                _DocumentTile(
-                  icon: Icons.description_outlined,
-                  name: _coverFile!.fileName ?? 'Cover letter',
-                  detail: '${_coverFile!.format?.label ?? ''} · ${Fmt.fileSize(_coverFile!.sizeBytes ?? 0)}',
-                  onRemove: () => setState(() => _coverFile = null),
-                ),
-                const SizedBox(height: 12),
-              ],
-              _UploadBox(busy: _uploading, label: _coverFile == null ? 'Upload cover letter' : 'Replace file', onTap: _uploadCover),
-            ]),
-          _CoverMode.skip => Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: context.palette.surface, borderRadius: BorderRadius.circular(AppSpacing.radius)),
-              child: Row(children: [
-                Icon(Icons.info_outline_rounded, color: context.palette.muted),
-                const SizedBox(width: 12),
-                const Expanded(child: Text('You can apply without a cover letter, but many employers in Sierra Leone expect one.')),
-              ]),
-            ),
-        },
+          const SizedBox(height: 12),
+        ],
+        _UploadBox(busy: _uploading, label: _coverFile == null ? 'Upload cover letter' : 'Replace file', onTap: _uploadCover),
       ]);
 
   Widget _documents() {
@@ -652,7 +579,7 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
       ]);
 
   Widget _review() {
-    final cover = _coverLetter;
+    final cover = _coverFile;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _title('Review your application', 'Check everything before you send it. You can\'t edit an application after submitting.'),
       _ReviewCard(

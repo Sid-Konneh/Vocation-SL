@@ -64,6 +64,16 @@ class DemoEmployerBackend implements EmployerBackend {
   }
 
   @override
+  Future<String> uploadJobAdvert(Uint8List bytes, String fileName) async {
+    final type = fileName.toLowerCase().endsWith('.pdf')
+        ? 'application/pdf'
+        : fileName.toLowerCase().endsWith('.png')
+            ? 'image/png'
+            : 'image/jpeg';
+    return 'data:$type;base64,${base64Encode(bytes)}';
+  }
+
+  @override
   Future<List<Job>> myJobs(String companyId) async => List.of(jobs);
 
   Job _with(Job j, {required String id, required JobStatus status}) => Job(
@@ -86,6 +96,7 @@ class DemoEmployerBackend implements EmployerBackend {
         preferred: j.preferred,
         skills: j.skills,
         benefits: j.benefits,
+        advertUrl: j.advertUrl,
         status: status,
         company: company,
       );

@@ -49,6 +49,7 @@ class Job {
     this.documentsRequested = false,
     this.documentsNote = '',
     this.applyUrl = '',
+    this.advertUrl = '',
     this.applyClicks = 0,
     this.featureRequestedAt,
     this.screening = const [],
@@ -92,6 +93,13 @@ class Job {
   /// When set, candidates apply on the employer's own website instead of in the app.
   final String applyUrl;
   bool get appliesExternally => applyUrl.isNotEmpty;
+
+  /// The employer's own job advert (PDF or photo), attached instead of or as
+  /// well as the written description.
+  final String advertUrl;
+  bool get hasAdvert => advertUrl.isNotEmpty;
+  bool get advertIsPdf => isPdfAdvert(advertUrl);
+  static bool isPdfAdvert(String nameOrUrl) => (Uri.tryParse(nameOrUrl)?.path ?? nameOrUrl).toLowerCase().endsWith('.pdf');
 
   /// Taps on "Apply on website" (jobs with an external link).
   final int applyClicks;
@@ -154,6 +162,7 @@ class Job {
         documentsRequested: documentsRequested,
         documentsNote: documentsNote,
         applyUrl: applyUrl,
+        advertUrl: advertUrl,
         applyClicks: applyClicks,
         featureRequestedAt: featureRequestedAt,
         screening: screening,
@@ -189,6 +198,7 @@ class Job {
         documentsRequested: j['documents_requested'] as bool? ?? false,
         documentsNote: j['documents_note'] as String? ?? '',
         applyUrl: j['apply_url'] as String? ?? '',
+        advertUrl: j['advert_url'] as String? ?? '',
         applyClicks: (j['apply_clicks'] as num?)?.toInt() ?? 0,
         featureRequestedAt: j['feature_requested_at'] == null ? null : DateTime.tryParse('${j['feature_requested_at']}'),
         screening: [
@@ -227,6 +237,7 @@ class Job {
         'documents_requested': documentsRequested,
         'documents_note': documentsNote,
         'apply_url': applyUrl,
+        'advert_url': advertUrl,
         'apply_clicks': applyClicks,
         'feature_requested_at': featureRequestedAt?.toIso8601String(),
         'screening': screening.map((q) => q.toJson()).toList(),

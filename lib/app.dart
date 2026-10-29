@@ -146,6 +146,14 @@ class _AppFrameState extends ConsumerState<_AppFrame> with WidgetsBindingObserve
     ref.listen<String?>(sessionProvider, (prev, uid) {
       if (uid != null && uid != prev) _syncPush();
     });
+    // An employer who just signed in (e.g. from the email confirmation link):
+    // look up their company while the splash plays, so company setup or the
+    // dashboard opens without a second wait.
+    ref.listen<UserRole?>(roleProvider, (_, role) {
+      if (role == UserRole.employer && ref.read(sessionProvider) != null) {
+        unawaited(ref.read(companyProvider.future).then((_) {}, onError: (_) {}));
+      }
+    });
     ref.listen<bool>(onlineProvider, (prev, online) {
       if (prev == false && online) {
         ref.read(syncServiceProvider).flush();

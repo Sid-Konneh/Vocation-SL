@@ -62,3 +62,7 @@ key.properties
 
 # Play Store bundles (large; upload from release/play)
 release/play/
+
+# Apple keys and marketing videos (copyrighted music): never commit
+*.p8
+store/video/

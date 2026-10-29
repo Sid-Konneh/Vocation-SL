@@ -6,7 +6,10 @@ import '../../../core/errors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/models.dart';
+import '../../../providers/core_providers.dart';
+import '../../../services/file_service.dart';
 import '../../../widgets/common.dart';
+import '../../../widgets/job_advert.dart';
 import '../../providers.dart';
 import '../../widgets.dart';
 
@@ -38,6 +41,13 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
   final _documentsNote = TextEditingController();
   final _applyUrl = TextEditingController();
   bool _external = false;
+
+  /// The saved advert, and a newly picked one that uploads when the job is saved.
+  String _advertUrl = '';
+  PickedFile? _advertFile;
+
+  /// With an advert attached, the written description, lists and summary are optional.
+  bool get _hasAdvert => _advertFile != null || _advertUrl.isNotEmpty;
 
   /// Screening questions being edited: text, the answer wanted (null = any), and a stable id.
   final List<({TextEditingController text, bool? wanted, String id})> _questions = [];
@@ -89,6 +99,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
     _documentsNote.text = j.documentsNote;
     _external = j.appliesExternally;
     _applyUrl.text = j.applyUrl;
+    _advertUrl = j.advertUrl;
     _questions.addAll([for (final q in j.screening) (text: TextEditingController(text: q.text), wanted: q.wanted, id: q.id)]);
   }
 
@@ -124,6 +135,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
         documentsRequested: !_external && _documentsRequested,
         documentsNote: !_external && _documentsRequested ? _documentsNote.text.trim() : '',
         applyUrl: _external ? (Job.normalizeApplyUrl(_applyUrl.text) ?? '') : '',
+        advertUrl: _advertUrl,
         screening: _external
             ? const []
             : [
@@ -152,6 +164,11 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
     }
     setState(() => _saving = true);
     try {
+      final file = _advertFile;
+      if (file != null) {
+        _advertUrl = await ref.read(employerBackendProvider).uploadJobAdvert(file.bytes, file.name);
+        _advertFile = null; // uploaded; a retry after a failed save doesn't upload it again
+      }
       final status = post ? (_posted ? _original!.status : JobStatus.published) : JobStatus.draft;
       final saved = await ref.read(employerJobsProvider.notifier).save(_build(company), status: status);
       if (!mounted) return;
@@ -172,6 +189,15 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
       if (mounted) showError(context, e);
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _pickAdvert() async {
+    try {
+      final f = await ref.read(fileServiceProvider).pickJobAdvert();
+      if (f != null) setState(() => _advertFile = f);
+    } catch (e) {
+      if (mounted) showError(context, e);
     }
   }
 
@@ -285,31 +311,65 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
               Text('Leave blank to show "Salary not disclosed". Jobs with a salary get more applicants.',
                   style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
             ]),
+            section('Job advert (optional)', [
+              Text(
+                'Already have the advert as a PDF or a photo, e.g. from a newspaper or notice board? Upload it and the written '
+                'description below becomes optional. Typing the details as well helps more job seekers find the job in search and alerts.',
+                style: context.text.bodyMedium?.copyWith(color: context.palette.muted),
+              ),
+              const SizedBox(height: 12),
+              if (_hasAdvert) ...[
+                JobAdvertView(url: _advertUrl, bytes: _advertFile?.bytes, fileName: _advertFile?.name ?? '', maxHeight: 260),
+                const SizedBox(height: 8),
+                Wrap(spacing: 8, children: [
+                  OutlinedButton.icon(onPressed: _saving ? null : _pickAdvert, icon: const Icon(Icons.swap_horiz_rounded), label: const Text('Replace')),
+                  TextButton.icon(
+                    onPressed: _saving ? null : () => setState(() {
+                      _advertFile = null;
+                      _advertUrl = '';
+                    }),
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    label: const Text('Remove'),
+                  ),
+                ]),
+              ] else
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: _saving ? null : _pickAdvert,
+                    icon: const Icon(Icons.upload_file_rounded),
+                    label: const Text('Upload PDF or photo'),
+                  ),
+                ),
+              const SizedBox(height: 6),
+              Text('PDF up to 5 MB, or a JPG/PNG photo. Make sure the text is clear and readable.',
+                  style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+            ]),
             section('Description', [
               TextFormField(
                 controller: _about,
                 maxLength: 200,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(labelText: 'About the job (one-line summary) *'),
-                validator: (v) => req(v, 'a short summary'),
+                decoration: InputDecoration(labelText: 'About the job (one-line summary)${_hasAdvert ? '' : ' *'}'),
+                validator: (v) => _hasAdvert ? null : req(v, 'a short summary'),
               ),
               TextFormField(
                 controller: _description,
                 minLines: 5,
                 maxLines: 14,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(labelText: 'Full description *', alignLabelWithHint: true),
-                validator: (v) => (v ?? '').trim().length < 80 ? 'Write at least 80 characters' : null,
+                decoration: InputDecoration(labelText: 'Full description${_hasAdvert ? '' : ' *'}', alignLabelWithHint: true),
+                validator: (v) => !_hasAdvert && (v ?? '').trim().length < 80 ? 'Write at least 80 characters, or upload the job advert above' : null,
               ),
             ]),
             section('Details', [
-              listField(_responsibilities, 'Responsibilities *', 'Manage the branch network\nTrain new staff', required: true),
+              listField(_responsibilities, 'Responsibilities${_hasAdvert ? '' : ' *'}', 'Manage the branch network\nTrain new staff', required: !_hasAdvert),
               gap(),
-              listField(_requirements, 'Eligibility & requirements *', 'Degree in Accounting\n2+ years of experience', required: true),
+              listField(_requirements, 'Eligibility & requirements${_hasAdvert ? '' : ' *'}', 'Degree in Accounting\n2+ years of experience', required: !_hasAdvert),
               gap(),
               listField(_preferred, 'Preferred qualifications', 'ACCA part-qualified'),
               gap(),
-              listField(_skills, 'Skills *', 'Excel\nQuickBooks', required: true),
+              listField(_skills, 'Skills${_hasAdvert ? '' : ' *'}', 'Excel\nQuickBooks', required: !_hasAdvert),
               gap(),
               listField(_benefits, 'Benefits', 'NASSIT pension contributions\nMedical cover'),
             ]),
@@ -347,7 +407,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
                           : null,
                 ),
               ] else ...[
-                Text('Every applicant sends a CV (PDF) and can add a cover letter. You review them in Candidates.',
+                Text('Every applicant sends a CV and a cover letter (both PDF). You review them in Candidates.',
                     style: context.text.bodyMedium?.copyWith(color: context.palette.muted)),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,

@@ -9,6 +9,7 @@ import '../../employer/widgets.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
 import '../../widgets/company_logo.dart';
+import '../../widgets/job_advert.dart';
 import '../../widgets/states.dart';
 import '../admin_providers.dart';
 import '../admin_shell.dart';
@@ -224,10 +225,17 @@ class _JobDialog extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text('Review note: ${job.reviewNote}', style: context.text.bodySmall),
               ],
+              if (job.hasAdvert) ...[
+                const SizedBox(height: 16),
+                Text('Job advert uploaded by the employer', style: context.text.labelLarge),
+                const SizedBox(height: 6),
+                JobAdvertView(url: job.advertUrl, maxHeight: 320),
+                Text('Read the advert: check it matches the job details and doesn\'t ask candidates for money.', style: context.text.bodySmall),
+              ],
               const SizedBox(height: 16),
-              Text(job.about, style: context.text.titleSmall),
+              if (job.about.isNotEmpty) Text(job.about, style: context.text.titleSmall),
               const SizedBox(height: 8),
-              Text(job.description, style: context.text.bodyMedium),
+              if (job.description.isNotEmpty) Text(job.description, style: context.text.bodyMedium),
               if (job.appliesExternally) ...[
                 const SizedBox(height: 12),
                 Text('Applications go to an external link', style: context.text.labelLarge),

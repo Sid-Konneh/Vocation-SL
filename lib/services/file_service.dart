@@ -53,4 +53,26 @@ class FileService {
     final base = file.name.contains('.') ? file.name.substring(0, file.name.lastIndexOf('.')) : file.name;
     return PickedFile(name: '$base.${small.extension}', bytes: small.bytes);
   }
+
+  /// Lets an employer pick their job advert: a PDF, or a photo of a printed or
+  /// newspaper advert. Photos are shrunk but kept large enough to read.
+  Future<PickedFile?> pickJobAdvert() async {
+    final file = await FilePicker.pickFile(
+      dialogTitle: 'Choose the job advert (PDF or photo)',
+      type: FileType.custom,
+      allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+    );
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) throw const ValidationException('That file is empty. Choose another one.');
+    if (DocumentFormat.fromFileName(file.name) == DocumentFormat.pdf) {
+      if (bytes.length > maxDocumentBytes) throw const ValidationException('Files must be 5 MB or smaller.');
+      return PickedFile(name: file.name, bytes: bytes, format: DocumentFormat.pdf);
+    }
+    if (bytes.length > maxSourcePhotoBytes) throw const ValidationException('Choose an image smaller than 15 MB.');
+    final small = ImageResize.shrink(bytes, maxSide: 2000);
+    if (small.bytes.length > maxDocumentBytes) throw const ValidationException('That photo is too large. Try a smaller one or a PDF.');
+    final base = file.name.contains('.') ? file.name.substring(0, file.name.lastIndexOf('.')) : file.name;
+    return PickedFile(name: '$base.${small.extension}', bytes: small.bytes);
+  }
 }
