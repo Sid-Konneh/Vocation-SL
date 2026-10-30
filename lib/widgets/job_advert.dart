@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/models.dart';
 import 'common.dart';
+import 'document_viewer.dart';
 
 /// An employer's job advert (PDF or photo). Photos show as a preview that
-/// opens full screen with zoom; PDFs open in the browser or PDF viewer.
+/// opens full screen with zoom; PDFs open in the app's PDF viewer.
 /// [bytes] shows a file picked but not yet uploaded.
 class JobAdvertView extends StatelessWidget {
   const JobAdvertView({super.key, this.url = '', this.bytes, this.fileName = '', this.maxHeight = 420});
@@ -32,11 +34,53 @@ class JobAdvertView extends StatelessWidget {
     return url.isEmpty ? null : NetworkImage(url);
   }
 
-  Future<void> _openPdf(BuildContext context) async {
-    final ok = url.isNotEmpty && await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    if (!ok && context.mounted) {
-      showSnack(context, url.isEmpty ? 'Save the job first to open the PDF.' : 'Couldn\'t open the PDF. Try again.', error: true);
+  /// The PDF's bytes when it isn't uploaded yet (just picked, or demo mode).
+  Uint8List? get _pdfBytes {
+    if (bytes != null) return bytes;
+    if (!url.startsWith('data:')) return null;
+    try {
+      return base64Decode(url.substring(url.indexOf(',') + 1));
+    } catch (_) {
+      return null;
     }
+  }
+
+  /// Opens the PDF inside the app, with a button to download it.
+  void _openPdf(BuildContext context) {
+    final data = _pdfBytes;
+    final name = fileName.isNotEmpty ? fileName : 'Job advert.pdf';
+    if (data != null) {
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: const Text('Job advert')),
+          body: PdfViewer.data(data, sourceName: name, params: PdfViewerParams(backgroundColor: context.palette.surface)),
+        ),
+      ));
+      return;
+    }
+    if (url.isEmpty) return showSnack(context, 'Save the job first to open the PDF.', error: true);
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => DocumentViewerScreen(
+        title: 'Job advert',
+        fileName: name,
+        format: DocumentFormat.pdf,
+        loadUrl: () async => url,
+        downloadUrl: _downloadUrl,
+      ),
+    ));
+  }
+
+  /// Supabase Storage sends a file as a download, not a page, when the
+  /// address ends in `?download=` and a file name.
+  static String _downloadUrl(String url) {
+    final uri = Uri.parse(url);
+    if (!uri.path.contains('/storage/v1/object/public/')) return url;
+    return uri.replace(queryParameters: {...uri.queryParameters, 'download': 'Job advert.pdf'}).toString();
+  }
+
+  Future<void> _download(BuildContext context) async {
+    final ok = await launchUrl(Uri.parse(_downloadUrl(url)), mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) showSnack(context, 'Couldn\'t download the PDF. Try again.', error: true);
   }
 
   void _openImage(BuildContext context, ImageProvider image) => showDialog<void>(
@@ -66,8 +110,11 @@ class JobAdvertView extends StatelessWidget {
           onTap: () => _openPdf(context),
           leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.danger, size: 32),
           title: const Text('Job advert (PDF)'),
-          subtitle: Text(fileName.isNotEmpty ? fileName : 'Tap to open the full advert'),
-          trailing: const Icon(Icons.open_in_new_rounded),
+          subtitle: Text(fileName.isNotEmpty ? fileName : 'Tap to read the full advert'),
+          // Only a saved advert has an address to download from.
+          trailing: url.startsWith('http')
+              ? IconButton(tooltip: 'Download PDF', icon: const Icon(Icons.download_rounded), onPressed: () => _download(context))
+              : const Icon(Icons.chevron_right_rounded),
         ),
       );
     }

@@ -33,11 +33,14 @@ Future<void> viewDocument(
 }
 
 class DocumentViewerScreen extends StatefulWidget {
-  const DocumentViewerScreen({super.key, required this.title, required this.fileName, required this.format, required this.loadUrl});
+  const DocumentViewerScreen({super.key, required this.title, required this.fileName, required this.format, required this.loadUrl, this.downloadUrl});
   final String title;
   final String fileName;
   final DocumentFormat format;
   final Future<String> Function() loadUrl;
+
+  /// Turns the viewing address into one that saves the file, if different.
+  final String Function(String url)? downloadUrl;
 
   @override
   State<DocumentViewerScreen> createState() => _DocumentViewerScreenState();
@@ -47,7 +50,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
   late Future<String> _url = widget.loadUrl();
 
   Future<void> _download(String url) async {
-    final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    final ok = await launchUrl(Uri.parse(widget.downloadUrl?.call(url) ?? url), mode: LaunchMode.externalApplication);
     if (!ok && mounted) showSnack(context, 'Couldn\'t open the file.', error: true);
   }
 
