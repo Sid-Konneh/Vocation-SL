@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
 
   let sent = 0;
   const stale: string[] = [];
+  const errors: string[] = [];
   await Promise.all(devices.map(async (d) => {
     const message = {
       token: d.token,
@@ -100,6 +101,11 @@ Deno.serve(async (req) => {
       android: {
         priority: "high",
         notification: { icon: "ic_stat_notify", color: "#3F7A1F", tag: data.notification_id || undefined },
+      },
+      // iPhone: show the alert straight away, with sound, even when the app is closed.
+      apns: {
+        headers: { "apns-priority": "10", "apns-push-type": "alert" },
+        payload: { aps: { sound: "default", "thread-id": p.type || "alerts" } },
       },
       webpush: {
         fcm_options: { link },
@@ -121,10 +127,13 @@ Deno.serve(async (req) => {
         (res.status === 400 && text.includes("registration token"))) {
       stale.push(d.token);
     } else {
-      console.error(`FCM ${res.status}: ${text}`);
+      // THIRD_PARTY_AUTH_ERROR here means Firebase can't reach Apple: check the APNs key in Firebase.
+      console.error(`FCM ${res.status} (${d.platform}): ${text}`);
+      // Also returned to the database (net._http_response) so it can be read with SQL.
+      errors.push(`${d.platform} ${res.status}: ${text.replace(/\s+/g, " ").slice(0, 300)}`);
     }
   }));
 
   if (stale.length) await supabase.from("push_tokens").delete().in("token", stale);
-  return Response.json({ sent, removed: stale.length });
+  return Response.json({ sent, removed: stale.length, ...(errors.length ? { errors } : {}) });
 });
