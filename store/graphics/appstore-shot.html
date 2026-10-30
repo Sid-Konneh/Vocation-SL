@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>App Store Screenshot</title>
+<!-- Renders one 1320x2868 App Store screenshot: ?n=1..5 picks the screen and caption. -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1320px; height: 2868px; overflow: hidden; background: #2C5A14; font-family: 'Segoe UI', Arial, sans-serif; }
+  .bg { position: absolute; inset: 0; background: radial-gradient(circle at 85% 8%, #4d8a2a 0, transparent 45%), linear-gradient(160deg, #3F7A1F, #1d3d0d); }
+  .cap { position: absolute; left: 90px; right: 90px; top: 190px; color: #fff; }
+  .kicker { font-size: 44px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #b7dc8c; }
+  h1 { font-size: 112px; line-height: 1.04; font-weight: 800; letter-spacing: -2px; margin-top: 22px; }
+  .shot { position: absolute; left: 90px; right: 90px; bottom: 0; height: 2030px; border-radius: 72px 72px 0 0; overflow: hidden;
+          border: 14px solid #111; border-bottom: 0; background: #fff; box-shadow: 0 -20px 80px rgba(0,0,0,.35); }
+  .shot img { width: 100%; display: block; }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="cap"><div class="kicker" id="k"></div><h1 id="t"></h1></div>
+<div class="shot"><img id="img" alt=""></div>
+<script>
+  const shots = {
+    1: ['1-find-jobs.png', 'Jobs in Sierra Leone', 'Find jobs across all 16 districts'],
+    2: ['2-job-details.png', 'Every detail', 'See the pay, deadline and how you match'],
+    3: ['3-track-applications.png', 'Stay in the loop', 'Track every application'],
+    4: ['4-alerts.png', 'Never miss a reply', 'Get alerts when employers respond'],
+    5: ['5-profile.png', 'Apply faster', 'Build your profile once'],
+  };
+  const [file, kicker, title] = shots[new URLSearchParams(location.search).get('n') || 1];
+  document.getElementById('img').src = '../screenshots/' + file;
+  document.getElementById('k').textContent = kicker;
+  document.getElementById('t').textContent = title;
+</script>
+</body>
+</html>

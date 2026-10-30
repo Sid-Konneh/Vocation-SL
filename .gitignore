@@ -66,3 +66,6 @@ release/play/
 # Apple keys and marketing videos (copyrighted music): never commit
 *.p8
 store/video/
+
+# App Review replies name test accounts: keep private
+store/APP_REVIEW_REPLY*.md

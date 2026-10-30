@@ -23,6 +23,14 @@ String safePdfName(String fileName) {
   return '$base.pdf';
 }
 
+/// Who has blocked whom in a conversation. Either way, no new messages can be sent.
+class ConversationBlock {
+  const ConversationBlock({this.byMe = false, this.byThem = false});
+  final bool byMe;
+  final bool byThem;
+  bool get blocked => byMe || byThem;
+}
+
 /// Conversation between an employer and a candidate on one application.
 /// Who is sending is decided by the database from the signed-in account;
 /// [asEmployer] is only used by the demo backend.
@@ -44,6 +52,15 @@ abstract interface class MessageBackend {
 
   /// Unread messages from candidates, per application (for employers).
   Future<Map<String, int>> unreadReplies();
+
+  Future<ConversationBlock> blockStatus(String applicationId);
+
+  /// Blocks or unblocks the other side: the company (for candidates) or the
+  /// candidate (for employers), on every application between them.
+  Future<void> setBlocked(String applicationId, bool blocked);
+
+  /// Reports the other side of this conversation to the Vocation SL team.
+  Future<void> report(String applicationId, String reason, String details);
 }
 
 class SupabaseMessageBackend implements MessageBackend {
@@ -109,6 +126,24 @@ class SupabaseMessageBackend implements MessageBackend {
       return const {}; // messages table not installed yet
     }
   }
+
+  @override
+  Future<ConversationBlock> blockStatus(String applicationId) async {
+    try {
+      final r = await _client.rpc('conversation_status', params: {'app_id': applicationId}) as Map<String, dynamic>;
+      return ConversationBlock(byMe: r['blocked_by_me'] == true, byThem: r['blocked_by_them'] == true);
+    } catch (_) {
+      return const ConversationBlock(); // blocking not installed yet
+    }
+  }
+
+  @override
+  Future<void> setBlocked(String applicationId, bool blocked) =>
+      guardSupabase(() => _client.rpc('block_conversation', params: {'app_id': applicationId, 'p_block': blocked}));
+
+  @override
+  Future<void> report(String applicationId, String reason, String details) =>
+      guardSupabase(() => _client.rpc('report_conversation', params: {'app_id': applicationId, 'p_reason': reason, 'p_details': details}));
 }
 
 /// In-memory threads for demo mode and tests, shared by both sides.
@@ -154,4 +189,23 @@ class DemoMessageBackend implements MessageBackend {
 
   @override
   Future<Map<String, int>> unreadReplies() async => const {};
+
+  final _blocked = <String, bool>{}; // application id -> blocked by the employer side
+  final reports = <String>[];
+
+  @override
+  Future<ConversationBlock> blockStatus(String applicationId) async =>
+      _blocked.containsKey(applicationId) ? const ConversationBlock(byMe: true) : const ConversationBlock();
+
+  @override
+  Future<void> setBlocked(String applicationId, bool blocked) async {
+    if (blocked) {
+      _blocked[applicationId] = true;
+    } else {
+      _blocked.remove(applicationId);
+    }
+  }
+
+  @override
+  Future<void> report(String applicationId, String reason, String details) async => reports.add('$applicationId: $reason');
 }

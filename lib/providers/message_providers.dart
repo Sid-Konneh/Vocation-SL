@@ -13,6 +13,12 @@ final messageThreadProvider = FutureProvider.autoDispose.family<List<AppMessage>
   return ref.watch(messageBackendProvider).thread(applicationId);
 });
 
+/// Whether this conversation is blocked, by the signed-in side or the other.
+final conversationBlockProvider = FutureProvider.autoDispose.family<ConversationBlock, String>((ref, applicationId) {
+  ref.watch(sessionProvider);
+  return ref.watch(messageBackendProvider).blockStatus(applicationId);
+});
+
 /// Unread candidate replies per application, for the employer's candidate list.
 final unreadRepliesProvider = FutureProvider.autoDispose<Map<String, int>>((ref) {
   ref.watch(sessionProvider);

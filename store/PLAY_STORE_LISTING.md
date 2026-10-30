@@ -48,7 +48,7 @@ Vocation SL is a job platform built for Sierra Leone. Find work across all 16 di
 FOR JOB SEEKERS
 • Search jobs by title, skill or company, and filter by district, industry, job type, experience level, salary and remote work.
 • Save jobs and searches, and get alerts when something changes.
-• Apply in a few steps with your CV, a cover letter and a note to the employer. PDF, DOC and DOCX files are accepted.
+• Apply in a few steps with your CV and cover letter (both PDF) and an optional note to the employer.
 • Track every application: submitted, viewed, shortlisted, assessment, interview, offer and hired.
 • Reply to employers inside the app when they message you about an application.
 • Get push alerts for messages, interview invitations and status changes, even when the app is closed.
@@ -64,7 +64,7 @@ FOR EMPLOYERS
 • View and download invoices for your job listings.
 
 SAFE AND GENUINE
-• Every company and every job is reviewed by our team before it goes live.
+• Our team checks every new company, and reviews its jobs before they go live until the company is approved.
 • Report any suspicious listing in one tap.
 • A genuine employer will never ask you for money to apply or attend an interview. If anyone does, report it.
 • Your CV is shared only with the employers you apply to. You can delete your account and data at any time from Settings.

@@ -2,7 +2,7 @@ name: vocation_sl
 description: "Vocation SL: job discovery and applications for Sierra Leone."
 publish_to: 'none'
 
-version: 1.2.9+24
+version: 1.2.10+25
 
 environment:
   sdk: ^3.13.4
