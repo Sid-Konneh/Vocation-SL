@@ -417,9 +417,13 @@ class PlatformSettings {
     this.featuredPrice = 1500,
     this.launchFreePosts = 5,
     this.launchUntil,
+    this.freePostingCompanies = const [],
   });
 
   final bool requireCompanyApproval;
+
+  /// Companies (ids) whose job posts are always free: each gets a SLE 0 invoice.
+  final List<String> freePostingCompanies;
 
   /// Price per job posting, excluding GST (SLE). New invoices start at this price.
   final int postingPrice;
@@ -448,6 +452,7 @@ class PlatformSettings {
     int? featuredPrice,
     int? launchFreePosts,
     DateTime? Function()? launchUntil,
+    List<String>? freePostingCompanies,
   }) =>
       PlatformSettings(
         requireCompanyApproval: requireCompanyApproval ?? this.requireCompanyApproval,
@@ -459,6 +464,7 @@ class PlatformSettings {
         featuredPrice: featuredPrice ?? this.featuredPrice,
         launchFreePosts: launchFreePosts ?? this.launchFreePosts,
         launchUntil: launchUntil == null ? this.launchUntil : launchUntil(),
+        freePostingCompanies: freePostingCompanies ?? this.freePostingCompanies,
       );
 
   /// From platform_settings rows ({key, value}).
@@ -476,6 +482,7 @@ class PlatformSettings {
       featuredPrice: (m['featured_price'] as num?)?.toInt() ?? 1500,
       launchFreePosts: (launch['free_posts'] as num?)?.toInt() ?? 0,
       launchUntil: DateTime.tryParse('${launch['until'] ?? ''}'),
+      freePostingCompanies: m['free_posting_companies'] is List ? [for (final id in m['free_posting_companies'] as List) '$id'] : const [],
     );
   }
 
@@ -495,6 +502,7 @@ class PlatformSettings {
                 : '${launchUntil!.year}-${launchUntil!.month.toString().padLeft(2, '0')}-${launchUntil!.day.toString().padLeft(2, '0')}',
           },
         },
+        {'key': 'free_posting_companies', 'value': freePostingCompanies},
       ];
 }
 

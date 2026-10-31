@@ -429,9 +429,19 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                       ),
                     ]),
                     const SizedBox(height: 6),
-                    Text('During the launch offer, each employer\'s first free postings get a SLE 0 invoice automatically.',
+                    Text('During the launch offer, each employer\'s first free postings get a SLE 0 invoice automatically. '
+                        'After that, every job post gets a draft invoice at the posting price when it goes live; issue it from Invoices.',
                         style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
                   ]),
+                ),
+                const SizedBox(height: 16),
+                SectionCard(
+                  title: 'Employers who post free',
+                  child: _FreeEmployers(
+                    selected: d.freePostingCompanies,
+                    canEdit: canEdit,
+                    onChanged: (ids) => setState(() => _draft = d.copyWith(freePostingCompanies: ids)),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SectionCard(
@@ -470,6 +480,121 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               ]),
             );
           },
+        ),
+      ],
+    );
+  }
+}
+
+/// The companies picked to post free, shown as chips, with a dialog to add more.
+class _FreeEmployers extends ConsumerWidget {
+  const _FreeEmployers({required this.selected, required this.canEdit, required this.onChanged});
+  final List<String> selected;
+  final bool canEdit;
+  final ValueChanged<List<String>> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companies = ref.watch(adminCompaniesProvider);
+    return AdminAsync<List<AdminCompany>>(
+      value: companies,
+      onRetry: () => ref.invalidate(adminCompaniesProvider),
+      builder: (all) {
+        final byId = {for (final c in all) c.company.id: c.company};
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('Job posts from these employers are always free, during and after the launch offer. Each job still gets a SLE 0 invoice.',
+              style: context.text.bodyMedium),
+          const SizedBox(height: 12),
+          if (selected.isEmpty)
+            Text('No employers selected.', style: context.text.bodySmall?.copyWith(color: context.palette.muted))
+          else
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final id in selected)
+                InputChip(
+                  label: Text(byId[id]?.name ?? 'Deleted company'),
+                  onDeleted: canEdit ? () => onChanged([...selected]..remove(id)) : null,
+                  deleteButtonTooltipMessage: 'Remove',
+                ),
+            ]),
+          if (canEdit) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final picked = await showDialog<List<String>>(
+                    context: context,
+                    builder: (_) => _PickEmployersDialog(companies: [for (final c in all) c.company], selected: selected),
+                  );
+                  if (picked != null) onChanged(picked);
+                },
+                icon: const Icon(Icons.add_business_outlined),
+                label: const Text('Choose employers'),
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
+          Text('Press Save settings to apply. Applies to jobs that go live after saving.',
+              style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+        ]);
+      },
+    );
+  }
+}
+
+class _PickEmployersDialog extends StatefulWidget {
+  const _PickEmployersDialog({required this.companies, required this.selected});
+  final List<Company> companies;
+  final List<String> selected;
+
+  @override
+  State<_PickEmployersDialog> createState() => _PickEmployersDialogState();
+}
+
+class _PickEmployersDialogState extends State<_PickEmployersDialog> {
+  late final Set<String> _ids = {...widget.selected};
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final q = _q.trim().toLowerCase();
+    final list = widget.companies.where((c) => q.isEmpty || c.name.toLowerCase().contains(q)).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return AlertDialog(
+      title: const Text('Employers who post free'),
+      content: SizedBox(
+        width: 480,
+        height: 460,
+        child: Column(children: [
+          TextField(
+            autofocus: true,
+            onChanged: (v) => setState(() => _q = v),
+            decoration: const InputDecoration(hintText: 'Search companies', prefixIcon: Icon(Icons.search_rounded), isDense: true),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: list.isEmpty
+                ? const Center(child: Text('No companies match.'))
+                : ListView(children: [
+                    for (final c in list)
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _ids.contains(c.id),
+                        title: Text(c.name),
+                        subtitle: c.location.isEmpty ? null : Text(c.location),
+                        onChanged: (v) => setState(() => v == true ? _ids.add(c.id) : _ids.remove(c.id)),
+                      ),
+                  ]),
+          ),
+          Align(alignment: Alignment.centerLeft, child: Text('${_ids.length} selected', style: context.text.bodySmall)),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _ids.toList()),
+          style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
+          child: const Text('Done'),
         ),
       ],
     );
