@@ -14,7 +14,10 @@ enum NotificationType {
   invite('Invitation to apply'),
   support('Support reply'),
   supportAdmin('Support request'),
-  digest('Weekly digest');
+  digest('Weekly digest'),
+  invoice('Invoice'),
+  review('Approval update'),
+  reviewAdmin('Waiting for approval');
 
   const NotificationType(this.label);
   final String label;

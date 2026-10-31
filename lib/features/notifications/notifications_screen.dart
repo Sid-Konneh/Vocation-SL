@@ -29,6 +29,9 @@ IconData notificationIcon(NotificationType t) => switch (t) {
       NotificationType.invite => Icons.mark_email_unread_rounded,
       NotificationType.support || NotificationType.supportAdmin => Icons.support_agent_rounded,
       NotificationType.digest => Icons.summarize_rounded,
+      NotificationType.invoice => Icons.receipt_long_rounded,
+      NotificationType.review => Icons.verified_rounded,
+      NotificationType.reviewAdmin => Icons.fact_check_rounded,
     };
 
 Color notificationColor(NotificationType t) => switch (t) {
@@ -45,6 +48,9 @@ Color notificationColor(NotificationType t) => switch (t) {
       NotificationType.invite => AppColors.purple,
       NotificationType.support || NotificationType.supportAdmin => const Color(0xFF16808F),
       NotificationType.digest => AppColors.info,
+      NotificationType.invoice => AppColors.info,
+      NotificationType.review => AppColors.green,
+      NotificationType.reviewAdmin => AppColors.warning,
     };
 
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -67,6 +73,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       context.go('/admin/support');
     } else if (n.type == NotificationType.digest) {
       context.go('/admin/digest');
+    } else if (n.type == NotificationType.invoice) {
+      context.go('/employer/invoices');
+    } else if (n.type == NotificationType.reviewAdmin) {
+      context.go(n.jobId != null ? '/admin/jobs' : '/admin/employers');
+    } else if (n.type == NotificationType.review) {
+      context.go(n.jobId != null ? '/employer/jobs' : '/employer/company');
     } else if (n.applicationId != null) {
       context.push('/application/${n.applicationId}');
     } else if (n.jobId != null) {
