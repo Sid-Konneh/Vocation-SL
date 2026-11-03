@@ -14,7 +14,7 @@ class SuspendedScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final email = ref.watch(platformSettingsProvider).value?.supportEmail ?? 'vocationxsl@gmail.com';
+    final email = ref.watch(platformSettingsProvider).value?.supportEmail ?? 'info@vocationsl.com';
     return Scaffold(
       body: SafeArea(
         child: Center(

@@ -172,19 +172,19 @@ class ApprovalBanner extends StatelessWidget {
           Icons.hourglass_top_rounded,
           'Your company is awaiting approval',
           'You can post jobs now. They are saved as "Awaiting approval" and reviewed by our team once your company is approved. '
-              'Questions? Email vocationxsl@gmail.com.',
+              'Questions? Email info@vocationsl.com.',
         ),
       CompanyStatus.rejected => (
           AppColors.danger,
           Icons.error_outline_rounded,
           'Your company was not approved',
-          'Please email vocationxsl@gmail.com so we can help you complete verification.',
+          'Please email info@vocationsl.com so we can help you complete verification.',
         ),
       _ => (
           AppColors.danger,
           Icons.block_rounded,
           'Your company account is suspended',
-          'Your jobs are hidden from candidates. Email vocationxsl@gmail.com for details.',
+          'Your jobs are hidden from candidates. Email info@vocationsl.com for details.',
         ),
     };
     return Container(

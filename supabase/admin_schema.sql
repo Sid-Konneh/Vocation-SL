@@ -161,7 +161,7 @@ create table if not exists public.platform_settings (
 insert into public.platform_settings (key, value) values
   ('require_company_approval', 'true'),
   ('maintenance', '{"enabled": false, "message": ""}'),
-  ('support_email', '"vocationxsl@gmail.com"')
+  ('support_email', '"info@vocationsl.com"')
 on conflict (key) do nothing;
 
 create or replace function public.setting_bool(k text, fallback boolean) returns boolean

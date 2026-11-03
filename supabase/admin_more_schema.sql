@@ -449,7 +449,7 @@ notify pgrst, 'reload schema';
 update public.site_pages set title = 'Help & FAQs', updated_at = now(), body = $page$
 # Welcome to Vocation SL
 
-Vocation SL helps people across Sierra Leone find work, and helps employers find the right people. This page answers the questions we hear most. If yours isn't here, email us at vocationxsl@gmail.com and a member of our team will get back to you.
+Vocation SL helps people across Sierra Leone find work, and helps employers find the right people. This page answers the questions we hear most. If yours isn't here, email us at info@vocationsl.com and a member of our team will get back to you.
 
 # For job seekers
 
@@ -512,11 +512,11 @@ How do I delete my account?
 Go to Settings → Delete account. This permanently removes your profile, CV, cover letters, saved jobs and applications.
 
 My account has been suspended. What can I do?
-You'll see the reason on screen. If you think it's a mistake, email vocationxsl@gmail.com from the address on your account.
+You'll see the reason on screen. If you think it's a mistake, email info@vocationsl.com from the address on your account.
 
 # Contact us
 
-Email: vocationxsl@gmail.com
+Email: info@vocationsl.com
 $page$
 where slug = 'help' and btrim(body) = '';
 
@@ -537,7 +537,7 @@ You must be at least 18 years old to create an account.
 Give accurate information and keep it up to date.
 Keep your password private. You are responsible for activity on your account.
 One person per account. Don't create an account for someone else without their permission.
-Tell us straight away at vocationxsl@gmail.com if you think your account has been misused.
+Tell us straight away at info@vocationsl.com if you think your account has been misused.
 
 # 3. Job seekers
 
@@ -563,7 +563,7 @@ Try to break, overload or get around the security of the service.
 
 # 6. Reviews, suspensions and removal
 
-To keep Vocation SL safe, we may review content, remove listings, and suspend or close accounts that break these terms or put other users at risk. Where we can, we will tell you why. If you think we got it wrong, email vocationxsl@gmail.com.
+To keep Vocation SL safe, we may review content, remove listings, and suspend or close accounts that break these terms or put other users at risk. Where we can, we will tell you why. If you think we got it wrong, email info@vocationsl.com.
 
 # 7. Your content
 
@@ -591,7 +591,7 @@ These terms are governed by the laws of Sierra Leone.
 
 # 13. Contact
 
-Questions about these terms: vocationxsl@gmail.com
+Questions about these terms: info@vocationsl.com
 $page$
 where slug = 'terms' and btrim(body) = '';
 
@@ -644,7 +644,7 @@ View and update your profile at any time in the app.
 View your own CV and cover letters in the app.
 Control notifications in Settings.
 Delete your account and data in Settings → Delete account.
-Ask us for a copy of your information, or to correct it, by emailing vocationxsl@gmail.com from the address on your account.
+Ask us for a copy of your information, or to correct it, by emailing info@vocationsl.com from the address on your account.
 
 # Security
 
@@ -660,7 +660,7 @@ We may update this policy. When we make important changes we will tell you in th
 
 # Contact
 
-Questions or requests about your privacy: vocationxsl@gmail.com
+Questions or requests about your privacy: info@vocationsl.com
 $page$
 where slug = 'privacy' and btrim(body) = '';
 

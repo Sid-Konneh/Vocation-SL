@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset='utf-8'>
+<link href='https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap' rel='stylesheet'>
+<style>
+/* A4 landscape sign-up sheet for investors and partners at events. Print several copies. */
+@page{size:297mm 210mm;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;width:297mm;height:210mm;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;color:#14171A;background:#fff;padding:11mm 12mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.top{display:flex;align-items:center;gap:4mm}
+.logo{width:12mm;height:12mm;border-radius:3mm;background:#123009;display:grid;place-items:center}
+.logo svg{width:9mm;height:9mm}
+.top h1{margin:0;font-size:7mm;font-weight:800}
+.top h1 b{color:#3F7A1F}
+.top .note{margin-left:auto;text-align:right;font-size:3.6mm;font-weight:600;color:#3D4738}
+.top .note b{display:block;font-size:4.4mm;color:#3F7A1F}
+table{width:100%;border-collapse:collapse;margin-top:6mm;font-size:3.5mm}
+th{background:#EEF5E4;text-align:left;padding:2.4mm 2.2mm;font-weight:800;border:.3mm solid #CFE3B4;vertical-align:bottom}
+th small{display:block;font-weight:600;color:#5F6B5A;font-size:2.9mm;margin-top:.6mm}
+td{height:12.4mm;border:.3mm solid #D5DCCF;vertical-align:middle}
+td:first-child{text-align:center;color:#8A9484;font-weight:700;width:8mm}
+td.ck{padding:0 1.6mm;font-size:2.9mm;color:#3D4738;white-space:nowrap}
+td.ck span{display:inline-flex;align-items:center;gap:.9mm;margin-right:2.2mm}
+td.ck i{display:inline-block;width:3mm;height:3mm;border:.3mm solid #8A9484;border-radius:.6mm}
+.foot{margin-top:4mm;font-size:3.2mm;color:#5F6B5A;display:flex;justify-content:space-between}
+</style></head><body>
+<div class='top'>
+  <div class='logo'><svg viewBox="0 0 100 100"><path d="M26 14 L50 86 L74 14" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 86 L50 20 L72 86" fill="none" stroke="#9BD15A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <h1>Vocation <b>SL</b> · Investors &amp; partners</h1>
+  <div class='note'><b>Let's stay in touch</b>We'll send you our business plan and follow up personally</div>
+</div>
+<table>
+  <thead><tr>
+    <th>#</th><th style='width:44mm'>Name</th><th style='width:44mm'>Organisation / fund</th><th style='width:28mm'>Role</th>
+    <th style='width:52mm'>Email</th><th style='width:32mm'>Phone</th><th>Interested in<small>Tick all that apply</small></th>
+  </tr></thead>
+  <tbody id='rows'></tbody>
+</table>
+<div class='foot'><span>We use these details only to contact you about Vocation SL. We don't share them.</span><span>Abubakarr Sidique Konneh, Founder &amp; CEO · info@vocationsl.com · +232 73 512 413</span></div>
+<script>
+  const ck = '<td class="ck">' + ['Investing', 'Partnering', 'Mentoring'].map((t) => `<span><i></i>${t}</span>`).join('') + '</td>';
+  document.getElementById('rows').innerHTML = Array.from({ length: 11 }, (_, i) => `<tr><td>${i + 1}</td><td></td><td></td><td></td><td></td><td></td>${ck}</tr>`).join('');
+</script>
+</body></html>

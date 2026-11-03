@@ -1,0 +1,81 @@
+<!doctype html><html><head><meta charset='utf-8'>
+<link href='https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap' rel='stylesheet'>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:1200px;height:628px;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;color:#fff;position:relative;
+  background:
+    radial-gradient(520px 420px at 82% 46%,rgba(125,180,58,.38),transparent 70%),
+    radial-gradient(600px 400px at 0% 100%,rgba(0,0,0,.35),transparent 70%),
+    linear-gradient(135deg,#123009 0%,#1E4510 45%,#2C5A14 100%)}
+/* fine grid texture */
+body:before{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:40px 40px;mask-image:linear-gradient(90deg,transparent,#000 55%,#000)}
+/* large faint mark */
+.ghost{position:absolute;right:-60px;top:-40px;width:560px;height:560px;opacity:.06}
+.wrap{position:absolute;left:72px;top:64px;width:600px}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:52px;height:52px;border-radius:14px;background:#fff;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.logo svg{width:38px;height:38px}
+.name{font-size:26px;font-weight:800;letter-spacing:-.4px}
+.name b{color:#9BD15A}
+.pill{margin-left:6px;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.35);color:rgba(255,255,255,.9)}
+h1{margin:44px 0 0;font-size:58px;line-height:1.04;font-weight:800;letter-spacing:-2px}
+h1 span{color:#9BD15A}
+p.lead{margin:20px 0 0;font-size:20px;line-height:1.5;font-weight:500;color:rgba(255,255,255,.84);max-width:520px}
+.points{display:flex;gap:22px;margin-top:26px}
+.points div{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:rgba(255,255,255,.92)}
+.points i{width:20px;height:20px;border-radius:50%;background:#9BD15A;display:grid;place-items:center;flex:none}
+.points i svg{width:12px;height:12px}
+.cta{position:absolute;left:72px;bottom:56px;display:flex;align-items:center;gap:18px}
+.cta img{height:52px;display:block}
+.cta img.gp{height:70px;margin:0 -9px}
+.url{display:flex;flex-direction:column;justify-content:center;height:52px;padding:0 20px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22)}
+.url small{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#9BD15A}
+.url span{font-size:17px;font-weight:700}
+/* phones */
+.phone{position:absolute;width:236px;height:500px;border-radius:38px;background:#0B0D0F;padding:9px;
+  box-shadow:0 40px 80px rgba(0,0,0,.45),0 0 0 1.5px rgba(255,255,255,.12) inset}
+.phone .screen{width:100%;height:100%;border-radius:30px;overflow:hidden;background:#fff;position:relative;padding-top:34px}
+.phone img{width:100%;display:block}
+.phone .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:72px;height:20px;border-radius:12px;background:#0B0D0F;z-index:2}
+.p1{right:250px;top:96px;transform:rotate(-6deg)}
+.p2{right:70px;top:58px;transform:rotate(5deg);z-index:2}
+.badge{position:absolute;z-index:3;background:#fff;color:#14171A;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;
+  box-shadow:0 18px 40px rgba(0,0,0,.3);font-size:14px;font-weight:700}
+.badge em{font-style:normal;display:block;font-size:12px;font-weight:600;color:#5F6B5A}
+.badge .dot{width:34px;height:34px;border-radius:10px;background:#EEF5E4;display:grid;place-items:center}
+.badge .dot svg{width:18px;height:18px}
+.b1{right:330px;bottom:70px}
+.b2{right:36px;top:330px}
+</style></head><body>
+<svg class='ghost' viewBox="0 0 100 100"><path d="M26 14 L50 86 L74 14" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 86 L50 20 L72 86" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+<div class='wrap'>
+  <div class='brand'>
+    <div class='logo'><svg viewBox="0 0 100 100"><path d="M26 14 L50 86 L74 14" fill="none" stroke="#14171A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 86 L50 20 L72 86" fill="none" stroke="#7DB43A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class='name'>Vocation <b>SL</b></div>
+    <div class='pill'>Built for Sierra Leone</div>
+  </div>
+  <h1>Find work.<br><span>Hire the right people.</span></h1>
+  <p class='lead'>Jobs from all 16 districts in one place. Apply with your CV and cover letter from your phone, and hear back directly from employers.</p>
+  <div class='points'>
+    <div><i><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#123009" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>Free for job seekers</div>
+    <div><i><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#123009" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>New companies checked</div>
+    <div><i><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#123009" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>Instant job alerts</div>
+  </div>
+</div>
+
+<div class='cta'>
+  <img class='gp' src='../../landing/assets/google-play-badge.png' alt='Get it on Google Play'>
+  <img src='../../landing/assets/app-store-badge.svg' alt='Download on the App Store'>
+  <div class='url'><small>Or on the web</small><span>app.vocationsl.com</span></div>
+</div>
+
+<div class='phone p1'><div class='screen'><div class='notch'></div><img src='../screenshots/2-job-details.png'></div></div>
+<div class='phone p2'><div class='screen'><div class='notch'></div><img src='../screenshots/1-find-jobs.png'></div></div>
+
+<div class='badge b1'><div class='dot'><svg viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2z" fill="#3F7A1F"/></svg></div><div>Application sent<em>CV + cover letter (PDF)</em></div></div>
+<div class='badge b2'><div class='dot'><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0" fill="#3F7A1F"/></svg></div><div>New job alert<em>Matches your skills</em></div></div>
+</body></html>

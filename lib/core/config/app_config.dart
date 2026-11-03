@@ -39,7 +39,7 @@ class AppConfig {
 
   static const appName = 'Vocation SL';
   static const pageSize = 10;
-  static const supportEmail = 'vocationxsl@gmail.com';
+  static const supportEmail = 'info@vocationsl.com';
   static const version = '1.2.13';
 }
 

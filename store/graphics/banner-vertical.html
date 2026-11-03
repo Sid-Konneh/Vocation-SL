@@ -1,0 +1,102 @@
+<!doctype html><html><head><meta charset='utf-8'>
+<link href='https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap' rel='stylesheet'>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;color:#fff;position:relative;
+  background:
+    radial-gradient(700px 600px at 50% 58%,rgba(125,180,58,.36),transparent 70%),
+    radial-gradient(800px 500px at 0% 0%,rgba(0,0,0,.3),transparent 70%),
+    linear-gradient(170deg,#123009 0%,#1E4510 50%,#2C5A14 100%)}
+body:before{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:48px 48px;mask-image:linear-gradient(180deg,transparent,#000 30%,#000 70%,transparent)}
+.ghost{position:absolute;left:50%;top:640px;transform:translateX(-50%);width:900px;height:900px;opacity:.05}
+.top{position:absolute;left:96px;right:96px;top:110px}
+.brand{display:flex;align-items:center;gap:20px}
+.logo{width:84px;height:84px;border-radius:22px;background:#fff;display:grid;place-items:center;box-shadow:0 12px 32px rgba(0,0,0,.25)}
+.logo svg{width:62px;height:62px}
+.name{font-size:44px;font-weight:800;letter-spacing:-.6px}
+.name b{color:#9BD15A}
+.pill{margin-left:auto;font-size:17px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;padding:10px 18px;border-radius:999px;border:1.5px solid rgba(255,255,255,.35);color:rgba(255,255,255,.9)}
+h1{margin:80px 0 0;font-size:104px;line-height:1.02;font-weight:800;letter-spacing:-3.5px}
+h1 span{color:#9BD15A}
+p.lead{margin:28px 0 0;font-size:30px;line-height:1.45;font-weight:500;color:rgba(255,255,255,.84)}
+/* phones */
+.stage{position:absolute;left:0;right:0;top:668px;height:640px;transform:scale(.8);transform-origin:50% 0}
+.phone{position:absolute;width:300px;height:636px;border-radius:48px;background:#0B0D0F;padding:11px;
+  box-shadow:0 50px 100px rgba(0,0,0,.45),0 0 0 2px rgba(255,255,255,.12) inset}
+.phone .screen{width:100%;height:100%;border-radius:38px;overflow:hidden;background:#fff;position:relative;padding-top:42px}
+.phone img{width:100%;display:block}
+.phone .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:92px;height:26px;border-radius:14px;background:#0B0D0F;z-index:2}
+.p1{left:250px;top:30px;transform:rotate(-7deg)}
+.p2{left:520px;top:0;transform:rotate(5deg);z-index:2}
+.badge{position:absolute;z-index:3;background:#fff;color:#14171A;border-radius:18px;padding:16px 22px;display:flex;align-items:center;gap:14px;
+  box-shadow:0 22px 48px rgba(0,0,0,.3);font-size:20px;font-weight:700}
+.badge em{font-style:normal;display:block;font-size:16px;font-weight:600;color:#5F6B5A}
+.badge .dot{width:46px;height:46px;border-radius:13px;background:#EEF5E4;display:grid;place-items:center}
+.badge .dot svg{width:24px;height:24px}
+.b1{left:80px;top:430px}
+.b2{right:70px;top:250px}
+/* bottom */
+.bottom{position:absolute;left:96px;right:96px;top:1196px}
+.features{display:grid;grid-template-columns:1fr 1fr;gap:20px 40px;padding:30px 34px;border-radius:24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16)}
+.features div{display:flex;align-items:center;gap:14px;font-size:23px;font-weight:600;line-height:1.25;color:rgba(255,255,255,.94)}
+.features i{width:32px;height:32px;border-radius:50%;background:#9BD15A;display:grid;place-items:center;flex:none}
+.features i svg{width:19px;height:19px}
+.search{margin-top:34px;text-align:center;font-size:27px;font-weight:600;color:rgba(255,255,255,.88)}
+.search b{display:inline-flex;align-items:center;gap:10px;margin-left:8px;padding:8px 20px;border-radius:999px;background:#fff;color:#14171A;font-weight:800}
+.search b svg{width:22px;height:22px}
+.cta{display:flex;align-items:center;justify-content:center;gap:28px;margin-top:26px}
+.cta img{height:84px;display:block}
+.cta img.gp{height:114px;margin:0 -15px}
+.foot{position:absolute;left:96px;right:96px;bottom:44px;padding-top:24px;border-top:1px solid rgba(255,255,255,.18);font-size:21px;font-weight:600;color:rgba(255,255,255,.85)}
+.foot .web{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.foot .web div{padding:12px 18px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+.foot small{display:block;font-size:15px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.foot b{display:block;color:#9BD15A;font-weight:800;font-size:25px;margin-top:2px}
+.foot .contact{display:flex;justify-content:center;gap:40px;margin-top:16px}
+</style></head><body>
+<svg class='ghost' viewBox="0 0 100 100"><path d="M26 14 L50 86 L74 14" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 86 L50 20 L72 86" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+<div class='top'>
+  <div class='brand'>
+    <div class='logo'><svg viewBox="0 0 100 100"><path d="M26 14 L50 86 L74 14" fill="none" stroke="#14171A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 86 L50 20 L72 86" fill="none" stroke="#7DB43A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class='name'>Vocation <b>SL</b></div>
+    <div class='pill'>Built for Sierra Leone</div>
+  </div>
+  <h1>Find work.<br><span>Hire the right<br>people.</span></h1>
+  <p class='lead'>Jobs across Sierra Leone, in one app.</p>
+</div>
+
+<div class='stage'>
+  <div class='phone p1'><div class='screen'><div class='notch'></div><img src='../screenshots/2-job-details.png'></div></div>
+  <div class='phone p2'><div class='screen'><div class='notch'></div><img src='../screenshots/1-find-jobs.png'></div></div>
+  <div class='badge b1'><div class='dot'><svg viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2z" fill="#3F7A1F"/></svg></div><div>Application sent<em>CV + cover letter (PDF)</em></div></div>
+  <div class='badge b2'><div class='dot'><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0" fill="#3F7A1F"/></svg></div><div>New job alert<em>Matches your skills</em></div></div>
+</div>
+
+<div class='bottom'>
+  <div class='features'></div>
+  <script>
+    const tick = '<i><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#123009" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>';
+    document.querySelector('.features').innerHTML = [
+      'Jobs from all 16 districts', 'Apply with CV &amp; cover letter',
+      'Track every application', 'Instant job alerts',
+      'Message employers directly', 'Interview invitations',
+      'Employers post jobs &amp; hire', 'Free for job seekers',
+    ].map((f) => `<div>${tick}${f}</div>`).join('');
+  </script>
+  <div class='search'>Search <b><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#14171A" stroke-width="2.6"/><path d="M15.5 15.5L20 20" stroke="#14171A" stroke-width="2.6" stroke-linecap="round"/></svg>Vocation SL</b> on your app store</div>
+  <div class='cta'>
+    <img class='gp' src='../../landing/assets/google-play-badge.png' alt='Get it on Google Play'>
+    <img class='ios' src='../../landing/assets/app-store-badge.svg' alt='Download on the App Store'>
+  </div>
+  <script>if (location.search.includes('android')) document.querySelector('.ios').remove();</script>
+</div>
+
+<div class='foot'>
+  <div class='web'><div><small>Job seekers</small><b>app.vocationsl.com</b></div><div><small>Employers</small><b>employers.vocationsl.com</b></div></div>
+  <div class='contact'><span>info@vocationsl.com</span><span>+232 73 512 413</span></div>
+</div>
+</body></html>

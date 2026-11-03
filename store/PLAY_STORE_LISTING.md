@@ -71,7 +71,7 @@ SAFE AND GENUINE
 
 Free for job seekers. Covers Western Area Urban and Rural, Bo, Bombali, Bonthe, Falaba, Kailahun, Kambia, Karene, Kenema, Koinadugu, Kono, Moyamba, Port Loko, Pujehun and Tonkolili.
 
-Help: vocationxsl@gmail.com · https://vocationsl.com
+Help: info@vocationsl.com · https://vocationsl.com
 ```
 
 **Graphics (upload from `store/graphics/`):**
@@ -90,7 +90,7 @@ Help: vocationxsl@gmail.com · https://vocationsl.com
 |---|---|
 | App category | **Business** |
 | Tags | Jobs, Recruitment, Careers |
-| Email address | vocationxsl@gmail.com |
+| Email address | info@vocationsl.com |
 | Website | https://vocationsl.com |
 | Phone | (optional — leave empty unless you want it public) |
 | External marketing | On |
