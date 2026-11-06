@@ -76,10 +76,12 @@ class ApplyFlowScreen extends ConsumerWidget {
       return Scaffold(
         appBar: AppBar(title: const Text('Apply')),
         body: EmptyState(
-          icon: Icons.open_in_new_rounded,
-          title: 'Apply on the employer\'s website',
-          message: '${j.companyName} takes applications for ${j.title} on its own website (${j.applyHost}).',
-          action: 'Apply on website',
+          icon: j.appliesByEmail ? Icons.email_outlined : Icons.open_in_new_rounded,
+          title: j.appliesByEmail ? 'Apply by email' : 'Apply on the employer\'s website',
+          message: j.appliesByEmail
+              ? '${j.companyName} takes applications for ${j.title} by email (${j.applyHost}).'
+              : '${j.companyName} takes applications for ${j.title} on its own website (${j.applyHost}).',
+          action: j.appliesByEmail ? 'Apply by email' : 'Apply on website',
           onAction: () => openExternalApply(context, j),
         ),
       );

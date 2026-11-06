@@ -239,7 +239,7 @@ class SupabaseBackend implements VocationBackend {
         for (final term in text.split(RegExp(r'\s+')).where((t) => t.isNotEmpty)) {
           q = q.ilike('search_text', '%$term%');
         }
-        if (f.locations.isNotEmpty) q = q.inFilter('location', f.locations.toList());
+        if (f.locations.isNotEmpty) q = q.inFilter('location', f.areaLocations.toList());
         if (f.employmentTypes.isNotEmpty) q = q.inFilter('employment_type', f.employmentTypes.map((e) => e.name).toList());
         if (f.industries.isNotEmpty) q = q.inFilter('industry', f.industries.map((e) => e.name).toList());
         if (f.experienceLevels.isNotEmpty) q = q.inFilter('experience_level', f.experienceLevels.map((e) => e.name).toList());
@@ -300,6 +300,13 @@ class SupabaseBackend implements VocationBackend {
           row = {'id': userId, 'email': fresh.email, 'full_name': name, 'data': fresh.toJson()};
         }
         final data = Map<String, dynamic>.from(row['data'] as Map? ?? const {});
+        // Job emails live in their own column (old app versions rewrite `data`).
+        if (row['job_emails'] is bool) {
+          data['notification_preferences'] = {
+            ...Map<String, dynamic>.from(data['notification_preferences'] as Map? ?? const {}),
+            'job_emails': row['job_emails'],
+          };
+        }
         return AppUser.fromJson({
           ...data,
           'id': userId,
@@ -315,6 +322,7 @@ class SupabaseBackend implements VocationBackend {
           'email': user.email,
           'full_name': user.fullName,
           'data': user.toJson(),
+          'job_emails': user.notificationPreferences.jobEmails,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         });
         return user;

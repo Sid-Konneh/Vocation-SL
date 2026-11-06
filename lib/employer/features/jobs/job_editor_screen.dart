@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/models.dart';
 import '../../../providers/core_providers.dart';
+import '../../../services/cv_text.dart';
 import '../../../services/file_service.dart';
 import '../../../widgets/common.dart';
 import '../../../widgets/job_advert.dart';
@@ -59,6 +60,14 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
   ExperienceLevel _level = ExperienceLevel.mid;
   DateTime _deadline = DateTime.now().add(const Duration(days: 21));
 
+  /// Whether the employer chose these (or they came from a saved job). Only
+  /// choices still on their defaults are taken from an uploaded PDF advert.
+  bool _locationSet = false;
+  bool _typeSet = false;
+  bool _deadlineSet = false;
+  bool _applyModeSet = false;
+  bool _readingAdvert = false;
+
   @override
   void dispose() {
     for (final q in _questions) {
@@ -79,6 +88,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
     final j = jobs.where((x) => x.id == widget.jobId).firstOrNull;
     if (j == null) return;
     _original = j;
+    _locationSet = _typeSet = _deadlineSet = _applyModeSet = true;
     _title.text = j.title;
     _about.text = j.about;
     _description.text = j.description;
@@ -195,10 +205,77 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
   Future<void> _pickAdvert() async {
     try {
       final f = await ref.read(fileServiceProvider).pickJobAdvert();
-      if (f != null) setState(() => _advertFile = f);
+      if (f == null) return;
+      setState(() => _advertFile = f);
+      if (Job.isPdfAdvert(f.name)) await _fillFromAdvert(f);
     } catch (e) {
       if (mounted) showError(context, e);
     }
+  }
+
+  /// Copies details from the PDF advert's text into the fields the employer
+  /// left empty. What the employer typed or chose always stays.
+  Future<void> _fillFromAdvert(PickedFile f) async {
+    setState(() => _readingAdvert = true);
+    String text;
+    try {
+      text = await readPdfText(f.bytes);
+    } catch (_) {
+      text = '';
+    } finally {
+      if (mounted) setState(() => _readingAdvert = false);
+    }
+    if (!mounted) return;
+    if (text.trim().length < 40) {
+      showSnack(context, 'This PDF is a scanned picture, so its details can\'t be copied. Fill in the details below.');
+      return;
+    }
+    final x = AdvertExtract.parse(text);
+    final filled = <String>[];
+    bool empty(TextEditingController c) => c.text.trim().isEmpty;
+    setState(() {
+      if (x.title != null && empty(_title)) {
+        _title.text = x.title!;
+        filled.add('title');
+      }
+      if (x.location != null && !_locationSet && sierraLeoneLocations.contains(x.location)) {
+        _location = x.location!;
+        filled.add('location');
+      }
+      if (x.employmentType != null && !_typeSet) {
+        _type = x.employmentType!;
+        filled.add('job type');
+      }
+      final d = x.deadline;
+      if (d != null && !_deadlineSet && d.isBefore(DateTime.now().add(const Duration(days: 180)))) {
+        _deadline = d;
+        filled.add('deadline');
+      }
+      if (x.description.isNotEmpty && empty(_description)) {
+        _description.text = x.description.length > 8000 ? x.description.substring(0, 8000) : x.description;
+        filled.add('description');
+      }
+      if (x.responsibilities.isNotEmpty && empty(_responsibilities)) {
+        _responsibilities.text = x.responsibilities.join('\n');
+        filled.add('responsibilities');
+      }
+      if (x.requirements.isNotEmpty && empty(_requirements)) {
+        _requirements.text = x.requirements.join('\n');
+        filled.add('requirements');
+      }
+      final apply = x.applyEmail ?? x.applyUrl;
+      if (apply != null && empty(_applyUrl) && (_external || !_applyModeSet)) {
+        _external = true;
+        _applyUrl.text = apply;
+        filled.add(x.applyEmail != null ? 'apply by email to $apply' : 'apply link');
+      }
+    });
+    showSnack(
+      context,
+      filled.isEmpty
+          ? 'Couldn\'t find clearly labelled details in this PDF. Fill in the details below.'
+          : 'Copied from the advert: ${filled.join(', ')}. Please check them before posting.',
+    );
   }
 
   @override
@@ -256,8 +333,14 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
               ),
               gap(),
               Wrap(spacing: 12, runSpacing: 14, children: [
-                _dropdown<String>('Location *', _location, sierraLeoneLocations, (v) => v, (v) => setState(() => _location = v)),
-                _dropdown<EmploymentType>('Job type *', _type, EmploymentType.values, (v) => v.label, (v) => setState(() => _type = v)),
+                _dropdown<String>('Location *', _location, sierraLeoneLocations, (v) => v, (v) => setState(() {
+                      _location = v;
+                      _locationSet = true;
+                    })),
+                _dropdown<EmploymentType>('Job type *', _type, EmploymentType.values, (v) => v.label, (v) => setState(() {
+                      _type = v;
+                      _typeSet = true;
+                    })),
                 _dropdown<WorkMode>('Work mode *', _mode, WorkMode.values, (v) => v.label, (v) => setState(() => _mode = v)),
                 _dropdown<Industry>('Industry *', _industry, Industry.values, (v) => v.label, (v) => setState(() => _industry = v)),
                 _dropdown<ExperienceLevel>('Experience *', _level, ExperienceLevel.values, (v) => v.label, (v) => setState(() => _level = v)),
@@ -273,7 +356,12 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
                         firstDate: DateTime.now(),
                         lastDate: DateTime.now().add(const Duration(days: 180)),
                       );
-                      if (d != null) setState(() => _deadline = d);
+                      if (d != null) {
+                        setState(() {
+                          _deadline = d;
+                          _deadlineSet = true;
+                        });
+                      }
                     },
                   ),
                 ),
@@ -314,12 +402,19 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
             section('Job advert (optional)', [
               Text(
                 'Already have the advert as a PDF or a photo, e.g. from a newspaper or notice board? Upload it and the written '
-                'description below becomes optional. Typing the details as well helps more job seekers find the job in search and alerts.',
+                'description below becomes optional. From a PDF, details you haven\'t filled in (title, location, job type, deadline, '
+                'description, how to apply) are copied exactly as written in the advert. Check them before posting.',
                 style: context.text.bodyMedium?.copyWith(color: context.palette.muted),
               ),
               const SizedBox(height: 12),
               if (_hasAdvert) ...[
                 JobAdvertView(url: _advertUrl, bytes: _advertFile?.bytes, fileName: _advertFile?.name ?? '', maxHeight: 260),
+                if (_readingAdvert) ...[
+                  const SizedBox(height: 8),
+                  const LinearProgressIndicator(),
+                  const SizedBox(height: 4),
+                  Text('Copying the details from the advert…', style: context.text.bodySmall),
+                ],
                 const SizedBox(height: 8),
                 Wrap(spacing: 8, children: [
                   OutlinedButton.icon(onPressed: _saving ? null : _pickAdvert, icon: const Icon(Icons.swap_horiz_rounded), label: const Text('Replace')),
@@ -377,17 +472,20 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
               SegmentedButton<bool>(
                 segments: const [
                   ButtonSegment(value: false, label: Text('On Vocation SL'), icon: Icon(Icons.inbox_outlined)),
-                  ButtonSegment(value: true, label: Text('On our website'), icon: Icon(Icons.open_in_new_rounded)),
+                  ButtonSegment(value: true, label: Text('Website or email'), icon: Icon(Icons.open_in_new_rounded)),
                 ],
                 selected: {_external},
                 showSelectedIcon: false,
-                onSelectionChanged: (v) => setState(() => _external = v.first),
+                onSelectionChanged: (v) => setState(() {
+                  _external = v.first;
+                  _applyModeSet = true;
+                }),
               ),
               const SizedBox(height: 12),
               if (_external) ...[
                 Text(
-                  'Candidates tap "Apply on company website" and go straight to your link. Their applications go to your own system, '
-                  'so they won\'t appear in Candidates here.',
+                  'Enter a web link or an email address. Candidates go straight to your website, or their email app opens '
+                  'a new message to you. Their applications won\'t appear in Candidates here.',
                   style: context.text.bodyMedium?.copyWith(color: context.palette.muted),
                 ),
                 gap(),
@@ -396,14 +494,14 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
                   keyboardType: TextInputType.url,
                   autocorrect: false,
                   decoration: const InputDecoration(
-                    labelText: 'Application link *',
-                    hintText: 'e.g. https://careers.yourcompany.com/jobs/123',
+                    labelText: 'Application link or email *',
+                    hintText: 'e.g. https://yourcompany.com/jobs/123 or hr@yourcompany.com',
                     prefixIcon: Icon(Icons.link_rounded),
                   ),
                   validator: (v) => !_external
                       ? null
                       : Job.normalizeApplyUrl(v ?? '') == null
-                          ? 'Enter a full web address, e.g. https://yourcompany.com/apply'
+                          ? 'Enter a web address (https://yourcompany.com/apply) or an email (hr@yourcompany.com)'
                           : null,
                 ),
               ] else ...[
@@ -493,6 +591,8 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
   Widget _dropdown<T>(String label, T value, List<T> values, String Function(T) text, void Function(T) onChanged) => SizedBox(
         width: 260,
         child: DropdownButtonFormField<T>(
+          // Re-created when the value changes in code (e.g. copied from the advert).
+          key: ValueKey('$label:$value'),
           initialValue: value,
           isExpanded: true,
           decoration: InputDecoration(labelText: label),

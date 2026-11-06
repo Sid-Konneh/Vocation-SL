@@ -12,7 +12,7 @@ import 'cv_parser.dart';
 /// Nothing is sent to any online service.
 Future<CvExtract> readCvOnDevice(Uint8List bytes, DocumentFormat? format) async {
   final text = switch (format) {
-    DocumentFormat.pdf => await _pdfText(bytes),
+    DocumentFormat.pdf => await readPdfText(bytes),
     DocumentFormat.docx => _docxText(bytes),
     _ => throw const ValidationException('Only PDF and DOCX CVs can be read. Save your CV as a PDF and try again.'),
   };
@@ -24,7 +24,9 @@ Future<CvExtract> readCvOnDevice(Uint8List bytes, DocumentFormat? format) async 
   return const CvParser().parse(text);
 }
 
-Future<String> _pdfText(Uint8List bytes) async {
+/// The text of a PDF (first 6 pages), read on the device. Scanned PDFs
+/// (pictures of pages) have no text and return an empty string.
+Future<String> readPdfText(Uint8List bytes) async {
   await pdfrxFlutterInitialize();
   final doc = await PdfDocument.openData(bytes);
   try {

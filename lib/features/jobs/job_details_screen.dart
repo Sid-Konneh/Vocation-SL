@@ -18,6 +18,16 @@ import '../../widgets/job_card.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
 
+/// A job opened from a link (email, share, QR code) is the first page, so there
+/// is nothing to go back to: show a back button to the jobs list instead.
+Widget? _backToJobs(BuildContext context) => Navigator.of(context).canPop()
+    ? null
+    : IconButton(
+        tooltip: 'All jobs',
+        icon: const BackButtonIcon(),
+        onPressed: () => context.go('/jobs'),
+      );
+
 class JobDetailsScreen extends ConsumerWidget {
   const JobDetailsScreen({super.key, required this.jobId});
   final String jobId;
@@ -27,17 +37,24 @@ class JobDetailsScreen extends ConsumerWidget {
     // Idempotent: records whether this job came from a link (first page on screen).
     JobSource.noteOpened(jobId, firstPage: !Navigator.of(context).canPop());
     final async = ref.watch(jobDetailProvider(jobId));
-    return async.when(
-      loading: () => Scaffold(appBar: AppBar(), body: const SingleChildScrollView(child: JobDetailSkeleton())),
-      error: (e, _) => Scaffold(
-        appBar: AppBar(),
-        body: ErrorState(error: e, onRetry: () => ref.invalidate(jobDetailProvider(jobId))),
-      ),
-      data: (loaded) => _JobDetailsView(
-        job: loaded.data,
-        offline: loaded.isOfflineCopy,
-        syncedAt: loaded.syncedAt,
-        onRefresh: () => ref.read(jobDetailProvider(jobId).notifier).refresh(),
+    // The phone's back button also goes to the jobs list instead of closing the app.
+    return PopScope(
+      canPop: Navigator.of(context).canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/jobs');
+      },
+      child: async.when(
+        loading: () => Scaffold(appBar: AppBar(leading: _backToJobs(context)), body: const SingleChildScrollView(child: JobDetailSkeleton())),
+        error: (e, _) => Scaffold(
+          appBar: AppBar(leading: _backToJobs(context)),
+          body: ErrorState(error: e, onRetry: () => ref.invalidate(jobDetailProvider(jobId))),
+        ),
+        data: (loaded) => _JobDetailsView(
+          job: loaded.data,
+          offline: loaded.isOfflineCopy,
+          syncedAt: loaded.syncedAt,
+          onRefresh: () => ref.read(jobDetailProvider(jobId).notifier).refresh(),
+        ),
       ),
     );
   }
@@ -128,6 +145,22 @@ class _JobDetailsView extends ConsumerWidget {
             const SizedBox(height: 16),
             _SkillMatch(matched: matched, total: job.skills.length),
           ],
+          if (user != null)
+            Builder(builder: (context) {
+              final m = JobMatch.of(job, user);
+              if (!m.isGood || m.reasons.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Card(
+                  color: context.colors.primaryContainer,
+                  child: ListTile(
+                    leading: Icon(Icons.thumb_up_alt_outlined, color: context.colors.onPrimaryContainer),
+                    title: Text('A good match for you', style: TextStyle(color: context.colors.onPrimaryContainer, fontWeight: FontWeight.w600)),
+                    subtitle: Text(m.reasons.join(' · '), style: TextStyle(color: context.colors.onPrimaryContainer)),
+                  ),
+                ),
+              );
+            }),
           if (job.hasAdvert) _Section('Job advert', child: JobAdvertView(url: job.advertUrl)),
           if (job.about.trim().isNotEmpty)
             _Section('About the job', child: Text(job.about, style: context.text.bodyLarge?.copyWith(fontWeight: FontWeight.w600))),
@@ -152,9 +185,9 @@ class _JobDetailsView extends ConsumerWidget {
             _Section(
               'How to apply',
               child: BulletList([
-                'Apply on the employer\'s website: ${job.applyHost}',
+                job.appliesByEmail ? 'Apply by email to ${job.applyHost}' : 'Apply on the employer\'s website: ${job.applyHost}',
                 'Genuine employers never ask you to pay to apply. Report the job if they do.',
-              ], icon: Icons.open_in_new_rounded),
+              ], icon: job.appliesByEmail ? Icons.email_outlined : Icons.open_in_new_rounded),
             )
           else
           _Section(
@@ -188,6 +221,7 @@ class _JobDetailsView extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: _backToJobs(context),
         actions: [
           IconButton(tooltip: 'Share job', onPressed: () => _share(context, ref), icon: const Icon(Icons.ios_share_rounded)),
           SaveJobButton(job: job),
@@ -368,8 +402,8 @@ class _ApplyBar extends ConsumerWidget {
     } else if (job.appliesExternally) {
       action = FilledButton.icon(
         onPressed: () => openExternalApply(context, job, onContinue: () => ref.read(backendProvider).recordApplyClick(job.id)),
-        icon: const Icon(Icons.open_in_new_rounded, size: 20),
-        label: const Text('Apply on website', overflow: TextOverflow.ellipsis),
+        icon: Icon(job.appliesByEmail ? Icons.email_outlined : Icons.open_in_new_rounded, size: 20),
+        label: Text(job.appliesByEmail ? 'Apply by email' : 'Apply on website', overflow: TextOverflow.ellipsis),
       );
     } else {
       action = FilledButton.icon(
@@ -451,15 +485,17 @@ class _ReportDialogState extends State<_ReportDialog> {
       );
 }
 
-/// Jobs with an external application link: confirm, then open the employer's site.
+/// Jobs with an external application link: confirm, then open the employer's
+/// site, or a new email when the employer takes applications by email.
 Future<void> openExternalApply(BuildContext context, Job job, {Future<void> Function()? onContinue}) async {
+  final email = job.appliesByEmail;
   final go = await showDialog<bool>(
     context: context,
     builder: (d) => AlertDialog(
-      icon: const Icon(Icons.open_in_new_rounded),
-      title: const Text('Apply on the employer\'s website'),
+      icon: Icon(email ? Icons.email_outlined : Icons.open_in_new_rounded),
+      title: Text(email ? 'Apply by email' : 'Apply on the employer\'s website'),
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('${job.companyName} takes applications on its own website:'),
+        Text(email ? '${job.companyName} takes applications by email. Your email app will open with a new message to:' : '${job.companyName} takes applications on its own website:'),
         const SizedBox(height: 8),
         SelectableText(job.applyHost, style: const TextStyle(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
@@ -467,12 +503,17 @@ Future<void> openExternalApply(BuildContext context, Job job, {Future<void> Func
       ]),
       actions: [
         TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
-        FilledButton.icon(onPressed: () => Navigator.pop(d, true), icon: const Icon(Icons.open_in_new_rounded, size: 18), label: const Text('Continue')),
+        FilledButton.icon(
+            onPressed: () => Navigator.pop(d, true),
+            icon: Icon(email ? Icons.email_outlined : Icons.open_in_new_rounded, size: 18),
+            label: Text(email ? 'Write email' : 'Continue')),
       ],
     ),
   );
   if (go != true) return;
   await onContinue?.call();
-  final ok = await launchUrl(Uri.parse(job.applyUrl), mode: LaunchMode.externalApplication);
-  if (!ok && context.mounted) showSnack(context, 'Couldn\'t open the link. It is: ${job.applyUrl}', error: true);
+  final ok = await launchUrl(job.applyUri, mode: LaunchMode.externalApplication);
+  if (!ok && context.mounted) {
+    showSnack(context, email ? 'Couldn\'t open your email app. Send your application to ${job.applyHost}' : 'Couldn\'t open the link. It is: ${job.applyUrl}', error: true);
+  }
 }

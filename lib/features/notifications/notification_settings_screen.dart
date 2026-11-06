@@ -52,10 +52,10 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 onChanged: (v) => save(prefs.copyWith(pushEnabled: v)),
               ),
               SwitchListTile(
-                title: const Text('Weekly email summary'),
-                subtitle: Text('Sent to ${user.email}'),
-                value: prefs.emailDigest,
-                onChanged: (v) => save(prefs.copyWith(emailDigest: v)),
+                title: const Text('Job emails'),
+                subtitle: Text('An email to ${user.email} when new jobs go live'),
+                value: prefs.jobEmails,
+                onChanged: (v) => save(prefs.copyWith(jobEmails: v)),
               ),
               const Divider(),
               Padding(

@@ -72,9 +72,10 @@ class SupabaseEmployerBackend implements EmployerBackend {
         var ext = fileName.split('.').last.toLowerCase();
         if (ext == 'jpeg') ext = 'jpg';
         final type = switch (ext) { 'pdf' => 'application/pdf', 'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg' };
-        // Same folder rule as logos (job-adverts/<user id>/...); a new name
-        // each time so a replaced advert is never served from cache.
-        final path = '${_uid()}/${DateTime.now().millisecondsSinceEpoch}-advert.$ext';
+        // Same folder rule as logos (job-adverts/<user id>/...). A new folder
+        // each time so a replaced advert is never served from cache; the file
+        // keeps the name the employer gave it, so downloads use that name.
+        final path = '${_uid()}/${DateTime.now().millisecondsSinceEpoch}/${Job.advertStorageName(fileName, ext)}';
         await _client.storage.from('job-adverts').uploadBinary(path, bytes, fileOptions: sb.FileOptions(contentType: type));
         return _client.storage.from('job-adverts').getPublicUrl(path);
       });

@@ -90,7 +90,8 @@ class Job {
   /// Which documents, e.g. "Certificates and a copy of your ID".
   final String documentsNote;
 
-  /// When set, candidates apply on the employer's own website instead of in the app.
+  /// When set, candidates apply on the employer's own website, or by email
+  /// (a mailto: link), instead of in the app.
   final String applyUrl;
   bool get appliesExternally => applyUrl.isNotEmpty;
 
@@ -100,6 +101,27 @@ class Job {
   bool get hasAdvert => advertUrl.isNotEmpty;
   bool get advertIsPdf => isPdfAdvert(advertUrl);
   static bool isPdfAdvert(String nameOrUrl) => (Uri.tryParse(nameOrUrl)?.path ?? nameOrUrl).toLowerCase().endsWith('.pdf');
+
+  /// The advert's file name as the employer uploaded it ("AHF Nurse advert.pdf").
+  /// Adverts saved before names were kept show as "Job advert.pdf".
+  String get advertFileName => advertNameFromUrl(advertUrl);
+  static String advertNameFromUrl(String url) {
+    final segs = Uri.tryParse(url)?.pathSegments ?? const <String>[];
+    final last = segs.isEmpty ? '' : segs.last;
+    final ext = last.contains('.') ? last.split('.').last.toLowerCase() : 'pdf';
+    if (last.isEmpty || RegExp(r'^\d+-advert\.\w+$').hasMatch(last)) return 'Job advert.$ext';
+    return last; // pathSegments are already decoded
+  }
+
+  /// A safe storage name that keeps the employer's file name (letters, numbers,
+  /// spaces and simple punctuation), with [ext] as the extension.
+  static String advertStorageName(String fileName, String ext) {
+    var base = fileName.contains('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+    base = base.replaceAll(RegExp(r"[^A-Za-z0-9 ._()\-]"), '-').replaceAll(RegExp(r'-{2,}'), '-').replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (base.length > 80) base = base.substring(0, 80).trim();
+    if (base.isEmpty || RegExp(r'^[.\-]+$').hasMatch(base)) base = 'Job advert';
+    return '$base.$ext';
+  }
 
   /// Taps on "Apply on website" (jobs with an external link).
   final int applyClicks;
@@ -111,13 +133,39 @@ class Job {
   /// Yes/no questions candidates answer when applying (up to 5).
   final List<ScreeningQuestion> screening;
 
-  /// The website name shown to candidates before they leave the app, e.g. careers.example.org.
-  String get applyHost => Uri.tryParse(applyUrl)?.host ?? applyUrl;
+  /// The website name shown to candidates before they leave the app, e.g. careers.example.org,
+  /// or the email address for jobs that take applications by email.
+  String get applyHost => applyEmail ?? Uri.tryParse(applyUrl)?.host ?? applyUrl;
 
-  /// Cleans an employer-entered link: adds https:// if missing. Null if it isn't a web address.
+  static final _email = RegExp(r'^[^@\s/:?]+@[^@\s/:?]+\.[^@\s/:?]+$');
+
+  /// The address for jobs that take applications by email. Also reads links
+  /// saved before email was supported, where "hr@x.org" became "https://hr@x.org".
+  String? get applyEmail {
+    final mailto = RegExp(r'^mailto:([^?]+)', caseSensitive: false).firstMatch(applyUrl);
+    if (mailto != null) return Uri.decodeComponent(mailto.group(1)!);
+    final old = RegExp(r'^https?://([^/?#]+)/?$', caseSensitive: false).firstMatch(applyUrl);
+    return old != null && _email.hasMatch(old.group(1)!) ? old.group(1) : null;
+  }
+
+  bool get appliesByEmail => applyEmail != null;
+
+  /// What the apply button opens: the employer's website, or a new email with the
+  /// job title as its subject (unless the employer set one).
+  Uri get applyUri {
+    final email = applyEmail;
+    if (email == null) return Uri.parse(applyUrl);
+    final query = applyUrl.contains('?') ? applyUrl.substring(applyUrl.indexOf('?') + 1) : '';
+    return Uri.parse('mailto:$email?${query.isNotEmpty ? query : 'subject=${Uri.encodeComponent(title)}'}');
+  }
+
+  /// Cleans an employer-entered link: an email address becomes mailto:, a website
+  /// gets https:// if missing. Null if it is neither.
   static String? normalizeApplyUrl(String input) {
     var t = input.trim();
     if (t.isEmpty) return null;
+    final mailto = RegExp(r'^(?:mailto:)?([^?]+)(\?.*)?$', caseSensitive: false).firstMatch(t)!;
+    if (_email.hasMatch(mailto.group(1)!)) return 'mailto:${mailto.group(1)}${mailto.group(2) ?? ''}';
     if (!RegExp(r'^https?://', caseSensitive: false).hasMatch(t)) t = 'https://$t';
     final u = Uri.tryParse(t);
     if (u == null || !u.hasAuthority || !u.host.contains('.') || u.host.contains(' ')) return null;

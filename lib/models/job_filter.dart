@@ -42,6 +42,10 @@ class JobFilter {
 
   bool get isEmpty => query.trim().isEmpty && activeCount == 0;
 
+  /// The chosen locations plus places in the same area, so "Freetown" also
+  /// finds jobs listed as "Western Area Urban" or "Waterloo".
+  Set<String> get areaLocations => {for (final l in locations) ...sameAreaAs(l)};
+
   String get summary {
     final parts = <String>[
       if (query.trim().isNotEmpty) '"${query.trim()}"',
@@ -97,7 +101,7 @@ class JobFilter {
       final terms = q.split(RegExp(r'\s+'));
       if (!terms.every(haystack.contains)) return false;
     }
-    if (locations.isNotEmpty && !locations.contains(j.location)) return false;
+    if (locations.isNotEmpty && !areaLocations.contains(j.location)) return false;
     if (employmentTypes.isNotEmpty && !employmentTypes.contains(j.employmentType)) return false;
     if (industries.isNotEmpty && !industries.contains(j.industry)) return false;
     if (experienceLevels.isNotEmpty && !experienceLevels.contains(j.experienceLevel)) return false;

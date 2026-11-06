@@ -131,7 +131,7 @@ void main() {
     await waitFor(tester, find.text('Flutter Mobile Developer'));
     await tapText(tester, 'Flutter Mobile Developer');
     await waitFor(tester, find.text('Apply now'));
-    await waitFor(tester, find.text('About the job'));
+    await reveal(tester, find.text('About the job'));
     await reveal(tester, find.text('Responsibilities'));
     await reveal(tester, find.text('Eligibility & requirements'));
     await reveal(tester, find.text('About the company'));

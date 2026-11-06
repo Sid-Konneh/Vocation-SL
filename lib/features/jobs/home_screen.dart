@@ -73,7 +73,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = ref.watch(profileProvider).value?.data;
     final pad = pagePadding(context);
     final featured = feed.jobs.where((j) => j.featured).toList();
-    final recommended = _recommend(feed.jobs, user);
+    final recommended = JobMatch.recommend(feed.jobs, user);
+    final myArea = sameAreaAs(user?.location ?? '');
 
     return Scaffold(
       body: RefreshIndicator(
@@ -117,6 +118,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
+            // Quick filters: jobs near the job seeker, then by job type.
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 52,
+                child: ListView(
+                  padding: pad.copyWith(top: 8, bottom: 4),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    if (myArea.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ActionChip(
+                          avatar: const Icon(Icons.place_outlined, size: 18),
+                          label: Text('Jobs in ${user!.location}'),
+                          onPressed: () => _search(JobFilter(locations: {user.location})),
+                        ),
+                      ),
+                    for (final t in const [
+                      EmploymentType.fullTime,
+                      EmploymentType.contract,
+                      EmploymentType.partTime,
+                      EmploymentType.internship,
+                      EmploymentType.volunteer,
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ActionChip(label: Text(t.label), onPressed: () => _search(JobFilter(employmentTypes: {t}))),
+                      ),
+                  ],
+                ),
+              ),
+            ),
             const SliverToBoxAdapter(child: Divider()),
             if (feed.offlineCopy && feed.jobs.isNotEmpty)
               SliverPadding(
@@ -150,11 +183,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 sliver: SliverToBoxAdapter(
                   child: SectionHeader(
                     'Recommended for you',
-                    subtitle: 'Based on your skills and preferences',
+                    subtitle: 'Matched to your location, profile and job preferences',
                     action: 'See all',
                     onAction: () => _search(JobFilter(
                       industries: user?.preferences.industries ?? const {},
-                      locations: user?.preferences.locations ?? const {},
+                      employmentTypes: user?.preferences.employmentTypes ?? const {},
+                      locations: {
+                        if ((user?.location ?? '').isNotEmpty) user!.location,
+                        ...?user?.preferences.locations,
+                      },
                     )),
                   ),
                 ),
@@ -198,23 +235,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  List<Job> _recommend(List<Job> jobs, AppUser? user) {
-    if (user == null || jobs.isEmpty) return const [];
-    final skills = user.skills.map((s) => s.toLowerCase()).toSet();
-    final prefs = user.preferences;
-    int score(Job j) {
-      var s = j.skills.where((k) => skills.contains(k.toLowerCase())).length * 3;
-      if (prefs.industries.contains(j.industry)) s += 2;
-      if (prefs.locations.contains(j.location)) s += 1;
-      if (prefs.workModes.contains(j.workMode)) s += 1;
-      if (prefs.titles.any((t) => j.title.toLowerCase().contains(t.toLowerCase().split(' ').first))) s += 3;
-      return s;
-    }
-
-    final scored = jobs.where((j) => !j.isClosed).map((j) => (j, score(j))).where((e) => e.$2 >= 4).toList()
-      ..sort((a, b) => b.$2.compareTo(a.$2));
-    return scored.take(3).map((e) => e.$1).toList();
-  }
 }
 
 class _Header extends StatelessWidget {

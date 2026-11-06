@@ -167,6 +167,31 @@ void main() {
     expect(job.applyHost, 'careers.example.org');
     expect(Job.fromJson(job.toJson()).applyUrl, 'https://careers.example.org/jobs/12');
     expect(Job.fromJson({...job.toJson()}..remove('apply_url')).appliesExternally, isFalse, reason: 'older jobs apply in the app');
+    expect(job.appliesByEmail, isFalse);
+    expect(job.applyUri.toString(), 'https://careers.example.org/jobs/12');
+  });
+
+  test('jobs can take applications by email', () {
+    expect(Job.normalizeApplyUrl(' hr@example.org '), 'mailto:hr@example.org');
+    expect(Job.normalizeApplyUrl('mailto:hr@example.org?subject=Driver'), 'mailto:hr@example.org?subject=Driver', reason: 'editing keeps the subject');
+    expect(Job.normalizeApplyUrl('hr@localhost'), isNull);
+
+    Job withLink(String link) => Job.fromJson({
+          'id': 'j3',
+          'title': 'Data Entry Clerk',
+          'company_id': 'c1',
+          'posted_at': '2026-10-01T00:00:00Z',
+          'deadline': '2026-11-01T00:00:00Z',
+          'apply_url': link,
+        });
+    final email = withLink('mailto:globalhr.africa@aidshealth.org');
+    expect(email.appliesExternally, isTrue);
+    expect(email.appliesByEmail, isTrue);
+    expect(email.applyHost, 'globalhr.africa@aidshealth.org');
+    expect(email.applyUri.toString(), 'mailto:globalhr.africa@aidshealth.org?subject=Data%20Entry%20Clerk');
+    expect(withLink('mailto:hr@x.org?subject=Nurse').applyUri.toString(), 'mailto:hr@x.org?subject=Nurse', reason: "the employer's subject wins");
+    expect(withLink('https://globalhr.africa@aidshealth.org').applyEmail, 'globalhr.africa@aidshealth.org', reason: 'saved by older app versions');
+    expect(withLink('https://user@example.org/jobs').appliesByEmail, isFalse, reason: 'a link with a path stays a link');
   });
 
   test('document uploads accept PDF only', () {

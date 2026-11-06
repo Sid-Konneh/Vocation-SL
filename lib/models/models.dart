@@ -1,4 +1,5 @@
 export 'admin.dart';
+export 'advert_extract.dart';
 export 'application.dart';
 export 'company.dart';
 export 'cv_extract.dart';
@@ -7,6 +8,7 @@ export 'enums.dart';
 export 'hiring.dart';
 export 'job.dart';
 export 'job_filter.dart';
+export 'job_match.dart';
 export 'message.dart';
 export 'notification.dart';
 export 'referral.dart';

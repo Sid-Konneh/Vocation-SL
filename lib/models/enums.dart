@@ -108,3 +108,22 @@ final sierraLeoneLocations = <String>[
   ...([for (final d in sierraLeoneDistricts.values) ...d]..sort()),
   ...sierraLeoneTowns.where((t) => t != 'Freetown'),
 ];
+
+/// Places that count as the same area when matching and filtering: the
+/// Western Area (Freetown, Waterloo), and each main town with its district.
+const _sameArea = <List<String>>[
+  ['Freetown', 'Western Area Urban', 'Western Area Rural', 'Waterloo'],
+  ['Kono', 'Koidu'],
+  ['Bombali', 'Makeni'],
+  ['Port Loko', 'Lunsar'],
+];
+
+/// [location] and the places in the same area ("Freetown" → Freetown,
+/// Western Area Urban, Western Area Rural, Waterloo).
+Set<String> sameAreaAs(String location) {
+  final l = location.trim().toLowerCase();
+  for (final g in _sameArea) {
+    if (g.any((p) => p.toLowerCase() == l)) return g.toSet();
+  }
+  return location.trim().isEmpty ? <String>{} : {location.trim()};
+}

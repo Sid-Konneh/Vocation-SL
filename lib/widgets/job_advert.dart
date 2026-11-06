@@ -46,9 +46,12 @@ class JobAdvertView extends StatelessWidget {
   }
 
   /// Opens the PDF inside the app, with a button to download it.
+  /// The name the employer gave the file (from the picker, or the saved address).
+  String get _name => fileName.isNotEmpty ? fileName : Job.advertNameFromUrl(url);
+
   void _openPdf(BuildContext context) {
     final data = _pdfBytes;
-    final name = fileName.isNotEmpty ? fileName : 'Job advert.pdf';
+    final name = _name;
     if (data != null) {
       Navigator.of(context).push(MaterialPageRoute<void>(
         builder: (_) => Scaffold(
@@ -75,7 +78,7 @@ class JobAdvertView extends StatelessWidget {
   static String _downloadUrl(String url) {
     final uri = Uri.parse(url);
     if (!uri.path.contains('/storage/v1/object/public/')) return url;
-    return uri.replace(queryParameters: {...uri.queryParameters, 'download': 'Job advert.pdf'}).toString();
+    return uri.replace(queryParameters: {...uri.queryParameters, 'download': Job.advertNameFromUrl(url)}).toString();
   }
 
   Future<void> _download(BuildContext context) async {
@@ -110,7 +113,7 @@ class JobAdvertView extends StatelessWidget {
           onTap: () => _openPdf(context),
           leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.danger, size: 32),
           title: const Text('Job advert (PDF)'),
-          subtitle: Text(fileName.isNotEmpty ? fileName : 'Tap to read the full advert'),
+          subtitle: Text(_name == 'Job advert.pdf' ? 'Tap to read the full advert' : _name),
           // Only a saved advert has an address to download from.
           trailing: url.startsWith('http')
               ? IconButton(tooltip: 'Download PDF', icon: const Icon(Icons.download_rounded), onPressed: () => _download(context))
