@@ -28,7 +28,10 @@ abstract interface class VocationBackend {
   /// Throws [EmailConfirmationRequired] when the account must be verified first.
   /// [role] is saved on the account, so the email confirmation link opens the
   /// right side even in another browser.
-  Future<String> signUp({required String fullName, required String email, required String password, UserRole? role});
+  /// [inviteToken] comes from a team invite link: the account is created
+  /// already confirmed and joins the inviting company.
+  Future<String> signUp(
+      {required String fullName, required String email, required String password, UserRole? role, String? inviteToken});
 
   /// Opens Google sign-in. The session arrives later through [authChanges].
   /// On the web, [intent] travels in the return URL (`?role=`) because a

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
+import '../../providers/ai_match_providers.dart';
 import '../../providers/job_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
@@ -73,7 +74,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = ref.watch(profileProvider).value?.data;
     final pad = pagePadding(context);
     final featured = feed.jobs.where((j) => j.featured).toList();
-    final recommended = JobMatch.recommend(feed.jobs, user);
+    final recommended = JobMatch.recommend(feed.jobs, user, ai: ref.watch(aiJobMatchesProvider).value ?? const {});
     final myArea = sameAreaAs(user?.location ?? '');
 
     return Scaffold(
@@ -83,6 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ref.read(homeFeedProvider.notifier).refresh(),
             ref.read(savedJobsProvider.notifier).refresh(),
           ]);
+          ref.invalidate(aiJobMatchesProvider);
         },
         child: CustomScrollView(
           controller: _scroll,
@@ -183,7 +185,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 sliver: SliverToBoxAdapter(
                   child: SectionHeader(
                     'Recommended for you',
-                    subtitle: 'Matched to your location, profile and job preferences',
+                    subtitle: 'AI and your profile: matched to your experience, location and job preferences',
                     action: 'See all',
                     onAction: () => _search(JobFilter(
                       industries: user?.preferences.industries ?? const {},

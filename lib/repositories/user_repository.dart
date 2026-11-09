@@ -47,13 +47,13 @@ class UserRepository extends CachedRepository {
     return backend.signIn(email: email, password: password);
   }
 
-  Future<String> signUp(String name, String email, String password, {UserRole? role}) {
+  Future<String> signUp(String name, String email, String password, {UserRole? role, String? inviteToken}) {
     if (name.trim().length < 2) throw const ValidationException('Enter your full name.');
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email.trim())) {
       throw const ValidationException('Enter a valid email address.');
     }
     if (password.length < 8) throw const ValidationException('Use at least 8 characters for your password.');
-    return backend.signUp(fullName: name, email: email, password: password, role: role);
+    return backend.signUp(fullName: name, email: email, password: password, role: role, inviteToken: inviteToken);
   }
 
   /// Deletes the account on the server, then wipes this device's copy.

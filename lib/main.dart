@@ -48,6 +48,18 @@ Future<void> main() async {
   if (kIsWeb && freshSignIn && UserRole.values.any((r) => r.name == returnedRole)) {
     await store.setSetting('pending_role', returnedRole);
   }
+  // A team invite link (employers.vocationsl.com/?invite=<email>): open the
+  // sign-in screen on "Create account" with that email filled in.
+  final invited = Uri.base.queryParameters['invite']?.trim() ?? '';
+  final inviteToken = Uri.base.queryParameters['t'] ?? '';
+  if (kIsWeb && invited.contains('@')) {
+    await store.setSetting(inviteEmailKey, invited);
+    if (RegExp(r'^[0-9a-f]{32}$').hasMatch(inviteToken)) {
+      await store.setSetting(inviteTokenKey, inviteToken);
+    } else {
+      await store.removeSetting(inviteTokenKey);
+    }
+  }
   final connectivity = ConnectivityService();
   await connectivity.init(simulateOffline: DevSettings.load(store).simulateOffline);
 

@@ -59,8 +59,9 @@ language sql stable security definer set search_path = public as $$
   where p.job_emails
     and coalesce(p.suspended, false) = false
     and p.role is distinct from 'employer'
-    and p.email like '%_@_%._%'
-    and p.email not ilike '%@privaterelay.appleid.com';  -- Apple's hidden addresses bounce our mail
+    and p.email like '%_@_%._%';
+  -- Apple "Hide My Email" addresses are included since 8 Nov 2026: vocationsl.com
+  -- and jobs@vocationsl.com are registered with Apple's private email relay.
 $$;
 revoke all on function public.job_email_recipients() from public, anon, authenticated;
 

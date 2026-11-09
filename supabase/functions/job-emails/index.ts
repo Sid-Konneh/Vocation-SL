@@ -25,11 +25,13 @@ const secret = Deno.env.get("PUSH_WEBHOOK_SECRET") ?? "";
 const site = (Deno.env.get("SITE_URL") ?? "https://app.vocationsl.com").replace(/\/$/, "");
 const fnUrl = `${(Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "")}/functions/v1/job-emails`;
 const smtpUser = Deno.env.get("SMTP_USER") ?? "info@vocationsl.com";
-const DAILY_CAP = Number(Deno.env.get("JOB_EMAILS_DAILY_CAP") ?? "800");
+// Hostinger refused mail on 9 Nov 2026 after only ~160 in 24 hours, and sign-up
+// emails and team invites need the same mailbox, so job emails leave room.
+const DAILY_CAP = Number(Deno.env.get("JOB_EMAILS_DAILY_CAP") ?? "100");
 // Hostinger blocks bursts (about 90 in 4 minutes was too many on 6 Nov 2026) and
 // sign-in emails share the mailbox, so send slowly. Slow sending also means jobs
 // that go live close together reach each person in one email.
-const HOURLY_CAP = Number(Deno.env.get("JOB_EMAILS_HOURLY_CAP") ?? "40");
+const HOURLY_CAP = Number(Deno.env.get("JOB_EMAILS_HOURLY_CAP") ?? "20");
 const BATCH = 2;           // emails per run (runs every minute)
 const BACKOFF_MIN = 15;    // pause after Hostinger says "rate limit"
 const isRateLimit = (m: string) => /ratelimit|rate limit|too many|451 4\.7\.1|421/i.test(m);
@@ -134,6 +136,10 @@ async function send(): Promise<Response> {
   if (!pass) return new Response("SMTP_PASSWORD is not set", { status: 500 });
 
   const ago = (min: number) => new Date(Date.now() - min * 60 * 1000).toISOString();
+  // Team invites go first: they share this mailbox and someone is waiting for them.
+  const { data: invites } = await supabase.from("team_invites").select("email")
+    .is("emailed_at", null).gte("created_at", ago(48 * 60)).limit(1);
+  if (invites?.length) return Response.json({ sent: 0, reason: "team invite waiting" });
   const { data: limited } = await supabase.from("job_email_log").select("id").eq("ok", false)
     .ilike("error", "%ratelimit%").gte("sent_at", ago(BACKOFF_MIN)).limit(1);
   if (limited?.length) return Response.json({ sent: 0, reason: "waiting after Hostinger rate limit" });

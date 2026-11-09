@@ -1,18 +1,20 @@
 /// A colleague with access to the company's jobs and candidates.
 class TeamMember {
   const TeamMember({required this.userId, required this.role, required this.name, required this.email, this.addedAt});
+  /// Empty for an invite that is still waiting for the colleague to sign up.
   final String userId;
 
-  /// 'owner' or 'recruiter'.
+  /// 'owner', 'recruiter', or 'invited' (no account yet; invite emailed).
   final String role;
   final String name;
   final String email;
   final DateTime? addedAt;
 
   bool get isOwner => role == 'owner';
+  bool get isInvite => role == 'invited';
 
   factory TeamMember.fromJson(Map<String, dynamic> j) => TeamMember(
-        userId: j['user_id'] as String,
+        userId: j['role'] == 'invited' ? '' : j['user_id'] as String? ?? '',
         role: j['role'] as String? ?? 'recruiter',
         name: j['name'] as String? ?? '',
         email: j['email'] as String? ?? '',

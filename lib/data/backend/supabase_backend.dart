@@ -74,8 +74,22 @@ class SupabaseBackend implements VocationBackend {
       });
 
   @override
-  Future<String> signUp({required String fullName, required String email, required String password, UserRole? role}) =>
+  Future<String> signUp(
+          {required String fullName, required String email, required String password, UserRole? role, String? inviteToken}) =>
       _run(() async {
+        if (inviteToken != null) {
+          final res = await _client.functions.invoke('team-invite', body: {
+            'action': 'signup',
+            'email': email.trim(),
+            'token': inviteToken,
+            'password': password,
+            'name': fullName.trim(),
+          });
+          final data = res.data is Map ? Map<String, dynamic>.from(res.data as Map) : const <String, dynamic>{};
+          if (data['ok'] != true) throw AuthException('${data['error'] ?? 'Your account could not be created. Please try again.'}');
+          final signedIn = await _client.auth.signInWithPassword(email: email.trim(), password: password);
+          return signedIn.user!.id;
+        }
         final res = await _client.auth.signUp(
           email: email.trim(),
           password: password,

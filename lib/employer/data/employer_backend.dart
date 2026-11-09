@@ -56,6 +56,9 @@ abstract interface class EmployerBackend {
 
   // Team access (the owner adds colleagues by email)
   Future<List<TeamMember>> team();
-  Future<void> addTeamMember(String email);
+  /// Adds a colleague. Returns true if they already had an account and joined
+  /// now; false if they were sent an invite and join when they sign up.
+  Future<bool> addTeamMember(String email);
   Future<void> removeTeamMember(String userId);
+  Future<void> cancelTeamInvite(String email);
 }

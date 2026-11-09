@@ -32,8 +32,8 @@ class SessionNotifier extends Notifier<String?> {
     state = await ref.read(userRepositoryProvider).signIn(email, password);
   }
 
-  Future<void> signUp(String name, String email, String password, {UserRole? role}) async {
-    state = await ref.read(userRepositoryProvider).signUp(name, email, password, role: role);
+  Future<void> signUp(String name, String email, String password, {UserRole? role, String? inviteToken}) async {
+    state = await ref.read(userRepositoryProvider).signUp(name, email, password, role: role, inviteToken: inviteToken);
   }
 
   Future<void> signOut() async {
@@ -52,6 +52,14 @@ final sessionProvider = NotifierProvider<SessionNotifier, String?>(SessionNotifi
 /// Set when an email confirmation link can't sign the person in; the sign-in
 /// screen shows it once.
 const authLinkErrorKey = 'auth_link_error';
+
+/// The email from a team invite link; the sign-in screen opens on
+/// "Create account" with it filled in.
+const inviteEmailKey = 'invite_email';
+
+/// The private code from the same invite link: the account is created already
+/// confirmed, so no confirmation email is needed.
+const inviteTokenKey = 'invite_token';
 
 /// The token from an email confirmation link (`?token_hash=...`). Read from
 /// the whole address so it is found even if the link was built oddly.

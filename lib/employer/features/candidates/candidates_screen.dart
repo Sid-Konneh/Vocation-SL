@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/backend/message_backend.dart' show MessageAttachment;
 import '../../../models/models.dart';
+import '../../../providers/ai_match_providers.dart';
 import '../../../providers/core_providers.dart';
 import '../../../providers/message_providers.dart';
 import '../../../services/file_service.dart';
@@ -38,6 +39,13 @@ Future<void> openDocument(BuildContext context, WidgetRef ref, String? storagePa
       storagePath: storagePath,
       loadUrl: ref.read(employerBackendProvider).documentUrl,
     );
+
+/// AI job matching pilot: how close each applicant's profile is to the job
+/// they applied for (0–1), for this employer's jobs only.
+final aiApplicantMatchesProvider = FutureProvider<Map<String, double>>((ref) {
+  ref.watch(candidatesProvider.select((a) => a.value?.data.length));
+  return aiSimilarities('ai_applicant_matches', 'application_id');
+});
 
 class CandidatesScreen extends ConsumerStatefulWidget {
   const CandidatesScreen({super.key, this.jobId});
@@ -126,6 +134,7 @@ class _CandidatesScreenState extends ConsumerState<CandidatesScreen> {
     final jobs = ref.watch(employerJobsProvider).value?.data ?? const <Job>[];
     final all = async.value?.data ?? const <JobApplication>[];
     final q = _query.trim().toLowerCase();
+    final ai = ref.watch(aiApplicantMatchesProvider).value ?? const <String, double>{};
 
     var list = all.where((a) {
       if (_jobId != null && a.jobId != _jobId) return false;
@@ -141,6 +150,7 @@ class _CandidatesScreenState extends ConsumerState<CandidatesScreen> {
           1 => a.applicant.fullName.toLowerCase().compareTo(b.applicant.fullName.toLowerCase()),
           2 => (a.job?.title ?? '').compareTo(b.job?.title ?? ''),
           4 => ApplicationStatus.values.indexOf(a.status).compareTo(ApplicationStatus.values.indexOf(b.status)),
+          5 => (ai[a.id] ?? -1).compareTo(ai[b.id] ?? -1),
           _ => a.submittedAt.compareTo(b.submittedAt),
         };
     list.sort((a, b) => _ascending ? cmp(a, b) : cmp(b, a));
@@ -242,6 +252,10 @@ class _CandidatesScreenState extends ConsumerState<CandidatesScreen> {
               DataColumn(label: const Text('Job'), onSort: sortBy),
               DataColumn(label: const Text('Applied'), onSort: sortBy),
               DataColumn(label: const Text('Stage'), onSort: sortBy),
+              DataColumn(
+                label: const Tooltip(message: 'AI pilot: how closely the candidate\'s profile fits the job. Advice only.', child: Text('AI match')),
+                onSort: sortBy,
+              ),
               const DataColumn(label: Text('Screening')),
               const DataColumn(label: Text('Interview')),
               const DataColumn(label: Text('CV')),
@@ -292,6 +306,17 @@ class _CandidatesScreenState extends ConsumerState<CandidatesScreen> {
                             ),
                           )),
                     DataCell(Builder(builder: (_) {
+                      final s = ai[a.id];
+                      final color = s == null
+                          ? context.palette.muted
+                          : s >= JobMatch.aiStrong
+                              ? AppColors.green
+                              : s >= JobMatch.aiGood
+                                  ? AppColors.warning
+                                  : context.palette.muted;
+                      return Text(JobMatch.aiLabel(s), style: TextStyle(color: color, fontWeight: FontWeight.w700));
+                    })),
+                    DataCell(Builder(builder: (_) {
                       final m = a.screeningMatch(null);
                       if (m.total == 0) return const Text('—');
                       final all = m.matched == m.total;
@@ -315,7 +340,7 @@ class _CandidatesScreenState extends ConsumerState<CandidatesScreen> {
             ],
           ),
         const SizedBox(height: 8),
-        Text('Unreviewed applications are highlighted. Changing a stage notifies the candidate.',
+        Text('Unreviewed applications are highlighted. Changing a stage notifies the candidate. AI match is advice from our AI pilot: you still see and decide on every applicant.',
             style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
       ],
     );

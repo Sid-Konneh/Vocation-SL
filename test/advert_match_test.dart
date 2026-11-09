@@ -106,5 +106,17 @@ void main() {
     expect(JobMatch.of(job, elsewhere).isGood, isFalse);
     expect(JobMatch.recommend([job], user), [job]);
     expect(JobMatch.recommend([job], elsewhere), isEmpty);
+
+    // AI similarity from the server adds to the rules and says so.
+    final ai = JobMatch.of(job, elsewhere, ai: 0.86);
+    expect(ai.isGood, isTrue);
+    expect(ai.reasons, contains('AI: a strong fit with your profile'));
+    expect(JobMatch.of(job, elsewhere, ai: 0.82).reasons, contains('AI: fits your profile'));
+    expect(JobMatch.of(job, elsewhere, ai: 0.70).isGood, isFalse);
+    expect(JobMatch.recommend([job], elsewhere, ai: {job.id: 0.86}), [job]);
+    expect(JobMatch.aiLabel(0.85), 'Strong');
+    expect(JobMatch.aiLabel(0.82), 'Good');
+    expect(JobMatch.aiLabel(0.6), 'Low');
+    expect(JobMatch.aiLabel(null), '—');
   });
 }

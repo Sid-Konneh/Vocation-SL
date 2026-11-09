@@ -218,8 +218,12 @@ class SupabaseEmployerBackend implements EmployerBackend {
       });
 
   @override
-  Future<void> addTeamMember(String email) => guardSupabase(() => _client.rpc('add_team_member', params: {'p_email': email.trim()}));
+  Future<bool> addTeamMember(String email) =>
+      guardSupabase(() async => '${await _client.rpc('add_team_member', params: {'p_email': email.trim()})}' != 'invited');
 
   @override
   Future<void> removeTeamMember(String userId) => guardSupabase(() => _client.rpc('remove_team_member', params: {'p_user': userId}));
+
+  @override
+  Future<void> cancelTeamInvite(String email) => guardSupabase(() => _client.rpc('remove_team_invite', params: {'p_email': email}));
 }

@@ -278,10 +278,16 @@ class _TeamSectionState extends ConsumerState<TeamSection> {
     }
     setState(() => _busy = true);
     try {
-      await ref.read(employerBackendProvider).addTeamMember(email);
+      final joined = await ref.read(employerBackendProvider).addTeamMember(email);
       _email.clear();
       ref.invalidate(teamProvider);
-      if (mounted) showSnack(context, '$email can now manage your jobs and candidates.');
+      if (mounted) {
+        showSnack(
+            context,
+            joined
+                ? '$email can now manage your jobs and candidates.'
+                : 'Invite sent to $email. When they create an account with this email, they\'ll go straight to your dashboard.');
+      }
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -291,13 +297,20 @@ class _TeamSectionState extends ConsumerState<TeamSection> {
 
   Future<void> _remove(TeamMember m) async {
     final ok = await confirmDialog(context,
-        title: 'Remove ${m.name.isEmpty ? m.email : m.name}?',
-        message: 'They will no longer see your jobs or candidates.',
-        confirmLabel: 'Remove',
+        title: m.isInvite ? 'Cancel the invite to ${m.email}?' : 'Remove ${m.name.isEmpty ? m.email : m.name}?',
+        message: m.isInvite
+            ? 'If they create an account later, they won\'t join your team.'
+            : 'They will no longer see your jobs or candidates.',
+        confirmLabel: m.isInvite ? 'Cancel invite' : 'Remove',
         destructive: true);
     if (!ok) return;
     try {
-      await ref.read(employerBackendProvider).removeTeamMember(m.userId);
+      final backend = ref.read(employerBackendProvider);
+      if (m.isInvite) {
+        await backend.cancelTeamInvite(m.email);
+      } else {
+        await backend.removeTeamMember(m.userId);
+      }
       ref.invalidate(teamProvider);
     } catch (e) {
       if (mounted) showError(context, e);
@@ -323,9 +336,14 @@ class _TeamSectionState extends ConsumerState<TeamSection> {
             contentPadding: EdgeInsets.zero,
             leading: UserAvatar(initials: (m.name.isNotEmpty ? m.name : m.email).substring(0, 1).toUpperCase(), size: 36),
             title: Text(m.name.isEmpty ? m.email : m.name),
-            subtitle: Text('${m.email} · ${m.isOwner ? 'Owner' : 'Recruiter'}'),
+            subtitle: Text(m.isInvite
+                ? 'Invited · joins when they create an account with this email'
+                : '${m.email} · ${m.isOwner ? 'Owner' : 'Recruiter'}'),
             trailing: iAmOwner && !m.isOwner
-                ? IconButton(tooltip: 'Remove', icon: const Icon(Icons.person_remove_outlined), onPressed: () => _remove(m))
+                ? IconButton(
+                    tooltip: m.isInvite ? 'Cancel invite' : 'Remove',
+                    icon: Icon(m.isInvite ? Icons.close_rounded : Icons.person_remove_outlined),
+                    onPressed: () => _remove(m))
                 : null,
           ),
         if (iAmOwner) ...[
@@ -335,7 +353,8 @@ class _TeamSectionState extends ConsumerState<TeamSection> {
               child: TextField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Colleague\'s email', hintText: 'They must have a Vocation SL account', isDense: true),
+                decoration: const InputDecoration(
+                    labelText: 'Colleague\'s email', hintText: 'No account yet? We\'ll email them an invite', isDense: true),
                 onSubmitted: (_) => _add(),
               ),
             ),

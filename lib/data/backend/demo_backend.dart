@@ -151,7 +151,8 @@ class DemoBackend implements VocationBackend {
   }
 
   @override
-  Future<String> signUp({required String fullName, required String email, required String password, UserRole? role}) async {
+  Future<String> signUp(
+      {required String fullName, required String email, required String password, UserRole? role, String? inviteToken}) async {
     await _call();
     final key = email.trim().toLowerCase();
     final accounts = Map<String, dynamic>.from(_state['accounts'] as Map);

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/models.dart';
+import '../../providers/ai_match_providers.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/job_providers.dart';
 import '../../providers/session_providers.dart';
@@ -147,7 +148,7 @@ class _JobDetailsView extends ConsumerWidget {
           ],
           if (user != null)
             Builder(builder: (context) {
-              final m = JobMatch.of(job, user);
+              final m = JobMatch.of(job, user, ai: ref.watch(aiJobMatchesProvider).value?[job.id]);
               if (!m.isGood || m.reasons.isEmpty) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.only(top: 16),

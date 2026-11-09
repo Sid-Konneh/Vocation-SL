@@ -42,6 +42,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   /// employer who hasn't set up their company yet goes straight to setup.
   bool _intentChosen = false;
 
+  /// Set when opened from a team invite link (see [inviteTokenKey]).
+  String? _invitedEmail;
+  String? _inviteToken;
+
   bool get _hiring => _intent == UserRole.employer;
 
   @override
@@ -53,6 +57,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (linkError != null) {
       _info = linkError;
       store.removeSetting(authLinkErrorKey);
+    }
+    // Opened from a team invite email: create the account with the invited email.
+    final invited = store.setting<String>(inviteEmailKey);
+    if (invited != null) {
+      store.removeSetting(inviteEmailKey);
+      _invitedEmail = invited;
+      _inviteToken = store.setting<String>(inviteTokenKey);
+      store.removeSetting(inviteTokenKey);
+      _signUp = true;
+      _intent = UserRole.employer;
+      _intentChosen = true;
+      _email.text = invited;
+      _info = 'You\'ve been invited to a company team. Enter your name and choose a password to create your account '
+          'with $invited. You\'ll go straight to the company dashboard.';
     }
   }
 
@@ -73,7 +91,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     await _run(applyIntent: _signUp || _intentChosen || AppConfig.employerSite, () async {
       final session = ref.read(sessionProvider.notifier);
       if (_signUp) {
-        await session.signUp(_name.text, _email.text, _password.text, role: _intent);
+        // From the invite link, with the invited email: created already confirmed.
+        final fromInvite = _inviteToken != null && _email.text.trim().toLowerCase() == _invitedEmail?.trim().toLowerCase();
+        await session.signUp(_name.text, _email.text, _password.text,
+            role: _intent, inviteToken: fromInvite ? _inviteToken : null);
       } else {
         await session.signIn(_email.text, _password.text);
       }

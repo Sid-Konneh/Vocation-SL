@@ -98,12 +98,20 @@ void main() {
     expect(LaunchOffer.fromJson({'free_posts': 5, 'used': 5, 'active': true}).available, isFalse);
   });
 
-  test('demo team: owner adds and removes a recruiter', () async {
+  test('demo team: owner invites a colleague without an account, then cancels', () async {
     final b = DemoEmployerBackend();
-    await b.addTeamMember('hr@example.com');
-    expect((await b.team()).map((m) => m.role), ['owner', 'recruiter']);
-    await b.removeTeamMember('u-hr@example.com');
+    expect(await b.addTeamMember('hr@example.com'), isFalse);
+    final team = await b.team();
+    expect(team.map((m) => m.role), ['owner', 'invited']);
+    expect(team.last.isInvite, isTrue);
+    await b.cancelTeamInvite('hr@example.com');
     expect(await b.team(), hasLength(1));
+  });
+
+  test('team list reads a waiting invite (no user id)', () {
+    final m = TeamMember.fromJson({'user_id': null, 'role': 'invited', 'name': '', 'email': 'a@b.com'});
+    expect(m.isInvite, isTrue);
+    expect(m.userId, isEmpty);
   });
 
   test('traction report counts real activity by month', () {

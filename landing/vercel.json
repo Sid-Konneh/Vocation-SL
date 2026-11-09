@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "cleanUrls": true,
+  "redirects": [
+    { "source": "/android", "destination": "https://play.google.com/store/apps/details?id=org.vocationsl.vocation_sl", "permanent": false },
+    { "source": "/iphone", "destination": "https://apps.apple.com/us/app/vocation-sl-jobs-hiring/id6828575420", "permanent": false }
+  ],
   "headers": [
     { "source": "/(.*)", "headers": [
       { "key": "X-Content-Type-Options", "value": "nosniff" },

@@ -263,13 +263,19 @@ class DemoEmployerBackend implements EmployerBackend {
   Future<List<TeamMember>> team() async => List.of(teamMembers);
 
   @override
-  Future<void> addTeamMember(String email) async {
+  Future<bool> addTeamMember(String email) async {
     final e = email.trim().toLowerCase();
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e)) throw const ValidationException('Enter a valid email address.');
-    if (teamMembers.any((m) => m.email == e)) throw const ValidationException('That account already belongs to a company.');
-    teamMembers.add(TeamMember(userId: 'u-$e', role: 'recruiter', name: e.split('@').first, email: e, addedAt: DateTime.now()));
+    if (teamMembers.any((m) => m.email == e && !m.isInvite)) throw const ValidationException('That account already belongs to a company.');
+    // Demo: every new email is treated as someone without an account yet.
+    teamMembers.removeWhere((m) => m.email == e);
+    teamMembers.add(TeamMember(userId: '', role: 'invited', name: '', email: e, addedAt: DateTime.now()));
+    return false;
   }
 
   @override
   Future<void> removeTeamMember(String userId) async => teamMembers.removeWhere((m) => m.userId == userId && !m.isOwner);
+
+  @override
+  Future<void> cancelTeamInvite(String email) async => teamMembers.removeWhere((m) => m.isInvite && m.email == email);
 }
