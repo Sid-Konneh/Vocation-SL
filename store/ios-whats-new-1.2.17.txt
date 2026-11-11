@@ -1,0 +1,12 @@
+New: AI job matching (pilot)
+• Recommended for you now uses AI to match jobs to your experience, skills and studies, not just words. Each match says why.
+• Complete your profile (headline, skills, past jobs) for better matches.
+
+For employers
+• Invite your team: add a colleague by email, even if they don't have an account yet. They go straight to your company dashboard.
+• Sort candidates by AI match. You still see and decide on every applicant.
+
+Also
+• Apply by email when a job asks for it.
+• Clearer job details from PDF adverts.
+• Bug fixes and improvements.

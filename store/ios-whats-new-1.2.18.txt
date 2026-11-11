@@ -1,0 +1,6 @@
+For employers
+• Invoices now show our company details: VOCATION (SL) LIMITED, our NRA TIN and Corporate Affairs Commission registration number.
+
+Also
+• Job alert emails now link to the app on both the App Store and Google Play.
+• Bug fixes and improvements.

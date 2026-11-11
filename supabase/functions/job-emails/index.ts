@@ -101,7 +101,7 @@ ${c ? `<div style="font-size:13px;color:#5E6670;margin:0 0 10px;">Closes ${esc(c
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 ${cards}
 </table>
-<p style="margin:6px 0 0;font-size:14px;line-height:1.6;">See all jobs and apply in the app: <a href="${site}" style="color:#3F7A1F;font-weight:bold;">app.vocationsl.com</a> or <a href="https://play.google.com/store/apps/details?id=org.vocationsl.vocation_sl" style="color:#3F7A1F;font-weight:bold;">Vocation SL on Google Play</a>.</p>
+<p style="margin:6px 0 0;font-size:14px;line-height:1.6;">See all jobs and apply in the app: <a href="${site}" style="color:#3F7A1F;font-weight:bold;">app.vocationsl.com</a>, <a href="https://play.google.com/store/apps/details?id=org.vocationsl.vocation_sl" style="color:#3F7A1F;font-weight:bold;">Vocation SL on Google Play</a> or <a href="https://apps.apple.com/app/id6828575420" style="color:#3F7A1F;font-weight:bold;">Vocation SL on the App Store</a>.</p>
 </td></tr>
 <tr><td style="padding:16px 28px;border-top:1px solid #E3E7E0;font-size:12px;line-height:1.6;color:#5E6670;">You get this email because you have a Vocation SL account. To stop job emails, <a href="${unsubscribeUrl}" style="color:#3F7A1F;">unsubscribe</a>, or turn off <b>Job emails</b> in the app under Settings → Notification settings.<br>Vocation SL · VOCATION (SL) LIMITED · 33 New Koribondo Highway, Bo City, Sierra Leone · info@vocationsl.com</td></tr>
 </table></td></tr></table></body></html>`;
@@ -112,7 +112,9 @@ ${cards}
       const c = closes(j.deadline);
       return [j.title, jobLine(j), ...(c ? [`Closes ${c}`] : []), `${site}/job/${j.id}`, ""];
     }),
-    `See all jobs: ${site}`, "",
+    `See all jobs: ${site}`,
+    "Android (Google Play): https://play.google.com/store/apps/details?id=org.vocationsl.vocation_sl",
+    "iPhone (App Store): https://apps.apple.com/app/id6828575420", "",
     `To stop job emails: ${unsubscribeUrl}`,
     "Vocation SL · VOCATION (SL) LIMITED · 33 New Koribondo Highway, Bo City · info@vocationsl.com",
   ].join("\n");

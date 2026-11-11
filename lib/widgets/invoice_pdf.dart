@@ -67,8 +67,11 @@ Future<Uint8List> buildInvoicePdf(Invoice i) async {
               pw.TextSpan(text: 'SL', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: _brand)),
             ]),
           ),
-          pw.Text('Jobs in Sierra Leone', style: const pw.TextStyle(fontSize: 9, color: _muted)),
+          pw.Text(AppConfig.legalName, style: pw.TextStyle(fontSize: 9, color: _ink, fontWeight: pw.FontWeight.bold)),
+          pw.Text(AppConfig.companyAddress, style: const pw.TextStyle(fontSize: 9, color: _muted)),
           pw.Text(AppConfig.supportEmail, style: const pw.TextStyle(fontSize: 9, color: _muted)),
+          pw.Text('TIN: ${AppConfig.taxId}', style: const pw.TextStyle(fontSize: 9, color: _ink)),
+          pw.Text('CAC Reg. No.: ${AppConfig.cacRegistration}', style: const pw.TextStyle(fontSize: 9, color: _ink)),
         ]),
         pw.Spacer(),
         pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
@@ -197,7 +200,7 @@ Future<Uint8List> buildInvoicePdf(Invoice i) async {
       pw.Spacer(),
       pw.Divider(color: _line),
       pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-        pw.Text('Vocation SL · ${AppConfig.supportEmail}', style: const pw.TextStyle(fontSize: 8.5, color: _muted)),
+        pw.Text('${AppConfig.legalName} · TIN ${AppConfig.taxId} · CAC ${AppConfig.cacRegistration}', style: const pw.TextStyle(fontSize: 8.5, color: _muted)),
         pw.Text('Thank you for hiring with Vocation SL.', style: const pw.TextStyle(fontSize: 8.5, color: _muted)),
       ]),
     ]),
