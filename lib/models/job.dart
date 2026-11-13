@@ -51,6 +51,7 @@ class Job {
     this.applyUrl = '',
     this.advertUrl = '',
     this.applyClicks = 0,
+    this.externalApplied = 0,
     this.featureRequestedAt,
     this.screening = const [],
   });
@@ -125,6 +126,9 @@ class Job {
 
   /// Taps on "Apply on website" (jobs with an external link).
   final int applyClicks;
+
+  /// Job seekers who said "Yes, I applied" after going to the external link.
+  final int externalApplied;
 
   /// When the employer asked for this job to be featured (null if never).
   final DateTime? featureRequestedAt;
@@ -212,6 +216,7 @@ class Job {
         applyUrl: applyUrl,
         advertUrl: advertUrl,
         applyClicks: applyClicks,
+        externalApplied: externalApplied,
         featureRequestedAt: featureRequestedAt,
         screening: screening,
       );
@@ -248,6 +253,7 @@ class Job {
         applyUrl: j['apply_url'] as String? ?? '',
         advertUrl: j['advert_url'] as String? ?? '',
         applyClicks: (j['apply_clicks'] as num?)?.toInt() ?? 0,
+        externalApplied: (j['external_applied'] as num?)?.toInt() ?? 0,
         featureRequestedAt: j['feature_requested_at'] == null ? null : DateTime.tryParse('${j['feature_requested_at']}'),
         screening: [
           for (final q in (j['screening'] as List? ?? const [])) ScreeningQuestion.fromJson(Map<String, dynamic>.from(q as Map))
@@ -287,6 +293,7 @@ class Job {
         'apply_url': applyUrl,
         'advert_url': advertUrl,
         'apply_clicks': applyClicks,
+        'external_applied': externalApplied,
         'feature_requested_at': featureRequestedAt?.toIso8601String(),
         'screening': screening.map((q) => q.toJson()).toList(),
         if (includeCompany && company != null) 'company': company!.toJson(),

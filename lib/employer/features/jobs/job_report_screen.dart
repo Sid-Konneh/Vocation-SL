@@ -63,9 +63,15 @@ class JobReportScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               StatGrid(children: [
                 StatTile(label: 'Views', value: '${r.views}', icon: Icons.visibility_outlined),
-                if (r.appliesExternally)
-                  StatTile(label: 'Website taps', value: '${r.applyClicks}', icon: Icons.open_in_new_rounded, detail: 'Applications go to your website')
-                else
+                if (r.appliesExternally) ...[
+                  StatTile(label: 'Apply taps', value: '${r.applyClicks}', icon: Icons.open_in_new_rounded, detail: 'Went to your link to apply'),
+                  StatTile(
+                    label: 'Said they applied',
+                    value: '${r.externalApplied}',
+                    icon: Icons.how_to_reg_outlined,
+                    detail: r.externalAnswers == 0 ? 'No answers yet' : 'of ${r.externalAnswers} who answered',
+                  ),
+                ] else
                   StatTile(
                     label: 'Applications',
                     value: '${r.applications}',
@@ -80,6 +86,30 @@ class JobReportScreen extends ConsumerWidget {
                   detail: r.firstHireDays == null ? null : 'First hire after ${r.firstHireDays!.round()} days',
                 ),
               ]),
+              if (r.appliesExternally) ...[
+                const SizedBox(height: 16),
+                SectionCard(
+                  title: 'From views to applications',
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    _Bars(rows: [
+                      ('Viewed the job', r.views),
+                      ('Tapped apply', r.applyClicks),
+                      ('Said they applied', r.externalApplied),
+                      ('Will apply later', r.externalNotYet),
+                      ('Decided not to', r.externalNo),
+                    ]),
+                    Text(
+                      'After tapping apply, job seekers are asked "Did you apply?" when they come back to the app. '
+                      'Not everyone answers, so the real number of applications may be higher.',
+                      style: context.text.bodySmall?.copyWith(color: context.palette.muted),
+                    ),
+                  ]),
+                ),
+                if (r.externalByDay.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  SectionCard(title: '"Yes, I applied" by day', child: _DayChart(days: r.externalByDay)),
+                ],
+              ],
               if (!r.appliesExternally) ...[
                 const SizedBox(height: 16),
                 SectionCard(

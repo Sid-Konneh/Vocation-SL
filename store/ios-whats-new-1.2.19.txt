@@ -1,0 +1,8 @@
+For job seekers
+• After you apply on an employer's website or by email, the app asks "Did you apply?" when you come back. It takes one tap, and only the total is shared with the employer, never your name.
+
+For employers
+• Your hiring report now shows how many people viewed the job, tapped apply and said they applied.
+
+Also
+• Bug fixes and improvements.

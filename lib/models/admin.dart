@@ -607,6 +607,10 @@ class AdminStats {
     this.byExperience = const [],
     this.seekerLocations = const [],
     this.reportsByReason = const [],
+    this.applyClicks = 0,
+    this.externalApplied = 0,
+    this.externalApplied7d = 0,
+    this.externalAnswers = 0,
   });
 
   final int usersTotal, seekers, employers, suspended, newUsers7d;
@@ -633,6 +637,9 @@ class AdminStats {
     final reviewed = companiesApproved + companiesRejected;
     return reviewed == 0 ? null : companiesApproved / reviewed;
   }
+
+  /// Taps on apply for jobs with an external link, and answers to "Did you apply?".
+  final int applyClicks, externalApplied, externalApplied7d, externalAnswers;
 
   int get pendingWork => companiesPending + jobsPending + reportsOpen;
 
@@ -661,6 +668,10 @@ class AdminStats {
       hires: n('hires'),
       reportsOpen: n('reports_open'),
       jobViews: n('job_views'),
+      applyClicks: n('apply_clicks_total'),
+      externalApplied: n('external_applied'),
+      externalApplied7d: n('external_applied_7d'),
+      externalAnswers: n('external_answers'),
       signups30d: series('signups_30d'),
       applications30d: series('applications_30d'),
       jobs30d: series('jobs_30d'),

@@ -299,6 +299,15 @@ class SupabaseBackend implements VocationBackend {
     }
   }
 
+  @override
+  Future<void> recordExternalApplyAnswer(String jobId, String answer) async {
+    try {
+      await _client.rpc('record_external_apply', params: {'p_job': jobId, 'p_answer': answer});
+    } catch (_) {
+      // Analytics only: never block the job seeker.
+    }
+  }
+
   // ---- Profile ---------------------------------------------------------------
 
   @override

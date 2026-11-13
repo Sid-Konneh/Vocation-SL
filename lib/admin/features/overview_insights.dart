@@ -134,6 +134,13 @@ class AdminOverviewScreen extends ConsumerWidget {
               StatTile(label: 'Applications', value: _n.format(s.applicationsTotal), detail: '+${s.applications7d} this week', icon: Icons.inbox_outlined),
               StatTile(label: 'Hires', value: _n.format(s.hires), detail: '${s.hires30d} in the last 30 days', icon: Icons.handshake_outlined),
               StatTile(label: 'Job views', value: _n.format(s.jobViews), detail: 'View → apply ${_pct(s.viewToApply)}', icon: Icons.visibility_outlined),
+              StatTile(label: 'Apply taps', value: _n.format(s.applyClicks), detail: "To employers' own links", icon: Icons.open_in_new_rounded),
+              StatTile(
+                label: 'Said they applied',
+                value: _n.format(s.externalApplied),
+                detail: '+${s.externalApplied7d} this week · ${s.externalAnswers} answered',
+                icon: Icons.how_to_reg_outlined,
+              ),
               StatTile(
                 label: 'Avg. first response',
                 value: s.avgResponseDays == null ? '—' : '${s.avgResponseDays!.toStringAsFixed(1)} days',

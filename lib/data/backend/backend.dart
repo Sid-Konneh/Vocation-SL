@@ -77,6 +77,11 @@ abstract interface class VocationBackend {
   /// Counts a tap on "Apply on website" for employer insights. Best effort.
   Future<void> recordApplyClick(String jobId);
 
+  /// Saves the signed-in user's answer to "Did you apply?" after they left the
+  /// app to apply on the employer's website or by email: 'applied', 'not_yet'
+  /// or 'no'. One answer per person per job; a later answer replaces it.
+  Future<void> recordExternalApplyAnswer(String jobId, String answer);
+
   // Profile
   Future<AppUser> fetchUser(String userId);
   Future<AppUser> updateUser(AppUser user);

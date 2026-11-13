@@ -212,7 +212,10 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                     ),
                     DataCell(JobStatusPill(j.status)),
                     DataCell(j.appliesExternally
-                        ? Tooltip(message: 'Taps on "Apply on website". Applications go to your own website.', child: Text('${j.applyClicks} taps'))
+                        ? Tooltip(
+                            message: '${j.applyClicks} taps on apply. ${j.externalApplied} told us they applied. Applications go to your own link.',
+                            child: Text('${j.externalApplied} applied · ${j.applyClicks} taps'),
+                          )
                         : Text('${j.applicants}')),
                     DataCell(Text('${j.views}')),
                     DataCell(Text(j.status == JobStatus.draft ? '—' : Fmt.dateShort(j.postedAt))),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -402,7 +404,12 @@ class _ApplyBar extends ConsumerWidget {
       action = const FilledButton(onPressed: null, child: Text('Applications closed'));
     } else if (job.appliesExternally) {
       action = FilledButton.icon(
-        onPressed: () => openExternalApply(context, job, onContinue: () => ref.read(backendProvider).recordApplyClick(job.id)),
+        onPressed: () => openExternalApply(
+          context,
+          job,
+          onContinue: () => ref.read(backendProvider).recordApplyClick(job.id),
+          onAnswer: ref.read(sessionProvider) == null ? null : (a) => ref.read(backendProvider).recordExternalApplyAnswer(job.id, a),
+        ),
         icon: Icon(job.appliesByEmail ? Icons.email_outlined : Icons.open_in_new_rounded, size: 20),
         label: Text(job.appliesByEmail ? 'Apply by email' : 'Apply on website', overflow: TextOverflow.ellipsis),
       );
@@ -488,7 +495,11 @@ class _ReportDialogState extends State<_ReportDialog> {
 
 /// Jobs with an external application link: confirm, then open the employer's
 /// site, or a new email when the employer takes applications by email.
-Future<void> openExternalApply(BuildContext context, Job job, {Future<void> Function()? onContinue}) async {
+///
+/// With [onAnswer] (signed-in job seekers), asks "Did you apply?" when they come
+/// back to the app and passes on 'applied', 'not_yet' or 'no'.
+Future<void> openExternalApply(BuildContext context, Job job,
+    {Future<void> Function()? onContinue, Future<void> Function(String answer)? onAnswer}) async {
   final email = job.appliesByEmail;
   final go = await showDialog<bool>(
     context: context,
@@ -513,8 +524,73 @@ Future<void> openExternalApply(BuildContext context, Job job, {Future<void> Func
   );
   if (go != true) return;
   await onContinue?.call();
+  // Listen before leaving the app, so the return is never missed.
+  final back = onAnswer == null ? null : _waitForReturn();
   final ok = await launchUrl(job.applyUri, mode: LaunchMode.externalApplication);
-  if (!ok && context.mounted) {
-    showSnack(context, email ? 'Couldn\'t open your email app. Send your application to ${job.applyHost}' : 'Couldn\'t open the link. It is: ${job.applyUrl}', error: true);
+  if (!ok) {
+    back?.cancel();
+    if (context.mounted) {
+      showSnack(context, email ? 'Couldn\'t open your email app. Send your application to ${job.applyHost}' : 'Couldn\'t open the link. It is: ${job.applyUrl}', error: true);
+    }
+    return;
   }
+  if (back == null || !await back.returned || !context.mounted) return;
+  final answer = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (s) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('Did you apply?', style: s.text.titleLarge),
+          const SizedBox(height: 6),
+          Text(
+            '${job.title} at ${job.companyName}. Your answer helps us show employers that Vocation SL brings them applicants. '
+            'We only share the total, never your name.',
+            style: s.text.bodyMedium?.copyWith(color: s.palette.muted),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(onPressed: () => Navigator.pop(s, 'applied'), icon: const Icon(Icons.check_rounded), label: const Text('Yes, I applied')),
+          const SizedBox(height: 8),
+          OutlinedButton(onPressed: () => Navigator.pop(s, 'not_yet'), child: const Text('Not yet, I will later')),
+          const SizedBox(height: 8),
+          TextButton(onPressed: () => Navigator.pop(s, 'no'), child: const Text('No, I decided not to')),
+        ]),
+      ),
+    ),
+  );
+  if (answer == null) return;
+  await onAnswer!(answer);
+  if (context.mounted) {
+    showSnack(context, switch (answer) {
+      'applied' => 'Good luck! Keep an eye on your email and phone for a reply from ${job.companyName}.',
+      'not_yet' => 'No problem. The deadline is ${Fmt.date(job.deadline)}.',
+      _ => 'Thanks for letting us know.',
+    });
+  }
+}
+
+/// Completes `returned` with true when the person comes back to the app after
+/// leaving it (another app, browser tab or email app), or false if they don't
+/// within an hour or [cancel] is called.
+({Future<bool> returned, void Function() cancel}) _waitForReturn() {
+  final done = Completer<bool>();
+  var left = false;
+  late final AppLifecycleListener listener;
+  void finish(bool v) {
+    if (!done.isCompleted) done.complete(v);
+    listener.dispose();
+  }
+
+  listener = AppLifecycleListener(
+    onInactive: () => left = true,
+    onHide: () => left = true,
+    onPause: () => left = true,
+    onResume: () {
+      // Give the screen a moment to settle before asking.
+      if (left) Future.delayed(const Duration(milliseconds: 600), () => finish(true));
+    },
+  );
+  Future.delayed(const Duration(hours: 1), () => finish(false));
+  return (returned: done.future, cancel: () => finish(false));
 }

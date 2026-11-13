@@ -82,7 +82,12 @@ class ApplyFlowScreen extends ConsumerWidget {
               ? '${j.companyName} takes applications for ${j.title} by email (${j.applyHost}).'
               : '${j.companyName} takes applications for ${j.title} on its own website (${j.applyHost}).',
           action: j.appliesByEmail ? 'Apply by email' : 'Apply on website',
-          onAction: () => openExternalApply(context, j),
+          onAction: () => openExternalApply(
+            context,
+            j,
+            onContinue: () => ref.read(backendProvider).recordApplyClick(j.id),
+            onAnswer: (a) => ref.read(backendProvider).recordExternalApplyAnswer(j.id, a),
+          ),
         ),
       );
     }

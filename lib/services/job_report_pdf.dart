@@ -93,7 +93,11 @@ class JobReportPdf {
         pw.SizedBox(height: 14),
         pw.Row(children: [
           stat('Views', '${r.views}'),
-          r.appliesExternally ? stat('Taps on "Apply on website"', '${r.applyClicks}') : stat('Applications', '${r.applications}'),
+          if (r.appliesExternally) ...[
+            stat('Apply taps', '${r.applyClicks}'),
+            stat('Said they applied', '${r.externalApplied}'),
+          ] else
+            stat('Applications', '${r.applications}'),
           stat('Typical reply time', replyTimeText(r.medianReplyHours)),
           stat('Hired', '${r.hired}'),
         ]),

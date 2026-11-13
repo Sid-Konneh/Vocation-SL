@@ -224,6 +224,10 @@ class JobReport {
     required this.generatedAt,
     this.medianReplyHours,
     this.firstHireDays,
+    this.externalApplied = 0,
+    this.externalNotYet = 0,
+    this.externalNo = 0,
+    this.externalByDay = const [],
   });
 
   final String jobId;
@@ -251,6 +255,15 @@ class JobReport {
   final double? firstHireDays;
   final List<({DateTime day, int count})> byDay;
   final DateTime generatedAt;
+
+  /// Answers to "Did you apply?" from job seekers who went to the external link
+  /// (one per person, their latest answer).
+  final int externalApplied, externalNotYet, externalNo;
+
+  /// "Yes, I applied" answers by day.
+  final List<({DateTime day, int count})> externalByDay;
+
+  int get externalAnswers => externalApplied + externalNotYet + externalNo;
 
   int get hired => reached['hired'] ?? 0;
 
@@ -288,6 +301,13 @@ class JobReport {
           if (_date(d['day']) != null) (day: _date(d['day'])!, count: _int(d['n'])),
       ],
       generatedAt: _date(j['generated_at']) ?? DateTime.now(),
+      externalApplied: _int((j['external'] as Map?)?['applied']),
+      externalNotYet: _int((j['external'] as Map?)?['not_yet']),
+      externalNo: _int((j['external'] as Map?)?['no']),
+      externalByDay: [
+        for (final d in (j['external_by_day'] as List? ?? const []).whereType<Map>())
+          if (_date(d['day']) != null) (day: _date(d['day'])!, count: _int(d['n'])),
+      ],
     );
   }
 }
