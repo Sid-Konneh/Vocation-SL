@@ -212,6 +212,18 @@ class SupabaseEmployerBackend implements EmployerBackend {
       guardSupabase(() async => '${await _client.rpc('request_featured', params: {'p_job': jobId})}');
 
   @override
+  Future<JobExtension> extendJob(String jobId, int weeks) => guardSupabase(() async {
+        final r = Map<String, dynamic>.from(await _client.rpc('extend_job', params: {'p_job': jobId, 'p_weeks': weeks}) as Map);
+        return (
+          deadline: DateTime.parse('${r['deadline']}').toLocal(),
+          status: JobStatus.values.firstWhere((s) => s.name == r['status'], orElse: () => JobStatus.published),
+          invoice: '${r['invoice'] ?? ''}',
+          amount: (r['amount'] as num?) ?? 0,
+          free: r['free'] == true,
+        );
+      });
+
+  @override
   Future<List<TeamMember>> team() => guardSupabase(() async {
         final rows = await _client.rpc('team_members') as List;
         return [for (final r in rows) TeamMember.fromJson(Map<String, dynamic>.from(r as Map))];

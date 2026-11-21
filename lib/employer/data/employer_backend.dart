@@ -5,6 +5,9 @@ import '../../models/models.dart';
 /// Data operations for the employer app. Access is enforced by row-level
 /// security in Supabase (see supabase/employer_schema.sql): an employer only
 /// ever receives their own company's jobs, applicants and documents.
+/// Result of extending or reposting a job.
+typedef JobExtension = ({DateTime deadline, JobStatus status, String invoice, num amount, bool free});
+
 abstract interface class EmployerBackend {
   /// The company the signed-in user belongs to, or null if they haven't registered one.
   Future<Company?> myCompany();
@@ -53,6 +56,11 @@ abstract interface class EmployerBackend {
 
   /// Asks for a live job to be featured; returns the invoice number issued.
   Future<String> requestFeatured(String jobId);
+
+  /// Extends a live job, or reposts a closed one, by [weeks] (1 to 4). The
+  /// deadline moves on and an invoice for the extra weeks is created (a draft
+  /// that Vocation SL issues; free for employers who post free).
+  Future<JobExtension> extendJob(String jobId, int weeks);
 
   // Team access (the owner adds colleagues by email)
   Future<List<TeamMember>> team();

@@ -76,7 +76,7 @@ class DemoEmployerBackend implements EmployerBackend {
   @override
   Future<List<Job>> myJobs(String companyId) async => List.of(jobs);
 
-  Job _with(Job j, {required String id, required JobStatus status}) => Job(
+  Job _with(Job j, {required String id, required JobStatus status, DateTime? deadline}) => Job(
         id: id,
         title: j.title,
         companyId: j.companyId,
@@ -88,7 +88,7 @@ class DemoEmployerBackend implements EmployerBackend {
         salaryMin: j.salaryMin,
         salaryMax: j.salaryMax,
         postedAt: DateTime.now(),
-        deadline: j.deadline,
+        deadline: deadline ?? j.deadline,
         about: j.about,
         description: j.description,
         responsibilities: j.responsibilities,
@@ -257,6 +257,27 @@ class DemoEmployerBackend implements EmployerBackend {
   Future<String> requestFeatured(String jobId) async {
     if (!featureRequests.add(jobId)) throw const ValidationException('You\'ve already asked to feature this job.');
     return 'VSL-2026-DEMO${featureRequests.length}';
+  }
+
+  /// Extensions made in the demo (job id, weeks).
+  final extensions = <(String, int)>[];
+
+  @override
+  Future<JobExtension> extendJob(String jobId, int weeks) async {
+    if (weeks < 1 || weeks > 4) throw const ValidationException('Choose 1 to 4 weeks.');
+    final i = jobs.indexWhere((j) => j.id == jobId);
+    if (i < 0) throw const ValidationException('Job not found.');
+    final j = jobs[i];
+    if (j.status != JobStatus.published && j.status != JobStatus.closed) {
+      throw const ValidationException('Only live or closed jobs can be extended. Post the job first.');
+    }
+    final now = DateTime.now();
+    final from = j.deadline.isAfter(now) ? j.deadline : now;
+    final deadline = DateTime(from.year, from.month, from.day + 7 * weeks, 23, 59);
+    final status = (company?.isApproved ?? false) ? JobStatus.published : JobStatus.pending;
+    jobs[i] = _with(j, id: j.id, status: j.status == JobStatus.closed ? status : j.status, deadline: deadline);
+    extensions.add((jobId, weeks));
+    return (deadline: deadline, status: jobs[i].status, invoice: 'VSL-2026-DEMO-X${extensions.length}', amount: 1000 * weeks, free: false);
   }
 
   @override

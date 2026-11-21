@@ -229,6 +229,48 @@ class DemoAdminBackend implements AdminBackend {
   Future<AdminRole?> myRole() async => _team.where((m) => m.userId == myUserId).firstOrNull?.role;
 
   @override
+  Future<Map<String, dynamic>> analytics() async => {
+        'generated_at': DateTime.now().toIso8601String(),
+        'seekers': {'total': 120, 'new_7d': 14, 'new_30d': 60, 'active_7d': 22, 'active_30d': 70, 'returned_after_1d': 30, 'returned_after_7d': 18},
+        'funnel': {'signed_up': 120, 'basics': 70, 'cv': 35, 'applied': 25, 'shortlisted': 8, 'interviewed': 4, 'hired': 1},
+        'profile': {'cv': 35, 'skills': 20, 'experience': 22, 'education': 30, 'headline': 70, 'location': 80, 'phone': 75, 'photo': 15,
+          'discoverable': 6, 'job_alert': 9, 'job_emails': 118, 'push': 64},
+        'weekly': [
+          for (var i = 0; i < 12; i++)
+            {'week': DateTime.now().subtract(Duration(days: 7 * (11 - i))).toIso8601String().substring(0, 10), 'seekers': 4 + i, 'returned_1d': i ~/ 3,
+              'employers': i % 3, 'jobs': i % 4, 'applications': 2 + i},
+        ],
+        'districts': [
+          {'district': 'Freetown', 'seekers': 50, 'live_jobs': 4, 'applications': 30},
+          {'district': 'Bo', 'seekers': 30, 'live_jobs': 2, 'applications': 12},
+          {'district': 'Kenema', 'seekers': 12, 'live_jobs': 0, 'applications': 0},
+        ],
+        'industries': [
+          {'industry': 'technology', 'jobs': 4, 'live_jobs': 3, 'views': 400, 'applications': 30},
+          {'industry': 'healthcare', 'jobs': 2, 'live_jobs': 2, 'views': 150, 'applications': 10},
+        ],
+        'jobs': [
+          {'id': 'j1', 'title': 'Flutter Mobile Developer', 'company': 'Sample company', 'location': 'Freetown', 'status': 'published', 'days_left': 12,
+            'views': 210, 'external': false, 'apply_clicks': 0, 'external_applied': 0, 'applicants': 14, 'unanswered': 3, 'salary': true, 'matching': 9},
+          {'id': 'j2', 'title': 'Registered Nurse', 'company': 'Sample clinic', 'location': 'Bo', 'status': 'published', 'days_left': -2,
+            'views': 90, 'external': true, 'apply_clicks': 25, 'external_applied': 4, 'applicants': 0, 'unanswered': 0, 'salary': false, 'matching': 5},
+        ],
+        'job_totals': {'live': 2, 'expired_still_live': 1, 'closing_7d': 0, 'no_salary': 1, 'pending_review': 0, 'views': 300, 'in_app_views': 210,
+          'in_app_applications': 14, 'external_views': 90, 'external_clicks': 25, 'external_applied': 4},
+        'applications': {'total': 40, 'by_status': {'applied': 10, 'viewed': 12, 'shortlisted': 6, 'rejected': 10, 'hired': 2}, 'untouched_7d': 3,
+          'median_first_reply_hours': 9.5, 'replied': 20, 'saved_not_applied': 11, 'messages_30d': 25},
+        'employers': {'accounts': 12, 'companies': 6, 'no_company': 5, 'with_jobs': 4, 'with_live_jobs': 2, 'active_7d': 3, 'list': [
+          {'name': 'Sample company', 'status': 'approved', 'jobs': 3, 'live_jobs': 1, 'applicants': 20, 'unanswered': 3,
+            'last_seen': DateTime.now().toIso8601String(), 'created_at': DateTime.now().toIso8601String()},
+        ]},
+        'notifications': {'sent_30d': 300, 'unread_30d': 90, 'push_devices': {'android': 50, 'ios': 8, 'web': 6}},
+        'emails': {'sent_7d': 40, 'failed_7d': 0, 'sent_30d': 200, 'failed_30d': 12, 'last_sent': DateTime.now().toIso8601String(), 'waiting': 0,
+          'unsubscribed': 2, 'employer_reports_last': null},
+        'revenue': {'by_status': {'paid': {'count': 6, 'total': 0}}, 'free_postings': 6, 'paid_total': 0, 'unpaid_total': 0, 'draft_total': 0},
+        'referrals': {'signedUp': 2},
+      };
+
+  @override
   Future<AdminStats> stats() async {
     final now = DateTime.now();
     List<({DateTime day, int count})> series(Iterable<DateTime> dates) {

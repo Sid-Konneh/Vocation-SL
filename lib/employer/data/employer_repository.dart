@@ -40,6 +40,10 @@ class EmployerRepository extends CachedRepository {
       );
   List<Job> _decodeJobs(Object? j) => jsonList(j).map(Job.fromJson).toList();
 
+  /// Saves the job list after a local change (job posted, closed or deleted),
+  /// so a rebuild while the cache is still fresh doesn't bring back an older list.
+  Future<void> cacheJobs(String uid, List<Job> jobs) => store.write(_k(uid, 'jobs'), jobs.map((j) => j.toJson()).toList());
+
   // Applications
   Loaded<List<JobApplication>>? peekApplications(String uid) => peek(_k(uid, 'apps'), _decodeApps);
   Future<Loaded<List<JobApplication>>> fetchApplications(String uid, String companyId) => fetchAndCache(

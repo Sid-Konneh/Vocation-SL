@@ -46,6 +46,7 @@ import '../../features/referrals/referral_landing_screen.dart';
 import '../../features/referrals/referral_screen.dart';
 import '../../admin/features/referrals.dart';
 import '../../admin/features/traction.dart';
+import '../../admin/features/analytics.dart';
 import '../../features/saved/saved_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/splash/splash_screen.dart';
@@ -216,10 +217,18 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ---- Admin ------------------------------------------------------------
       GoRoute(path: '/admin', redirect: (c, s) => '/admin/overview'),
+      // Admins post a job for a company (opened from Employer verification).
+      GoRoute(
+        path: '/admin/post-job',
+        parentNavigatorKey: rootNavigatorKey,
+        redirect: (c, s) => s.extra is Company ? null : '/admin/employers',
+        pageBuilder: (c, s) => _page(s, JobEditorScreen(forCompany: s.extra as Company)),
+      ),
       ShellRoute(
         builder: (context, state, child) => AdminShell(location: state.matchedLocation, child: child),
         routes: [
           GoRoute(path: '/admin/overview', pageBuilder: (c, s) => _page(s, const AdminOverviewScreen())),
+          GoRoute(path: '/admin/analytics', pageBuilder: (c, s) => _page(s, const AdminAnalyticsScreen())),
           GoRoute(path: '/admin/insights', pageBuilder: (c, s) => _page(s, const AdminInsightsScreen())),
           GoRoute(path: '/admin/traction', pageBuilder: (c, s) => _page(s, const AdminTractionScreen())),
           GoRoute(path: '/admin/jobs', pageBuilder: (c, s) => _page(s, const AdminJobsScreen())),

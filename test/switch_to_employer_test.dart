@@ -2,6 +2,7 @@
 // the dashboard. Switching away and back (also after the app restarts) opens
 // the dashboard again, never the setup form, and never creates a second company.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -14,7 +15,9 @@ import 'package:vocation_sl/core/network/connectivity_service.dart';
 import 'package:vocation_sl/core/storage/local_store.dart';
 import 'package:vocation_sl/data/backend/demo_backend.dart';
 import 'package:vocation_sl/employer/data/demo_employer_backend.dart';
+import 'package:vocation_sl/employer/features/company/company_form.dart';
 import 'package:vocation_sl/employer/providers.dart';
+import 'package:vocation_sl/services/file_service.dart';
 import 'package:vocation_sl/providers/core_providers.dart';
 
 Future<void> settle(WidgetTester tester, [int ms = 600]) async {
@@ -102,10 +105,11 @@ void main() {
     await waitFor(tester, find.text('Set up your company'));
 
     await enter(tester, 'Company name *', 'Kroo Town Traders');
-    await enter(tester, 'About the company *', 'We import and distribute building materials to hardware stores across the Western Area.');
     await enter(tester, 'Contact email *', 'accounts@kroo.example');
     await enter(tester, 'Phone *', '+232 76 555 444');
     await enter(tester, 'Business address *', '12 Wallace Johnson Street, Freetown');
+    // Logo is required at setup (the picker can't run in tests, so set it directly).
+    tester.state<CompanyFormState>(find.byType(CompanyForm)).pickedLogo = PickedFile(name: 'logo.png', bytes: base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
     await reveal(tester, find.text('Create company profile'));
     await tester.tap(find.text('Create company profile'));
 

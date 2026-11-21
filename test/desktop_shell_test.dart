@@ -84,7 +84,7 @@ void main() {
     // About page with support email.
     await tester.tap(find.text('About'));
     await waitFor(tester, find.text('About Vocation SL'));
-    final emailFinder = find.text('vocationxsl@gmail.com');
+    final emailFinder = find.text('info@vocationsl.com');
     for (var i = 0; i < 12 && emailFinder.evaluate().isEmpty; i++) {
       await tester.drag(find.byType(ListView).last, const Offset(0, -400), warnIfMissed: false);
       await tester.pump(const Duration(milliseconds: 300));

@@ -72,12 +72,17 @@ class _CompanySetupScreenState extends ConsumerState<CompanySetupScreen> {
             Text('Set up your company', style: context.text.headlineMedium),
             const SizedBox(height: 8),
             Text(
-              'Tell candidates who you are. Our team reviews every new company before its jobs go live. '
-              'You can draft and submit jobs in the meantime.',
+              'It takes about 2 minutes. Add your company description, size and more later from Company profile. '
+              'Our team reviews every new company before its jobs go live; you can draft and submit jobs in the meantime.',
               style: context.text.bodyLarge?.copyWith(color: context.palette.muted),
             ),
             const SizedBox(height: 24),
-            CompanyForm(key: _form, askReferral: true, initialReferral: _pendingReferral),
+            CompanyForm(
+              key: _form,
+              setup: true,
+              initialReferral: _pendingReferral,
+              initialEmail: ref.watch(profileProvider).value?.data.email,
+            ),
             const SizedBox(height: 24),
             PrimaryButton(label: 'Create company profile', loading: _saving, onPressed: _submit),
             if (_saving) ...[
@@ -106,11 +111,30 @@ class _CompanyProfileScreenState extends ConsumerState<CompanyProfileScreen> {
     final updated = _form.currentState?.result();
     if (updated == null) return;
     final logo = _form.currentState?.pickedLogo;
+    final referral = ReferralCode.normalize(_form.currentState?.referralCode ?? '');
     setState(() => _saving = true);
     try {
       final saved = await ref.read(companyProvider.notifier).save(updated);
       if (logo != null) await ref.read(companyProvider.notifier).uploadLogo(saved, logo.bytes, logo.name);
-      if (mounted) showSnack(context, logo != null ? 'Company profile and logo saved' : 'Company profile saved');
+      String? referralError;
+      if (referral.isNotEmpty) {
+        try {
+          await ref.read(referralBackendProvider).claim(referral, saved.id);
+        } catch (e) {
+          referralError = AppException.describe(e);
+        }
+      }
+      if (mounted) {
+        showSnack(
+          context,
+          referralError != null
+              ? "Company profile saved, but the referral code wasn't applied ($referralError)"
+              : logo != null
+                  ? 'Company profile and logo saved'
+                  : 'Company profile saved',
+          error: referralError != null,
+        );
+      }
     } on NetworkException {
       if (mounted) showSnack(context, 'You\'re offline. Connect to save changes.', error: true);
     } catch (e) {
@@ -139,7 +163,7 @@ class _CompanyProfileScreenState extends ConsumerState<CompanyProfileScreen> {
         ApprovalBanner(company: company),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
-          child: Card(child: Padding(padding: const EdgeInsets.all(20), child: CompanyForm(key: _form, initial: company))),
+          child: Card(child: Padding(padding: const EdgeInsets.all(20), child: CompanyForm(key: _form, initial: company, askReferral: true))),
         ),
         const SizedBox(height: 24),
         ConstrainedBox(constraints: const BoxConstraints(maxWidth: 760), child: const TeamSection()),

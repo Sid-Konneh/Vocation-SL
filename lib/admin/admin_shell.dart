@@ -22,6 +22,7 @@ class AdminSection {
 const adminSections = [
   AdminSection('/admin/overview', 'Overview', Icons.space_dashboard_outlined),
   AdminSection('/admin/digest', 'Weekly digest', Icons.summarize_outlined),
+  AdminSection('/admin/analytics', 'Analytics', Icons.query_stats_rounded),
   AdminSection('/admin/insights', 'Insights', Icons.insights_outlined),
   AdminSection('/admin/traction', 'Traction', Icons.trending_up_rounded),
   AdminSection('/admin/jobs', 'Job moderation', Icons.fact_check_outlined),

@@ -2,6 +2,7 @@
 // sign in -> company setup -> post job (pending approval) ->
 // candidates table -> change stage -> candidate detail -> dashboard numbers.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -13,7 +14,9 @@ import 'package:vocation_sl/core/network/connectivity_service.dart';
 import 'package:vocation_sl/core/storage/local_store.dart';
 import 'package:vocation_sl/data/backend/demo_backend.dart';
 import 'package:vocation_sl/app.dart';
+import 'package:vocation_sl/employer/features/company/company_form.dart';
 import 'package:vocation_sl/employer/providers.dart';
+import 'package:vocation_sl/services/file_service.dart';
 import 'package:vocation_sl/models/models.dart';
 import 'package:vocation_sl/providers/core_providers.dart';
 
@@ -107,11 +110,16 @@ void main() {
     await tester.tap(find.text('Create company profile'));
     await tester.pump();
     expect(find.text('Enter your company name'), findsOneWidget);
+    expect(find.text('Upload your company logo'), findsOneWidget);
+    // Setup asks only for the essentials; the rest is filled in later.
+    expect(find.text('About the company'), findsNothing);
+    expect(find.text('Website (optional)'), findsOneWidget);
     await enter(tester, 'Company name *', 'Kroo Town Traders');
-    await enter(tester, 'About the company *', 'We import and distribute building materials to hardware stores across the Western Area.');
     await enter(tester, 'Contact email *', 'accounts@kroo.example');
     await enter(tester, 'Phone *', '+232 76 555 444');
     await enter(tester, 'Business address *', '12 Wallace Johnson Street, Freetown');
+    // Logo is required at setup (the picker can't run in tests, so set it directly).
+    tester.state<CompanyFormState>(find.byType(CompanyForm)).pickedLogo = PickedFile(name: 'logo.png', bytes: base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
     await reveal(tester, find.text('Create company profile'));
     await tester.tap(find.text('Create company profile'));
     await waitFor(tester, find.text('Here\'s how your hiring is going.'));

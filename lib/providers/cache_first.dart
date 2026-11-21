@@ -25,7 +25,12 @@ abstract class CacheFirstNotifier<T> extends AsyncNotifier<Loaded<T>> {
       if (!cacheIsFresh) scheduleMicrotask(refresh);
       return cached;
     }
-    return fetchRemote();
+    final writesAtStart = _writes;
+    final result = await fetchRemote();
+    // A change saved locally while this load ran is newer; keep it.
+    final current = state.value;
+    if (writesAtStart != _writes && current != null) return current;
+    return result;
   }
 
   /// Fetches fresh data. Keeps showing current data if the refresh fails.

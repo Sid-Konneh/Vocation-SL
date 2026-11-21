@@ -131,19 +131,33 @@ class EmployerJobsController extends CacheFirstNotifier<List<Job>> {
   Future<Job> save(Job job, {required JobStatus status}) async {
     final saved = await ref.read(employerBackendProvider).saveJob(job, status: status);
     final list = dataOrNull ?? const <Job>[];
-    setData([saved, ...list.where((j) => j.id != saved.id)]);
+    await _set([saved, ...list.where((j) => j.id != saved.id)]);
     return saved;
   }
 
   Future<Job> setStatus(Job job, JobStatus status) async {
     final saved = await ref.read(employerBackendProvider).setJobStatus(job.id, status);
-    setData([for (final j in dataOrNull ?? const <Job>[]) j.id == saved.id ? saved : j]);
+    await _set([for (final j in dataOrNull ?? const <Job>[]) j.id == saved.id ? saved : j]);
     return saved;
+  }
+
+  /// Extends a live job, or reposts a closed one, then reloads the list.
+  Future<JobExtension> extend(Job job, int weeks) async {
+    final r = await ref.read(employerBackendProvider).extendJob(job.id, weeks);
+    await refresh();
+    return r;
   }
 
   Future<void> deleteDraft(Job job) async {
     await ref.read(employerBackendProvider).deleteDraft(job.id);
-    setData((dataOrNull ?? const <Job>[]).where((j) => j.id != job.id).toList());
+    await _set((dataOrNull ?? const <Job>[]).where((j) => j.id != job.id).toList());
+  }
+
+  /// Shows the changed list and keeps it on the device, so a rebuild (e.g.
+  /// when the company reloads) can't bring back a cached list from before.
+  Future<void> _set(List<Job> jobs) async {
+    setData(jobs);
+    await ref.read(employerRepositoryProvider).cacheJobs(_uid, jobs);
   }
 }
 

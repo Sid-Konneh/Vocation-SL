@@ -19,6 +19,9 @@ class SupabaseAdminBackend implements AdminBackend {
   }
 
   @override
+  Future<Map<String, dynamic>> analytics() => guardSupabase(() async => Map<String, dynamic>.from(await _client.rpc('admin_analytics') as Map));
+
+  @override
   Future<AdminRole?> myRole() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return null;

@@ -9,6 +9,9 @@ abstract interface class AdminBackend {
 
   Future<AdminStats> stats();
 
+  /// In-depth figures for Admin → Analytics (supabase/release_1_3.sql, admin_analytics()).
+  Future<Map<String, dynamic>> analytics();
+
   // Job moderation
   Future<List<Job>> jobs();
   /// Approve (published), decline (send back), reject, close or reopen.

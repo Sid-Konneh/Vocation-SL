@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../scam_flags.dart';
 
@@ -352,6 +353,10 @@ class _AdminEmployersScreenState extends ConsumerState<AdminEmployersScreen> {
             () => a.run((b) => b.setCompanyVerified(c.company.id, !c.company.verified), refresh: refresh));
       case 'view':
         await showDialog<void>(context: context, builder: (_) => _CompanyDialog(c: c));
+      case 'post':
+        await context.push('/admin/post-job', extra: c.company);
+        ref.invalidate(adminCompaniesProvider);
+        ref.invalidate(adminJobsProvider);
     }
   }
 
@@ -422,6 +427,8 @@ class _AdminEmployersScreenState extends ConsumerState<AdminEmployersScreen> {
                         onSelected: (a) => _do(c, a),
                         itemBuilder: (_) => [
                           const PopupMenuItem(value: 'view', child: Text('View details')),
+                          if (c.company.status == CompanyStatus.approved)
+                            const PopupMenuItem(value: 'post', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.post_add_rounded), title: Text('Post a job for this company'))),
                           if (c.company.status == CompanyStatus.pending || c.company.status == CompanyStatus.rejected)
                             const PopupMenuItem(value: 'approve', child: Text('Approve')),
                           if (c.company.status == CompanyStatus.pending) const PopupMenuItem(value: 'reject', child: Text('Reject')),

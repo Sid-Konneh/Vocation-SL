@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
@@ -96,6 +97,8 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
         case 'reopen':
           await ctrl.setStatus(job, JobStatus.published);
           if (mounted) showSnack(context, 'Job reopened');
+        case 'extend' || 'repost':
+          await _extend(job);
         case 'delete':
           if (await confirmDialog(context, title: 'Delete this job?', message: '"${job.title}" will be deleted.', confirmLabel: 'Delete', destructive: true)) {
             await ctrl.deleteDraft(job);
@@ -106,6 +109,49 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
       if (mounted) showError(context, e);
     }
   }
+
+  /// Extend a live job, or repost a closed one, by 1 to 4 weeks.
+  Future<void> _extend(Job job) async {
+    final s = await ref.read(platformSettingsProvider.future);
+    final company = ref.read(companyProvider).value?.data;
+    if (!mounted) return;
+    final free = company != null && s.freePostingCompanies.contains(company.id);
+    final weeks = await showDialog<int>(context: context, builder: (_) => _ExtendDialog(job: job, pricePerWeek: s.extensionPrice, free: free));
+    if (weeks == null || !mounted) return;
+    final r = await ref.read(employerJobsProvider.notifier).extend(job, weeks);
+    if (!mounted) return;
+    final what = job.status == JobStatus.closed ? 'Job reposted' : 'Job extended';
+    final live = r.status == JobStatus.pending ? ' It goes live once your company is approved.' : '';
+    final bill = r.free ? '' : " We'll send you invoice ${r.invoice} for the extra ${weeks == 1 ? 'week' : 'weeks'}.";
+    showSnack(context, '$what until ${Fmt.date(r.deadline)}.$live$bill');
+  }
+
+  /// Busy employers send us their advert and we post it for them.
+  Future<void> _postForMe() => showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("We'll post it for you"),
+          content: const Text(
+            'Busy? Send us your job advert (a photo, PDF or Word file) on WhatsApp or by email. '
+            "We'll post it for your company, usually the same day, and you manage applicants here as usual.",
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: () => launchUrl(Uri.parse('mailto:info@vocationsl.com?subject=Please%20post%20our%20job'), mode: LaunchMode.externalApplication),
+              icon: const Icon(Icons.email_outlined),
+              label: const Text('Email'),
+            ),
+            FilledButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse('https://wa.me/23273512413?text=${Uri.encodeComponent('Hello Vocation SL, please post our job. Our advert is attached.')}'),
+                mode: LaunchMode.externalApplication,
+              ),
+              icon: const Icon(Icons.chat_outlined),
+              label: const Text('WhatsApp'),
+            ),
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +166,12 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
       subtitle: '${all.where((j) => j.status == JobStatus.published).length} live · ${all.length} total',
       onRefresh: () => ref.read(employerJobsProvider.notifier).refresh(),
       actions: [
+        OutlinedButton.icon(
+          onPressed: _postForMe,
+          icon: const Icon(Icons.support_agent_rounded),
+          label: const Text('Post it for me'),
+          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+        ),
         FilledButton.icon(
           onPressed: () => context.push('/employer/jobs/new'),
           icon: const Icon(Icons.add_rounded),
@@ -220,10 +272,17 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                     DataCell(Text('${j.views}')),
                     DataCell(Text(j.status == JobStatus.draft ? '—' : Fmt.dateShort(j.postedAt))),
                     DataCell(
-                      Text(
-                        Fmt.deadline(j.deadline),
-                        style: TextStyle(color: j.isClosed ? AppColors.danger : (Fmt.deadlineSoon(j.deadline) ? AppColors.warning : null)),
-                      ),
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text(
+                          Fmt.deadline(j.deadline),
+                          style: TextStyle(color: j.isClosed ? AppColors.danger : (Fmt.deadlineSoon(j.deadline) ? AppColors.warning : null)),
+                        ),
+                        if (j.status == JobStatus.closed || (j.status == JobStatus.published && (j.isClosed || Fmt.deadlineSoon(j.deadline))))
+                          TextButton(
+                            onPressed: () => _act(j, j.status == JobStatus.closed ? 'repost' : 'extend'),
+                            child: Text(j.status == JobStatus.closed ? 'Repost' : 'Extend'),
+                          ),
+                      ]),
                     ),
                     DataCell(
                       PopupMenuButton<String>(
@@ -249,8 +308,12 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                           if (j.status != JobStatus.draft && !j.appliesExternally) const PopupMenuItem(value: 'applicants', child: Text('View applicants')),
                           if (j.status == JobStatus.published || j.status == JobStatus.closed)
                             const PopupMenuItem(value: 'report', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.bar_chart_rounded), title: Text('Hiring report'))),
+                          if (j.status == JobStatus.published)
+                            const PopupMenuItem(value: 'extend', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.update_rounded), title: Text('Extend (add weeks)'))),
+                          if (j.status == JobStatus.closed)
+                            const PopupMenuItem(value: 'repost', child: ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: Icon(Icons.replay_rounded), title: Text('Repost for more weeks'))),
                           if (j.status == JobStatus.published) const PopupMenuItem(value: 'close', child: Text('Close job')),
-                          if (j.status == JobStatus.closed) const PopupMenuItem(value: 'reopen', child: Text('Reopen')),
+                          if (j.status == JobStatus.closed && j.deadline.isAfter(DateTime.now())) const PopupMenuItem(value: 'reopen', child: Text('Reopen until the deadline')),
                           if (const {JobStatus.draft, JobStatus.declined, JobStatus.rejected}.contains(j.status))
                             const PopupMenuItem(value: 'delete', child: Text('Delete')),
                         ],
@@ -260,6 +323,71 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                 ),
             ],
           ),
+      ],
+    );
+  }
+}
+
+/// Choose how many weeks to add (1 to 4), with the price and the new deadline.
+class _ExtendDialog extends StatefulWidget {
+  const _ExtendDialog({required this.job, required this.pricePerWeek, required this.free});
+  final Job job;
+  final int pricePerWeek;
+  final bool free;
+
+  @override
+  State<_ExtendDialog> createState() => _ExtendDialogState();
+}
+
+class _ExtendDialogState extends State<_ExtendDialog> {
+  int _weeks = 1;
+
+  DateTime get _newDeadline {
+    final now = DateTime.now();
+    final from = widget.job.deadline.isAfter(now) ? widget.job.deadline : now;
+    return DateTime(from.year, from.month, from.day + 7 * _weeks);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repost = widget.job.status == JobStatus.closed;
+    final price = widget.pricePerWeek * _weeks;
+    final gst = (price * 0.15).round();
+    return AlertDialog(
+      title: Text(repost ? 'Repost this job' : 'Extend this job'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(widget.job.title, style: context.text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          Text('How many more weeks?', style: context.text.bodyMedium),
+          const SizedBox(height: 8),
+          SegmentedButton<int>(
+            segments: [for (final w in [1, 2, 3, 4]) ButtonSegment(value: w, label: Text(w == 1 ? '1 week' : '$w weeks'))],
+            selected: {_weeks},
+            showSelectedIcon: false,
+            onSelectionChanged: (v) => setState(() => _weeks = v.first),
+          ),
+          const SizedBox(height: 14),
+          Text('New deadline: ${Fmt.date(_newDeadline)}', style: context.text.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Text(
+            widget.free
+                ? 'Free for your company.'
+                : 'SLE ${Fmt.money(widget.pricePerWeek)} a week: SLE ${Fmt.money(price)} + 15% GST (SLE ${Fmt.money(gst)}) = SLE ${Fmt.money(price + gst)}. '
+                    "We'll send you an invoice; pay within 14 days by Mobile Money or bank transfer.",
+            style: context.text.bodySmall?.copyWith(color: context.palette.muted),
+          ),
+          if (repost) ...[
+            const SizedBox(height: 6),
+            Text('The job opens again for applications. Applicants you already have stay in your pipeline.',
+                style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
+          ],
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        FilledButton(onPressed: () => Navigator.pop(context, _weeks), child: Text(repost ? 'Repost job' : 'Extend job')),
       ],
     );
   }

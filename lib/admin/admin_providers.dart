@@ -19,6 +19,7 @@ final adminRoleProvider = FutureProvider<AdminRole?>((ref) async {
 // ---- Admin data (always fetched fresh; the dashboard is an online tool) ----------
 
 final adminStatsProvider = FutureProvider.autoDispose<AdminStats>((ref) => ref.watch(adminBackendProvider).stats());
+final adminAnalyticsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) => ref.watch(adminBackendProvider).analytics());
 final adminJobsProvider = FutureProvider.autoDispose<List<Job>>((ref) => ref.watch(adminBackendProvider).jobs());
 final adminCompaniesProvider = FutureProvider.autoDispose<List<AdminCompany>>((ref) => ref.watch(adminBackendProvider).companies());
 final adminUsersProvider = FutureProvider.autoDispose<List<AdminUser>>((ref) => ref.watch(adminBackendProvider).users());

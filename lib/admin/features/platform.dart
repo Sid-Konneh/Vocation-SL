@@ -284,6 +284,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   final _email = TextEditingController();
   final _postingPrice = TextEditingController();
   final _featuredPrice = TextEditingController();
+  final _extensionPrice = TextEditingController();
   final _freePosts = TextEditingController();
   bool _saving = false;
 
@@ -293,6 +294,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     _email.dispose();
     _postingPrice.dispose();
     _featuredPrice.dispose();
+    _extensionPrice.dispose();
     _freePosts.dispose();
     super.dispose();
   }
@@ -300,8 +302,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   Future<void> _save() async {
     final posting = int.tryParse(_postingPrice.text.replaceAll(',', '').trim());
     final featured = int.tryParse(_featuredPrice.text.replaceAll(',', '').trim());
+    final extension = int.tryParse(_extensionPrice.text.replaceAll(',', '').trim());
     final free = int.tryParse(_freePosts.text.trim());
-    if (posting == null || posting < 0 || featured == null || featured < 0 || free == null || free < 0 || free > 50) {
+    if (posting == null || posting < 0 || featured == null || featured < 0 || extension == null || extension < 0 || free == null || free < 0 || free > 50) {
       showSnack(context, 'Enter prices and free postings as whole numbers.', error: true);
       return;
     }
@@ -310,6 +313,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       supportEmail: _email.text.trim(),
       postingPrice: posting,
       featuredPrice: featured,
+      extensionPrice: extension,
       launchFreePosts: free,
     );
     if (!d.supportEmail.contains('@')) {
@@ -349,6 +353,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               _email.text = s.supportEmail;
               _postingPrice.text = '${s.postingPrice}';
               _featuredPrice.text = '${s.featuredPrice}';
+              _extensionPrice.text = '${s.extensionPrice}';
               _freePosts.text = '${s.launchFreePosts}';
             }
             final d = _draft!;
@@ -398,6 +403,17 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                         ),
                       ),
                     ]),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _extensionPrice,
+                      enabled: canEdit,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Price per extra week (extend or repost)',
+                        prefixText: 'SLE ',
+                        helperText: 'Excluding GST. Employers extend a job by 1 to 4 weeks; a draft invoice for the extra weeks waits in Invoices.',
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Row(children: [
                       SizedBox(

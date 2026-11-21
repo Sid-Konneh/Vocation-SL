@@ -415,6 +415,7 @@ class PlatformSettings {
     this.supportEmail = 'info@vocationsl.com',
     this.postingPrice = 5000,
     this.featuredPrice = 1500,
+    this.extensionPrice = 1000,
     this.launchFreePosts = 5,
     this.launchUntil,
     this.freePostingCompanies = const [],
@@ -430,6 +431,9 @@ class PlatformSettings {
 
   /// Price to feature a job on the home screen, excluding GST (SLE).
   final int featuredPrice;
+
+  /// Price per extra week when an employer extends or reposts a job, excluding GST (SLE).
+  final int extensionPrice;
 
   /// Launch offer: free postings per employer until [launchUntil] (inclusive).
   final int launchFreePosts;
@@ -450,6 +454,7 @@ class PlatformSettings {
     String? supportEmail,
     int? postingPrice,
     int? featuredPrice,
+    int? extensionPrice,
     int? launchFreePosts,
     DateTime? Function()? launchUntil,
     List<String>? freePostingCompanies,
@@ -462,6 +467,7 @@ class PlatformSettings {
         supportEmail: supportEmail ?? this.supportEmail,
         postingPrice: postingPrice ?? this.postingPrice,
         featuredPrice: featuredPrice ?? this.featuredPrice,
+        extensionPrice: extensionPrice ?? this.extensionPrice,
         launchFreePosts: launchFreePosts ?? this.launchFreePosts,
         launchUntil: launchUntil == null ? this.launchUntil : launchUntil(),
         freePostingCompanies: freePostingCompanies ?? this.freePostingCompanies,
@@ -480,6 +486,7 @@ class PlatformSettings {
       supportEmail: m['support_email'] as String? ?? 'info@vocationsl.com',
       postingPrice: (m['posting_price'] as num?)?.toInt() ?? 5000,
       featuredPrice: (m['featured_price'] as num?)?.toInt() ?? 1500,
+      extensionPrice: (m['extension_price'] as num?)?.toInt() ?? 1000,
       launchFreePosts: (launch['free_posts'] as num?)?.toInt() ?? 0,
       launchUntil: DateTime.tryParse('${launch['until'] ?? ''}'),
       freePostingCompanies: m['free_posting_companies'] is List ? [for (final id in m['free_posting_companies'] as List) '$id'] : const [],
@@ -493,6 +500,7 @@ class PlatformSettings {
         {'key': 'support_email', 'value': supportEmail},
         {'key': 'posting_price', 'value': postingPrice},
         {'key': 'featured_price', 'value': featuredPrice},
+        {'key': 'extension_price', 'value': extensionPrice},
         {
           'key': 'launch_offer',
           'value': {

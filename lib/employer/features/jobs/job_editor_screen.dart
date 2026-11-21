@@ -16,8 +16,11 @@ import '../../widgets.dart';
 
 /// Create or edit a job. Lists (responsibilities, skills…) are entered one per line.
 class JobEditorScreen extends ConsumerStatefulWidget {
-  const JobEditorScreen({super.key, this.jobId});
+  const JobEditorScreen({super.key, this.jobId, this.forCompany});
   final String? jobId;
+
+  /// Admins: post a new job on behalf of this company ("Post it for me").
+  final Company? forCompany;
 
   @override
   ConsumerState<JobEditorScreen> createState() => _JobEditorScreenState();
@@ -163,7 +166,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
       showSnack(context, 'Give the draft a job title first.', error: true);
       return;
     }
-    if (post && !_posted && !company.isApproved) {
+    if (post && !_posted && !company.isApproved && widget.forCompany == null) {
       final ok = await confirmDialog(
         context,
         title: 'Submit this job?',
@@ -180,11 +183,15 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
         _advertFile = null; // uploaded; a retry after a failed save doesn't upload it again
       }
       final status = post ? (_posted ? _original!.status : JobStatus.published) : JobStatus.draft;
-      final saved = await ref.read(employerJobsProvider.notifier).save(_build(company), status: status);
+      final saved = widget.forCompany != null
+          ? await ref.read(employerBackendProvider).saveJob(_build(company), status: status)
+          : await ref.read(employerJobsProvider.notifier).save(_build(company), status: status);
       if (!mounted) return;
       showSnack(
         context,
-        !post
+        widget.forCompany != null
+            ? (saved.status == JobStatus.published ? 'Job posted for ${company.name} and live' : 'Job saved for ${company.name} (${saved.status.label})')
+            : !post
             ? 'Draft saved'
             : _posted
                 ? 'Job updated'
@@ -280,8 +287,8 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final company = ref.watch(companyProvider).value?.data;
-    final jobs = ref.watch(employerJobsProvider).value?.data ?? const <Job>[];
+    final company = widget.forCompany ?? ref.watch(companyProvider).value?.data;
+    final jobs = widget.forCompany != null ? const <Job>[] : ref.watch(employerJobsProvider).value?.data ?? const <Job>[];
     if (company == null) return const Scaffold(body: SizedBox());
     _load(company, jobs);
 
@@ -302,7 +309,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_original == null ? 'Post a job' : 'Edit job'),
+        title: Text(widget.forCompany != null ? 'Post a job for ${widget.forCompany!.name}' : _original == null ? 'Post a job' : 'Edit job'),
         actions: [
           if (!_posted && !_rejected)
             TextButton(onPressed: _saving ? null : () => _save(company, post: false), child: const Text('Save draft')),

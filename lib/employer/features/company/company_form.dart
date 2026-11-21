@@ -14,12 +14,21 @@ const _brandColors = [0xFF1F6FEB, 0xFF0E7C66, 0xFF3F7A1F, 0xFF7A4CC2, 0xFFD1435B
 /// Edits every employer-writable company field. Call [CompanyFormState.build]
 /// via a GlobalKey to validate and read the result.
 class CompanyForm extends StatefulWidget {
-  const CompanyForm({super.key, this.initial, this.askReferral = false, this.initialReferral});
+  const CompanyForm({super.key, this.initial, this.setup = false, this.askReferral = false, this.initialReferral, this.initialEmail});
   final Company? initial;
 
-  /// Sign-up only: asks who referred the company (prefilled from a referral link).
+  /// Quick sign-up: only logo, name, industry, head office, contact email,
+  /// phone and business address (all required) plus an optional website.
+  /// About, size, year founded and referral code are filled in later from
+  /// Company profile. A referral code from a referral link is still applied.
+  final bool setup;
+
+  /// Asks who referred the company (Company profile, for codes added later).
   final bool askReferral;
   final String? initialReferral;
+
+  /// Prefills the contact email (the email the employer signed up with).
+  final String? initialEmail;
 
   @override
   State<CompanyForm> createState() => CompanyFormState();
@@ -30,7 +39,7 @@ class CompanyFormState extends State<CompanyForm> {
   late final _name = TextEditingController(text: widget.initial?.name);
   late final _about = TextEditingController(text: widget.initial?.about);
   late final _website = TextEditingController(text: widget.initial?.website);
-  late final _email = TextEditingController(text: widget.initial?.email);
+  late final _email = TextEditingController(text: (widget.initial?.email ?? '').isNotEmpty ? widget.initial!.email : widget.initialEmail);
   late final _phone = TextEditingController(text: widget.initial?.phone);
   late final _address = TextEditingController(text: widget.initial?.address);
   late final _referral = TextEditingController(text: widget.initialReferral == null ? '' : ReferralCode.display(widget.initialReferral!));
@@ -43,11 +52,17 @@ class CompanyFormState extends State<CompanyForm> {
   /// A newly chosen logo, uploaded by the parent screen after saving.
   PickedFile? pickedLogo;
 
+  /// Shown under the logo when setup is submitted without one.
+  String? _logoError;
+
   Future<void> _pickLogo() async {
     try {
       final f = await FileService().pickPhoto(dialogTitle: 'Choose your company logo');
       if (f == null) return;
-      setState(() => pickedLogo = f);
+      setState(() {
+        pickedLogo = f;
+        _logoError = null;
+      });
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -66,7 +81,10 @@ class CompanyFormState extends State<CompanyForm> {
 
   /// Validates and returns the edited company, or null if invalid.
   Company? result() {
-    if (!(_key.currentState?.validate() ?? false)) return null;
+    final needsLogo = widget.setup && pickedLogo == null && (widget.initial?.logoUrl ?? '').isEmpty;
+    setState(() => _logoError = needsLogo ? 'Upload your company logo' : null);
+    final valid = _key.currentState?.validate() ?? false;
+    if (!valid || needsLogo) return null;
     final base = widget.initial ??
         const Company(id: '', name: '', industry: Industry.technology, location: '', about: '', size: '', founded: 0, website: '', brandColor: 0);
     return base.copyWith(
@@ -111,7 +129,7 @@ class CompanyFormState extends State<CompanyForm> {
     return Form(
       key: _key,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('Logo', style: context.text.titleMedium),
+        Text(widget.setup ? 'Logo *' : 'Logo', style: context.text.titleMedium),
         const SizedBox(height: 10),
         Row(children: [
           CompanyLogo(company: preview, size: 72),
@@ -129,9 +147,14 @@ class CompanyFormState extends State<CompanyForm> {
                 pickedLogo != null ? '${pickedLogo!.name} · saved when you save the profile' : 'PNG or JPG. Large images are resized automatically. Square images look best.',
                 style: context.text.bodySmall?.copyWith(color: context.palette.muted),
               ),
+              if (_logoError != null) ...[
+                const SizedBox(height: 4),
+                Text(_logoError!, style: context.text.bodySmall?.copyWith(color: context.colors.error)),
+              ],
             ]),
           ),
         ]),
+        if (!widget.setup) ...[
         const SizedBox(height: 14),
         Text('Without a logo, your initials are shown on this colour:', style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
         const SizedBox(height: 8),
@@ -160,6 +183,7 @@ class CompanyFormState extends State<CompanyForm> {
             ]),
           ),
         ]),
+        ],
         heading('Company details'),
         TextFormField(
           controller: _name,
@@ -187,6 +211,7 @@ class CompanyFormState extends State<CompanyForm> {
               onChanged: (v) => setState(() => _location = v ?? _location),
             ),
           ),
+          if (!widget.setup) ...[
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonFormField<String>(
@@ -197,16 +222,24 @@ class CompanyFormState extends State<CompanyForm> {
               onChanged: (v) => setState(() => _size = v ?? _size),
             ),
           ),
+          ],
         ]),
         gap(),
+        if (widget.setup)
+          TextFormField(
+            controller: _website,
+            keyboardType: TextInputType.url,
+            decoration: const InputDecoration(labelText: 'Website (optional)'),
+          ),
+        if (!widget.setup) ...[
         TextFormField(
           controller: _about,
           minLines: 4,
           maxLines: 8,
           maxLength: 1200,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(labelText: 'About the company *', alignLabelWithHint: true, hintText: 'What you do, where you work, and what it\'s like to work with you.'),
-          validator: (v) => (v ?? '').trim().length < 40 ? 'Write at least 40 characters so candidates know who you are' : null,
+          decoration: const InputDecoration(labelText: 'About the company', alignLabelWithHint: true, hintText: 'What you do, where you work, and what it\'s like to work with you.'),
+          validator: (v) => (v ?? '').trim().isNotEmpty && (v ?? '').trim().length < 40 ? 'Write at least 40 characters so candidates know who you are' : null,
         ),
         Row(children: [
           Expanded(
@@ -232,6 +265,7 @@ class CompanyFormState extends State<CompanyForm> {
             ),
           ),
         ]),
+        ],
         heading('Contact details'),
         Text('Used by our team when reviewing your account. Not shown to candidates.',
             style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
@@ -241,7 +275,7 @@ class CompanyFormState extends State<CompanyForm> {
             child: TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Contact email *'),
+              decoration: InputDecoration(labelText: 'Contact email *', helperText: widget.setup ? 'The email you signed up with. Change it if needed.' : null),
               validator: (v) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch((v ?? '').trim()) ? null : 'Enter a valid email',
             ),
           ),
