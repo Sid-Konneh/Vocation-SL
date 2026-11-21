@@ -14,10 +14,21 @@ name: iOS App Store
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: GitHub Mac to build on (macos-26 has Xcode 27)
+        default: macos-latest
+      xcode:
+        description: Xcode major version to use, e.g. 27 ("default" keeps the runner's default)
+        default: default
+      upload:
+        description: Upload to App Store Connect (untick for a test build)
+        type: boolean
+        default: true
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ${{ inputs.runner || 'macos-latest' }}
     timeout-minutes: 60
     env:
       TEAM_ID: WZ949KH7QW
@@ -25,6 +36,21 @@ jobs:
       PROFILE_NAME: Vocation SL App Store
     steps:
       - uses: actions/checkout@v4
+
+      # Apple: from April 2027, uploads must be built with the iOS 27 SDK (Xcode 27).
+      - name: Choose Xcode
+        run: |
+          WANT="${{ inputs.xcode || 'default' }}"
+          if [ "$WANT" != "default" ]; then
+            X=$(ls -d /Applications/Xcode_$WANT*.app 2>/dev/null | sort -V | tail -1)
+            if [ -z "$X" ]; then
+              echo "Xcode $WANT is not installed on this runner. Installed:"; ls -d /Applications/Xcode*.app
+              exit 1
+            fi
+            sudo xcode-select -s "$X/Contents/Developer"
+          fi
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i iphoneos
 
       - uses: subosito/flutter-action@v2
         with:
@@ -82,6 +108,7 @@ jobs:
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_eN8hZ_bBW_flojrgei4uew_J-coAe0m
 
       - name: Upload to App Store Connect
+        if: ${{ inputs.upload != false }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
