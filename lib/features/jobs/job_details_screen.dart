@@ -10,6 +10,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/models.dart';
 import '../../providers/ai_match_providers.dart';
 import '../../providers/core_providers.dart';
+import '../../providers/hiring_providers.dart';
 import '../../providers/job_providers.dart';
 import '../../providers/session_providers.dart';
 import '../../providers/user_data_providers.dart';
@@ -129,7 +130,9 @@ class _JobDetailsView extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text('${job.location}, Sierra Leone · ${Fmt.posted(job.postedAt)} · ${job.applicants} applicants',
+          Text(
+              '${job.location}, Sierra Leone · ${Fmt.posted(job.postedAt)}'
+              '${job.appliesExternally ? '' : ' · ${job.applicants} applicant${job.applicants == 1 ? '' : 's'}'}',
               style: context.text.bodyMedium?.copyWith(color: muted)),
           const SizedBox(height: 16),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -138,6 +141,7 @@ class _JobDetailsView extends ConsumerWidget {
             TagChip(job.experienceLevel.label, icon: Icons.trending_up_rounded),
             TagChip(job.industry.label, icon: Icons.category_outlined),
           ]),
+          if (application == null) _Signals(job: job),
           const SizedBox(height: 20),
           _KeyFacts(job: job),
           if (application != null) ...[
@@ -242,6 +246,35 @@ class _JobDetailsView extends ConsumerWidget {
         child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: AppSpacing.maxReadingWidth), child: body),
       ),
       bottomNavigationBar: _ApplyBar(job: job, application: application),
+    );
+  }
+}
+
+/// "Be an early applicant" and "Responsive employer": real counts only.
+class _Signals extends ConsumerWidget {
+  const _Signals({required this.job});
+  final Job job;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final momentum = JobSignals.momentum(job);
+    // Reply speed only means something when people apply in the app.
+    final speed = job.appliesExternally ? null : ref.watch(replySpeedProvider(job.companyId)).value;
+    final responsive = speed != null && JobSignals.isResponsive(speed);
+    if (momentum == null && !responsive) return const SizedBox.shrink();
+    final green = context.colors.onPrimaryContainer;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Wrap(spacing: 8, runSpacing: 8, children: [
+        if (momentum != null)
+          TagChip(momentum, icon: Icons.bolt_rounded, color: AppColors.warning, background: AppColors.warning.withValues(alpha: 0.12)),
+        if (responsive)
+          Tooltip(
+            message: '${speed.replied} of ${speed.applications} applicants heard back in the last 6 months.',
+            child: TagChip('Responsive employer · ${JobSignals.responsiveLabel(speed)}',
+                icon: Icons.mark_chat_read_outlined, color: green, background: context.colors.primaryContainer),
+          ),
+      ]),
     );
   }
 }

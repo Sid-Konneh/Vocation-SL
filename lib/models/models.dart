@@ -9,6 +9,7 @@ export 'hiring.dart';
 export 'job.dart';
 export 'job_filter.dart';
 export 'job_match.dart';
+export 'job_signals.dart';
 export 'message.dart';
 export 'notification.dart';
 export 'referral.dart';

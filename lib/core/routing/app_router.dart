@@ -47,6 +47,7 @@ import '../../features/referrals/referral_screen.dart';
 import '../../admin/features/referrals.dart';
 import '../../admin/features/traction.dart';
 import '../../admin/features/analytics.dart';
+import '../../admin/features/listed_jobs.dart';
 import '../../features/saved/saved_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/splash/splash_screen.dart';
@@ -229,6 +230,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/admin/overview', pageBuilder: (c, s) => _page(s, const AdminOverviewScreen())),
           GoRoute(path: '/admin/analytics', pageBuilder: (c, s) => _page(s, const AdminAnalyticsScreen())),
+          GoRoute(path: '/admin/listed-jobs', pageBuilder: (c, s) => _page(s, const AdminListedJobsScreen())),
           GoRoute(path: '/admin/insights', pageBuilder: (c, s) => _page(s, const AdminInsightsScreen())),
           GoRoute(path: '/admin/traction', pageBuilder: (c, s) => _page(s, const AdminTractionScreen())),
           GoRoute(path: '/admin/jobs', pageBuilder: (c, s) => _page(s, const AdminJobsScreen())),
