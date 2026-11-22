@@ -46,7 +46,7 @@ class AppConfig {
   static const companyAddress = '33 New Koribondo Highway, Bo City, Sierra Leone';
   static const taxId = '1001050525'; // NRA TIN, issued 7 Feb 2024
   static const cacRegistration = 'SL050224VOCAT20623'; // Corporate Affairs Commission
-  static const version = '1.3.1';
+  static const version = '1.3.2';
 }
 
 /// How long cached data counts as fresh before a background refresh.

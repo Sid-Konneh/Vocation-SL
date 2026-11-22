@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/config/app_config.dart';
+import '../core/errors.dart';
 import '../models/models.dart';
 import '../repositories/base.dart';
 import 'cache_first.dart';
@@ -20,6 +21,10 @@ class SessionNotifier extends Notifier<String?> {
     _sub?.cancel();
     _sub = repo.authChanges.listen((uid) {
       if (uid != state) state = uid;
+    }, onError: (Object e) {
+      // A Google/Apple return link that couldn't be turned into a session
+      // (expired, used twice, cancelled): tell the sign-in screen.
+      ref.read(authErrorProvider.notifier).report(AppException.describe(e));
     });
     ref.onDispose(() => _sub?.cancel());
     return repo.currentUserId;
@@ -48,6 +53,17 @@ class SessionNotifier extends Notifier<String?> {
 }
 
 final sessionProvider = NotifierProvider<SessionNotifier, String?>(SessionNotifier.new);
+
+/// The last Google/Apple sign-in failure, shown once on the sign-in screen.
+class AuthErrorNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void report(String message) => state = message;
+  void clear() => state = null;
+}
+
+final authErrorProvider = NotifierProvider<AuthErrorNotifier, String?>(AuthErrorNotifier.new);
 
 /// Set when an email confirmation link can't sign the person in; the sign-in
 /// screen shows it once.

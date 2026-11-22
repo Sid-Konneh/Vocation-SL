@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:url_launcher/url_launcher.dart' show closeInAppWebView;
 import 'package:uuid/uuid.dart';
 
 import '../../core/config/app_config.dart';
@@ -117,7 +118,19 @@ class SupabaseBackend implements VocationBackend {
         final redirect = kIsWeb && intent != null ? '$_redirect?role=${intent.name}' : _redirect;
         final launched = await _client.auth.signInWithOAuth(provider, redirectTo: redirect);
         if (!launched) throw AuthException('Couldn\'t open $label sign-in. Try again.');
+        if (!kIsWeb) _closeBrowserOnSignIn();
       });
+
+  /// On iPhone, Google and Apple open in a Safari sheet inside the app. The
+  /// sheet stays on screen after the app gets the session, so people thought
+  /// sign-in was stuck. Close it as soon as the session arrives.
+  void _closeBrowserOnSignIn() {
+    _client.auth.onAuthStateChange
+        .firstWhere((s) => s.event == sb.AuthChangeEvent.signedIn)
+        .timeout(const Duration(minutes: 15))
+        .then((_) => closeInAppWebView())
+        .catchError((_) {}); // Nothing open, or they never finished.
+  }
 
   @override
   Future<bool> appleSignInAvailable() async {

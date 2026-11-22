@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -48,9 +51,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool get _hiring => _intent == UserRole.employer;
 
+  /// "Google" or "Apple" while the browser is open for sign-in (phones only).
+  String? _waitingFor;
+
+  /// True once the person is back in the app and the session is on its way.
+  bool _finishing = false;
+  Timer? _giveUp;
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(onResume: _onResume);
+
   @override
   void initState() {
     super.initState();
+    _lifecycle; // Start listening.
     // A confirmation link that failed (expired, or already used).
     final store = ref.read(localStoreProvider);
     final linkError = store.setting<String>(authLinkErrorKey);
@@ -76,6 +88,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
+    _giveUp?.cancel();
+    _lifecycle.dispose();
     _name.dispose();
     _email.dispose();
     _password.dispose();
@@ -102,8 +116,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
   }
 
-  Future<void> _google() => _run(() => ref.read(sessionProvider.notifier).signInWithGoogle(intent: _intent));
-  Future<void> _apple() => _run(() => ref.read(sessionProvider.notifier).signInWithApple(intent: _intent));
+  Future<void> _google() => _oauth('Google', () => ref.read(sessionProvider.notifier).signInWithGoogle(intent: _intent));
+  Future<void> _apple() => _oauth('Apple', () => ref.read(sessionProvider.notifier).signInWithApple(intent: _intent));
+
+  /// Opens Google or Apple. On the web the page itself goes there; on a phone
+  /// a browser opens and the app waits, telling the person what is happening.
+  Future<void> _oauth(String label, Future<void> Function() start) async {
+    _stopWaiting();
+    await _run(start);
+    if (!mounted || kIsWeb || _error != null) return;
+    setState(() => _waitingFor = label);
+  }
+
+  void _onResume() {
+    if (_waitingFor == null || ref.read(sessionProvider) != null) return;
+    // Back from the browser: the session normally arrives within seconds.
+    // If it doesn't, they closed the browser or the network dropped.
+    setState(() => _finishing = true);
+    _giveUp?.cancel();
+    _giveUp = Timer(const Duration(seconds: 25), () {
+      if (!mounted || ref.read(sessionProvider) != null) return;
+      final label = _waitingFor;
+      _stopWaiting();
+      setState(() => _error = 'Sign-in with $label didn\'t finish. Tap "Continue with $label" to try again, or use your email.');
+    });
+  }
+
+  void _stopWaiting() {
+    _giveUp?.cancel();
+    if (_waitingFor == null && !_finishing) return;
+    setState(() {
+      _waitingFor = null;
+      _finishing = false;
+    });
+  }
 
   Future<void> _forgotPassword() => _run(() async {
         await ref.read(userRepositoryProvider).sendPasswordReset(_email.text);
@@ -144,6 +190,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isDemo = isDemoBackend(ref.watch(backendProvider));
     final supportsGoogle = ref.watch(userRepositoryProvider).supportsGoogleSignIn;
     final supportsApple = ref.watch(appleSignInProvider).value ?? false;
+    ref.listen(authErrorProvider, (_, message) {
+      if (message == null) return;
+      _stopWaiting();
+      setState(() => _error = message);
+      ref.read(authErrorProvider.notifier).clear();
+    });
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -275,6 +327,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: const Text('Forgot password?'),
                       ),
                     ),
+                  if (_waitingFor != null) ...[
+                    const SizedBox(height: 14),
+                    _OAuthWaiting(provider: _waitingFor!, finishing: _finishing, onCancel: _stopWaiting),
+                  ],
                   if (_info != null) ...[
                     const SizedBox(height: 14),
                     Semantics(
@@ -365,6 +421,42 @@ class _AppleMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.string(_svg, width: 18, height: 20, semanticsLabel: 'Apple');
+}
+
+/// Shown on a phone while Google or Apple is open in the browser, then while
+/// the app finishes signing in.
+class _OAuthWaiting extends StatelessWidget {
+  const _OAuthWaiting({required this.provider, required this.finishing, required this.onCancel});
+  final String provider;
+  final bool finishing;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        liveRegion: true,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 12, 4, 4),
+          decoration: BoxDecoration(color: context.palette.accentTint, borderRadius: BorderRadius.circular(12)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.4)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  finishing
+                      ? 'Signing you in…'
+                      : 'Finish with $provider in the browser. Vocation SL opens again by itself when you are done.',
+                  style: context.text.bodyMedium,
+                ),
+              ),
+            ]),
+            Align(alignment: Alignment.centerRight, child: TextButton(onPressed: onCancel, child: const Text('Cancel'))),
+          ]),
+        ),
+      );
 }
 
 class _DemoCard extends StatelessWidget {
