@@ -6,7 +6,7 @@
 -- 1. Prices and launch offer (editable in Admin → Platform settings)
 -- ---------------------------------------------------------------------------
 insert into public.platform_settings (key, value) values
-  ('posting_price', '5000'),
+  ('posting_price', '4000'),
   ('featured_price', '1500'),
   ('launch_offer', '{"free_posts": 5, "until": "2026-12-31"}')
 on conflict (key) do nothing;

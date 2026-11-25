@@ -71,6 +71,15 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
   bool _applyModeSet = false;
   bool _readingAdvert = false;
 
+  /// The latest closing date the editor offers: 4 weeks from today (what the
+  /// posting price covers), or the job's current date if it was extended.
+  DateTime get _latestDeadline {
+    final now = DateTime.now();
+    final four = DateTime(now.year, now.month, now.day).add(const Duration(days: 28));
+    final current = _original?.deadline;
+    return current != null && current.isAfter(four) ? DateTime(current.year, current.month, current.day) : four;
+  }
+
   @override
   void dispose() {
     for (final q in _questions) {
@@ -254,8 +263,8 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
         filled.add('job type');
       }
       final d = x.deadline;
-      if (d != null && !_deadlineSet && d.isBefore(DateTime.now().add(const Duration(days: 180)))) {
-        _deadline = d;
+      if (d != null && !_deadlineSet && d.isAfter(DateTime.now())) {
+        _deadline = d.isAfter(_latestDeadline) ? _latestDeadline : d;
         filled.add('deadline');
       }
       if (x.description.isNotEmpty && empty(_description)) {
@@ -353,24 +362,33 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
                 _dropdown<ExperienceLevel>('Experience *', _level, ExperienceLevel.values, (v) => v.label, (v) => setState(() => _level = v)),
                 SizedBox(
                   width: 260,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.event_outlined),
-                    label: Text('Deadline: ${Fmt.date(_deadline)}'),
-                    onPressed: () async {
-                      final d = await showDatePicker(
-                        context: context,
-                        initialDate: _deadline.isBefore(DateTime.now()) ? DateTime.now().add(const Duration(days: 1)) : _deadline,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 180)),
-                      );
-                      if (d != null) {
-                        setState(() {
-                          _deadline = d;
-                          _deadlineSet = true;
-                        });
-                      }
-                    },
-                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.event_outlined),
+                      label: Text('Deadline: ${Fmt.date(_deadline)}'),
+                      onPressed: () async {
+                        final last = _latestDeadline;
+                        final start = _deadline.isBefore(DateTime.now()) ? DateTime.now().add(const Duration(days: 1)) : _deadline;
+                        final d = await showDatePicker(
+                          context: context,
+                          initialDate: start.isAfter(last) ? last : start,
+                          firstDate: DateTime.now(),
+                          lastDate: last,
+                        );
+                        if (d != null) {
+                          setState(() {
+                            _deadline = d;
+                            _deadlineSet = true;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'A job stays open for up to 4 weeks. To keep it open longer, use Extend in My jobs.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ]),
                 ),
               ]),
             ]),
