@@ -32,6 +32,7 @@ const adminSections = [
   AdminSection('/admin/applications', 'Applications', Icons.assignment_outlined),
   AdminSection('/admin/reports', 'Reports', Icons.flag_outlined),
   AdminSection('/admin/support', 'Support inbox', Icons.support_agent_outlined),
+  AdminSection('/admin/how-to-pay', 'Company info & how to pay', Icons.account_balance_outlined),
   AdminSection('/admin/invoices', 'Invoices', Icons.receipt_long_outlined),
   AdminSection('/admin/referrals', 'Referrals', Icons.handshake_outlined),
   AdminSection('/admin/content', 'Content', Icons.campaign_outlined),

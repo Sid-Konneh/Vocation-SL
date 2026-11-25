@@ -243,6 +243,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/admin/content', pageBuilder: (c, s) => _page(s, const AdminContentScreen())),
           GoRoute(path: '/admin/settings', pageBuilder: (c, s) => _page(s, const AdminSettingsScreen())),
           GoRoute(path: '/admin/team', pageBuilder: (c, s) => _page(s, const AdminTeamScreen())),
+          GoRoute(path: '/admin/how-to-pay', pageBuilder: (c, s) => _page(s, const HowToPayScreen())),
           GoRoute(path: '/admin/invoices', pageBuilder: (c, s) => _page(s, const AdminInvoicesScreen())),
           GoRoute(path: '/admin/referrals', pageBuilder: (c, s) => _page(s, const AdminReferralsScreen())),
           GoRoute(path: '/admin/activity', pageBuilder: (c, s) => _page(s, const AdminActivityScreen())),

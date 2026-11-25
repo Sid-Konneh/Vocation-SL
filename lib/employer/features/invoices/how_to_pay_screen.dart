@@ -5,7 +5,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../models/models.dart';
 import '../../../widgets/common.dart';
+import '../../../widgets/document_viewer.dart';
+import '../../../widgets/states.dart';
 import '../../widgets.dart';
 
 /// Vocation SL's company information, how to pay invoices, and the company's
@@ -142,14 +145,24 @@ const _docs = [
 class _DocumentsCard extends StatelessWidget {
   const _DocumentsCard();
 
-  Future<void> _open(BuildContext context, _Doc d) async {
-    try {
-      // Private bucket: any signed-in user can read; links last 10 minutes.
-      final url = await Supabase.instance.client.storage.from('company-documents').createSignedUrl(d.file, 600);
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } catch (_) {
-      if (context.mounted) showSnack(context, 'Could not open the document. Check your connection and try again.', error: true);
-    }
+  // Private bucket: any signed-in user can read; links last 10 minutes.
+  static Future<String> _signedUrl(_Doc d) => Supabase.instance.client.storage.from('company-documents').createSignedUrl(d.file, 600);
+
+  /// Supabase sends the file as a download when the link has `download=`.
+  static String _downloadUrl(_Doc d, String url) => '$url${url.contains('?') ? '&' : '?'}download=${Uri.encodeComponent(d.file)}';
+
+  void _open(BuildContext context, _Doc d) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => d.file.endsWith('.pdf')
+          ? DocumentViewerScreen(
+              title: d.title,
+              fileName: d.file,
+              format: DocumentFormat.pdf,
+              loadUrl: () => _signedUrl(d),
+              downloadUrl: (url) => _downloadUrl(d, url),
+            )
+          : _ImageDocumentScreen(doc: d),
+    ));
   }
 
   @override
@@ -162,9 +175,62 @@ class _DocumentsCard extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: Icon(d.icon, color: context.colors.primary),
               title: Text(d.title),
-              trailing: const Icon(Icons.open_in_new_rounded, size: 20),
+              trailing: const Icon(Icons.chevron_right_rounded),
               onTap: AppConfig.useSupabase ? () => _open(context, d) : null,
             ),
         ],
+      );
+}
+
+/// Shows a certificate photo in the app (pinch to zoom), with a download button.
+class _ImageDocumentScreen extends StatefulWidget {
+  const _ImageDocumentScreen({required this.doc});
+  final _Doc doc;
+
+  @override
+  State<_ImageDocumentScreen> createState() => _ImageDocumentScreenState();
+}
+
+class _ImageDocumentScreenState extends State<_ImageDocumentScreen> {
+  late Future<String> _url = _DocumentsCard._signedUrl(widget.doc);
+
+  Future<void> _download(String url) async {
+    final ok = await launchUrl(Uri.parse(_DocumentsCard._downloadUrl(widget.doc, url)), mode: LaunchMode.externalApplication);
+    if (!ok && mounted) showSnack(context, 'Couldn\'t download the file.', error: true);
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<String>(
+        future: _url,
+        builder: (context, snap) => Scaffold(
+          appBar: AppBar(
+            title: Text(widget.doc.title),
+            actions: [
+              if (snap.hasData)
+                IconButton(tooltip: 'Download', icon: const Icon(Icons.download_rounded), onPressed: () => _download(snap.data!)),
+            ],
+          ),
+          body: switch (snap) {
+            AsyncSnapshot(hasError: true) => ErrorState(error: snap.error!, onRetry: () => setState(() => _url = _DocumentsCard._signedUrl(widget.doc))),
+            AsyncSnapshot(hasData: false) => const Center(child: CircularProgressIndicator()),
+            _ => InteractiveViewer(
+                maxScale: 5,
+                child: Center(
+                  child: Image.network(
+                    snap.data!,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
+                    errorBuilder: (context, error, stack) => Center(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        const Text('This document couldn\'t be shown in the app.'),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(onPressed: () => _download(snap.data!), icon: const Icon(Icons.download_rounded), label: const Text('Download')),
+                      ]),
+                    ),
+                  ),
+                ),
+              ),
+          },
+        ),
       );
 }
