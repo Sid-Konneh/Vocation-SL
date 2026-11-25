@@ -27,6 +27,7 @@ const _items = [
   _Item('My jobs', Icons.work_outline_rounded, Icons.work_rounded),
   _Item('Candidates', Icons.people_outline_rounded, Icons.people_rounded),
   _Item('Company profile', Icons.business_outlined, Icons.business_rounded),
+  _Item('Company info & how to pay', Icons.account_balance_outlined, Icons.account_balance_rounded),
   _Item('Invoices', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
   _Item('Find talent', Icons.person_search_outlined, Icons.person_search_rounded),
 ];
@@ -219,7 +220,7 @@ class EmployerShell extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final i in [6, 1, 4, 5])
+            for (final i in [7, 1, 4, 5, 6])
               ListTile(
                 leading: Icon(_items[i].icon),
                 title: Text(_items[i].label),

@@ -13,8 +13,8 @@ begin
   if new.status = 'issued' and (tg_op = 'INSERT' or old.status is distinct from 'issued') and new.company_id is not null then
     insert into public.notifications (user_id, type, title, body, job_id)
     select m.user_id, 'invoice', 'New invoice from Vocation SL',
-           format('%s · %s %s due %s', new.number, new.currency, to_char(new.total, 'FM999,999,990.00'),
-                  coalesce(to_char(new.due_date, 'DD Mon YYYY'), 'on receipt')),
+           format('%s · %s %s due %s. How to pay: bank transfer to Ecobank, account name VOCATION SL LTD, account no. 6382002973, or Orange Money +232 73 512 413. Quote %s as your reference.', new.number, new.currency, to_char(new.total, 'FM999,999,990.00'),
+                  coalesce(to_char(new.due_date, 'DD Mon YYYY'), 'on receipt'), new.number),
            new.job_id
     from public.company_members m where m.company_id = new.company_id;
   end if;

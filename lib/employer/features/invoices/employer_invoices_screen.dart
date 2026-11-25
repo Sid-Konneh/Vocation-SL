@@ -10,6 +10,7 @@ import '../../../widgets/skeletons.dart';
 import '../../../widgets/states.dart';
 import '../../providers.dart';
 import '../../widgets.dart';
+import 'how_to_pay_screen.dart';
 
 /// Invoices Vocation SL has issued for the company's job listings.
 class EmployerInvoicesScreen extends ConsumerWidget {
@@ -49,6 +50,8 @@ class EmployerInvoicesScreen extends ConsumerWidget {
                 ),
                 StatTile(label: 'Paid', value: money(sum(paid), currency), detail: '${paid.length} invoice${paid.length == 1 ? '' : 's'}', icon: Icons.payments_outlined),
               ]),
+              const SizedBox(height: 20),
+              const HowToPayCard(),
               const SizedBox(height: 20),
               TableCard(
                 empty: const EmptyState(

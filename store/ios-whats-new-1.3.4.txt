@@ -1,0 +1,6 @@
+For employers
+• New "Company info & how to pay" in the menu: our bank (Ecobank) and Orange Money details, Vocation SL company information, and our NRA and CAC registration certificates and bank confirmation letter.
+• The Invoices screen and unpaid invoice PDFs show how to pay, with the invoice number to quote as your reference.
+
+Also
+• Bug fixes and improvements.

@@ -16,6 +16,7 @@ import '../../employer/features/candidates/candidates_screen.dart';
 import '../../employer/features/company/company_screens.dart';
 import '../../employer/features/dashboard/dashboard_screens.dart';
 import '../../employer/features/invoices/employer_invoices_screen.dart';
+import '../../employer/features/invoices/how_to_pay_screen.dart';
 import '../../employer/features/jobs/job_editor_screen.dart';
 import '../../employer/features/jobs/job_report_screen.dart';
 import '../../employer/features/jobs/my_jobs_screen.dart';
@@ -186,6 +187,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(path: '/employer/candidates', builder: (c, s) => CandidatesScreen(jobId: s.uri.queryParameters['job'])),
           ]),
           StatefulShellBranch(routes: [GoRoute(path: '/employer/company', builder: (c, s) => const CompanyProfileScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/employer/how-to-pay', builder: (c, s) => const HowToPayScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: '/employer/invoices', builder: (c, s) => const EmployerInvoicesScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: '/employer/talent', builder: (c, s) => const TalentSearchScreen())]),
         ],

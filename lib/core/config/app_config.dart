@@ -55,7 +55,7 @@ class AppConfig {
   static const payBankBban = '008008638200297389';
   static const payBankSwift = 'ECOCSLFR';
   static const payOrangeMoney = '+232 73 512 413';
-  static const version = '1.3.3';
+  static const version = '1.3.4';
 }
 
 /// How long cached data counts as fresh before a background refresh.
