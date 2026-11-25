@@ -1,0 +1,7 @@
+For employers
+• New "Company info & how to pay" in the menu: our bank (Ecobank) and Orange Money details, Vocation SL company information, and our NRA and CAC registration certificates and bank confirmation letter, which you can view and download in the app.
+• The Invoices screen and unpaid invoice PDFs show how to pay, with the invoice number to quote as your reference.
+• A job stays open for up to 4 weeks. To keep it open longer, use Extend in My jobs.
+
+Also
+• Bug fixes and improvements.
