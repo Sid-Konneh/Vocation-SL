@@ -52,6 +52,12 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 onChanged: (v) => save(prefs.copyWith(pushEnabled: v)),
               ),
               SwitchListTile(
+                title: const Text('Alert me about every new job'),
+                subtitle: const Text('An alert here, and on your phone or browser, each time a job goes live'),
+                value: prefs.everyJob,
+                onChanged: (v) => save(prefs.copyWith(everyJob: v)),
+              ),
+              SwitchListTile(
                 title: const Text('Job emails'),
                 subtitle: Text('An email to ${user.email} when new jobs go live'),
                 value: prefs.jobEmails,

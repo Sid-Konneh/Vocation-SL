@@ -100,6 +100,7 @@ class NotificationPreferences {
     this.pushEnabled = true,
     this.emailDigest = false,
     this.jobEmails = true,
+    this.everyJob = true,
   });
 
   final Map<NotificationType, bool> enabled;
@@ -109,16 +110,21 @@ class NotificationPreferences {
   /// An email every time new jobs go live (profiles.job_emails on the server).
   final bool jobEmails;
 
+  /// An alert (in the app, and a push on phone or browser) for every new job
+  /// that goes live (profiles.every_job_alerts on the server).
+  final bool everyJob;
+
   bool allows(NotificationType t) => enabled[t] ?? true;
 
   NotificationPreferences toggle(NotificationType t, bool value) => NotificationPreferences(
-      enabled: {...enabled, t: value}, pushEnabled: pushEnabled, emailDigest: emailDigest, jobEmails: jobEmails);
+      enabled: {...enabled, t: value}, pushEnabled: pushEnabled, emailDigest: emailDigest, jobEmails: jobEmails, everyJob: everyJob);
 
-  NotificationPreferences copyWith({bool? pushEnabled, bool? emailDigest, bool? jobEmails}) => NotificationPreferences(
+  NotificationPreferences copyWith({bool? pushEnabled, bool? emailDigest, bool? jobEmails, bool? everyJob}) => NotificationPreferences(
         enabled: enabled,
         pushEnabled: pushEnabled ?? this.pushEnabled,
         emailDigest: emailDigest ?? this.emailDigest,
         jobEmails: jobEmails ?? this.jobEmails,
+        everyJob: everyJob ?? this.everyJob,
       );
 
   factory NotificationPreferences.fromJson(Map<String, dynamic> j) {
@@ -128,6 +134,7 @@ class NotificationPreferences {
       pushEnabled: j['push_enabled'] as bool? ?? true,
       emailDigest: j['email_digest'] as bool? ?? false,
       jobEmails: j['job_emails'] as bool? ?? true,
+      everyJob: j['every_job_alerts'] as bool? ?? true,
     );
   }
 
@@ -136,5 +143,6 @@ class NotificationPreferences {
         'push_enabled': pushEnabled,
         'email_digest': emailDigest,
         'job_emails': jobEmails,
+        'every_job_alerts': everyJob,
       };
 }

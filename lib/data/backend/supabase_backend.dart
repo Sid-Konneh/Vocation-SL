@@ -337,10 +337,11 @@ class SupabaseBackend implements VocationBackend {
         }
         final data = Map<String, dynamic>.from(row['data'] as Map? ?? const {});
         // Job emails live in their own column (old app versions rewrite `data`).
-        if (row['job_emails'] is bool) {
+        if (row['job_emails'] is bool || row['every_job_alerts'] is bool) {
           data['notification_preferences'] = {
             ...Map<String, dynamic>.from(data['notification_preferences'] as Map? ?? const {}),
-            'job_emails': row['job_emails'],
+            if (row['job_emails'] is bool) 'job_emails': row['job_emails'],
+            if (row['every_job_alerts'] is bool) 'every_job_alerts': row['every_job_alerts'],
           };
         }
         return AppUser.fromJson({
@@ -359,6 +360,7 @@ class SupabaseBackend implements VocationBackend {
           'full_name': user.fullName,
           'data': user.toJson(),
           'job_emails': user.notificationPreferences.jobEmails,
+          'every_job_alerts': user.notificationPreferences.everyJob,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         });
         return user;
