@@ -614,7 +614,7 @@ class _MonthlyReportState extends State<_MonthlyReport> {
           row('Still unpaid at month end', '${outstanding.length} · ${money(sum(outstanding, (i) => i.total))}'),
           row('Free launch-offer postings', '$free'),
           const SizedBox(height: 8),
-          Text('GST is shown on invoices issued in the month; check with your accountant whether your return is based on invoices or payments.',
+          Text('Vocation SL pays GST to the NRA on money received: use "of which GST to pay the NRA" for the month\'s GST return.',
               style: context.text.bodySmall?.copyWith(color: context.palette.muted)),
         ]),
       ),

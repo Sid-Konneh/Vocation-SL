@@ -46,7 +46,16 @@ class AppConfig {
   static const companyAddress = '33 New Koribondo Highway, Bo City, Sierra Leone';
   static const taxId = '1001050525'; // NRA TIN, issued 7 Feb 2024
   static const cacRegistration = 'SL050224VOCAT20623'; // Corporate Affairs Commission
-  static const version = '1.3.2';
+
+  /// How employers pay, printed on unpaid invoices. Bank details as confirmed
+  /// by Ecobank's letter of 10 Nov 2026 (account name exactly as the bank holds it).
+  static const payBankName = 'Ecobank (SL) Limited';
+  static const payBankAccountName = 'VOCATION SL LTD';
+  static const payBankAccountNumber = '6382002973';
+  static const payBankBban = '008008638200297389';
+  static const payBankSwift = 'ECOCSLFR';
+  static const payOrangeMoney = '+232 73 512 413';
+  static const version = '1.3.3';
 }
 
 /// How long cached data counts as fresh before a background refresh.

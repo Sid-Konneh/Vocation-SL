@@ -188,9 +188,30 @@ Future<Uint8List> buildInvoicePdf(Invoice i) async {
           decoration: pw.BoxDecoration(color: PdfColors.red50, borderRadius: pw.BorderRadius.circular(6)),
           child: pw.Text('This invoice has been cancelled and is not payable.', style: const pw.TextStyle(fontSize: 10, color: PdfColors.red800)),
         ),
-      if (i.status == InvoiceStatus.issued)
+      if (i.status == InvoiceStatus.issued) ...[
+        pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(color: _tint, borderRadius: pw.BorderRadius.circular(6)),
+          child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            label('How to pay'),
+            pw.SizedBox(height: 6),
+            pw.Text('Bank transfer (preferred)', style: pw.TextStyle(fontSize: 10, color: _ink, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 2),
+            pw.Text(
+                '${AppConfig.payBankName} · Account name: ${AppConfig.payBankAccountName}\n'
+                'Account number: ${AppConfig.payBankAccountNumber} · BBAN: ${AppConfig.payBankBban} · SWIFT: ${AppConfig.payBankSwift}',
+                style: const pw.TextStyle(fontSize: 9.5, color: _ink, lineSpacing: 2)),
+            pw.SizedBox(height: 8),
+            pw.Text('Orange Money', style: pw.TextStyle(fontSize: 10, color: _ink, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 2),
+            pw.Text(AppConfig.payOrangeMoney, style: const pw.TextStyle(fontSize: 9.5, color: _ink)),
+          ]),
+        ),
+        pw.SizedBox(height: 10),
         pw.Text('Please quote ${i.number} as the reference when you pay. Questions about this invoice: ${AppConfig.supportEmail}.',
             style: const pw.TextStyle(fontSize: 9.5, color: _ink)),
+      ],
       if (i.notes.isNotEmpty) ...[
         pw.SizedBox(height: 16),
         label('Notes'),

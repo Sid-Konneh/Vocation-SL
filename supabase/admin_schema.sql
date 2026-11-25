@@ -342,7 +342,7 @@ begin
     'jobs_closing_7d',     (select count(*) from public.jobs where status = 'published' and deadline > now() and deadline <= now() + interval '7 days'),
     'jobs_featured',       (select count(*) from public.jobs where featured and status = 'published'),
     'avg_salary',          (select coalesce(round(avg((coalesce(salary_min, salary_max) + coalesce(salary_max, salary_min)) / 2.0)), 0)
-                            from public.jobs where status = 'published' and coalesce(salary_min, salary_max) is not null),
+                            from public.jobs where status = 'published' and deadline > now() and company_id <> '14bd5c26-ac43-4008-9211-ebe575132ace' and coalesce(salary_min, salary_max) is not null),
     'hires_30d',           (select count(*) from public.applications where status = 'hired' and updated_at > now() - interval '30 days'),
     'reports_total',       (select count(*) from public.reports),
     'avg_response_days',   (select round(avg(extract(epoch from ((x.h->>'at')::timestamptz - a.submitted_at)) / 86400)::numeric, 1)
