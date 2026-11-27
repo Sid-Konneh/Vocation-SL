@@ -433,7 +433,7 @@ class _ApplyBar extends ConsumerWidget {
         icon: const Icon(Icons.track_changes_rounded),
         label: const Text('View application'),
       );
-    } else if (job.isClosed) {
+    } else if (!job.acceptsApplications) {
       action = const FilledButton(onPressed: null, child: Text('Applications closed'));
     } else if (job.appliesExternally) {
       action = FilledButton.icon(

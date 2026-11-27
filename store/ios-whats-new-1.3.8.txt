@@ -1,0 +1,10 @@
+For job seekers
+• A daily reminder of jobs that close in the next 2 days, so you don't miss a deadline. Turn it on or off in Notification settings.
+• Applications close when a job's deadline passes. If the employer extends the job, you can apply again.
+
+For employers
+• Close a candidate's hiring process after your final decision: messages and stage changes turn off, and the candidate is told. Reopen it any time if anything changes.
+• After you mark someone Hired or Rejected, the app offers to close their hiring process.
+
+Also
+• Bug fixes and improvements.

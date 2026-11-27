@@ -77,7 +77,8 @@ void main() {
       industry: Industry.healthcare,
       experienceLevel: ExperienceLevel.mid,
       postedAt: now,
-      deadline: now.add(const Duration(days: 20)),
+      // Relative to the real clock: matching skips jobs whose deadline has passed.
+      deadline: DateTime.now().add(const Duration(days: 20)),
       salaryMin: null,
       salaryMax: null,
       about: '',

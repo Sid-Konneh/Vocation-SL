@@ -137,7 +137,7 @@ class _MessageThreadState extends ConsumerState<MessageThread> {
     final legacy = widget.legacyEmployerMessage;
     final showLegacy = legacy != null && legacy.isNotEmpty && !messages.any((m) => m.fromEmployer && m.body == legacy);
     final employerHasWritten = showLegacy || messages.any((m) => m.fromEmployer) || (legacy?.isNotEmpty ?? false);
-    final canWrite = widget.enabled && !block.blocked && (widget.asEmployer || employerHasWritten);
+    final canWrite = widget.enabled && !block.messagesOff && (widget.asEmployer || employerHasWritten);
     final muted = context.palette.muted;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -174,6 +174,24 @@ class _MessageThreadState extends ConsumerState<MessageThread> {
             Expanded(
               child: Text(
                 block.byMe ? 'You blocked ${widget.otherName}. Messages are off.' : 'Messages are off for this conversation.',
+                style: context.text.bodyMedium,
+              ),
+            ),
+          ]),
+        ),
+      if (block.processClosed && !block.blocked)
+        Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: context.palette.surface, borderRadius: BorderRadius.circular(12)),
+          child: Row(children: [
+            Icon(Icons.lock_outline_rounded, color: muted, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.asEmployer
+                    ? 'You closed this hiring process${block.processClosedAt == null ? '' : ' on ${Fmt.date(block.processClosedAt!)}'}. Messages are off. Reopen it under Stage if anything changes.'
+                    : '${widget.otherName} closed this hiring process${block.processClosedAt == null ? '' : ' on ${Fmt.date(block.processClosedAt!)}'}. Messages are off.',
                 style: context.text.bodyMedium,
               ),
             ),
@@ -276,9 +294,33 @@ class _MessageThreadState extends ConsumerState<MessageThread> {
             label: Text(widget.asEmployer ? 'Send message' : 'Send reply'),
           ),
         ]),
-      ] else if (widget.enabled && !block.blocked && !widget.asEmployer && messages.isNotEmpty)
+      ] else if (widget.enabled && !block.messagesOff && !widget.asEmployer && messages.isNotEmpty)
         Text('You can reply once the employer has written to you.', style: context.text.bodySmall?.copyWith(color: muted)),
     ]);
+  }
+}
+
+/// Employers: closes (after a final decision) or reopens a candidate's hiring
+/// process, after confirming. Returns true when it changed.
+Future<bool> setHiringProcessClosed(BuildContext context, WidgetRef ref, String applicationId, String candidateName, bool close) async {
+  final ok = await confirmDialog(
+    context,
+    title: close ? 'Close the hiring process for $candidateName?' : 'Reopen the hiring process for $candidateName?',
+    message: close
+        ? 'Use this after your final decision. Messages with $candidateName will be turned off and the stage can\'t be changed. '
+            '$candidateName will be notified. You can reopen it later if anything changes.'
+        : 'Messages and stage changes will be turned back on. $candidateName will be notified.',
+    confirmLabel: close ? 'Close process' : 'Reopen',
+  );
+  if (!ok) return false;
+  try {
+    await ref.read(messageBackendProvider).setProcessClosed(applicationId, close);
+    ref.invalidate(conversationBlockProvider(applicationId));
+    if (context.mounted) showSnack(context, close ? 'Hiring process closed. $candidateName has been notified.' : 'Hiring process reopened.');
+    return true;
+  } catch (e) {
+    if (context.mounted) showError(context, e);
+    return false;
   }
 }
 

@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../features/applications/application_detail_screen.dart' show ApplicationTimeline;
 import '../../../models/models.dart';
+import '../../../data/backend/message_backend.dart' show ConversationBlock;
 import '../../../providers/message_providers.dart';
 import '../../../widgets/common.dart';
 import '../../../widgets/interview_slots.dart';
@@ -52,7 +53,15 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
             destructive: true)) {
       return;
     }
-    await _run(() => ref.read(candidatesProvider.notifier).updateCandidate(a, status: s), 'Moved to ${s.label}');
+    var moved = false;
+    await _run(() async {
+      await ref.read(candidatesProvider.notifier).updateCandidate(a, status: s);
+      moved = true;
+    }, 'Moved to ${s.label}');
+    // A final decision: offer to close the hiring process.
+    if (moved && mounted && (s == ApplicationStatus.hired || s == ApplicationStatus.rejected)) {
+      await setHiringProcessClosed(context, ref, a.id, a.applicant.fullName.split(' ').first, true);
+    }
   }
 
   Future<void> _schedule(JobApplication a) async {
@@ -118,7 +127,10 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
     }
     final profile = ref.watch(applicantProfileProvider(a.userId));
     final wide = MediaQuery.sizeOf(context).width >= 1000;
-    final canAct = a.status != ApplicationStatus.withdrawn;
+    final block = ref.watch(conversationBlockProvider(a.id)).value ?? const ConversationBlock();
+    final closed = block.processClosed;
+    final canAct = a.status != ApplicationStatus.withdrawn && !closed;
+    final firstName = a.applicant.fullName.split(' ').first;
 
     final header = Card(
       child: Padding(
@@ -150,8 +162,26 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
     final actions = SectionCard(
       title: 'Stage',
       trailing: StatusChip(a.status),
-      child: !canAct
+      child: a.status == ApplicationStatus.withdrawn
           ? Text('The candidate withdrew this application.', style: context.text.bodyMedium)
+          : closed
+          ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              InfoRow(
+                icon: Icons.lock_outline_rounded,
+                label: 'Hiring process closed',
+                value: block.processClosedAt == null ? 'Messages and stage changes are off' : 'On ${Fmt.date(block.processClosedAt!)}. Messages and stage changes are off.',
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.tonalIcon(
+                  onPressed: _busy ? null : () => setHiringProcessClosed(context, ref, a.id, firstName, false),
+                  icon: const Icon(Icons.lock_open_rounded, size: 18),
+                  label: const Text('Reopen hiring process'),
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                ),
+              ),
+            ])
           : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Wrap(spacing: 8, runSpacing: 8, children: [
                 for (final s in [ApplicationStatus.shortlisted, ApplicationStatus.assessment, ApplicationStatus.offer, ApplicationStatus.hired])
@@ -182,6 +212,12 @@ class _CandidateDetailScreenState extends ConsumerState<CandidateDetailScreen> {
                   onPressed: _busy || a.status == ApplicationStatus.rejected ? null : () => _move(a, ApplicationStatus.rejected),
                   style: TextButton.styleFrom(foregroundColor: AppColors.danger),
                   child: const Text('Reject'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : () => setHiringProcessClosed(context, ref, a.id, firstName, true),
+                  icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                  label: const Text('Close hiring process'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
                 ),
               ]),
               if (a.interviewAt != null) ...[

@@ -320,6 +320,10 @@ class DemoBackend implements VocationBackend {
     if (apps.any((a) => a['user_id'] == application.userId && a['job_id'] == application.jobId && a['status'] != 'withdrawn')) {
       throw const ValidationException('You have already applied for this job.');
     }
+    final target = _jobs[application.jobId];
+    if (target != null && !target.acceptsApplications) {
+      throw const ValidationException('Applications for this job have closed.');
+    }
     final saved = application.copyWith(pendingSync: false);
     apps.add({...saved.toJson(includeLocal: false), 'simulate': true});
     final job = _jobs[application.jobId];

@@ -181,6 +181,10 @@ class Job {
 
   String get companyName => company?.name ?? '';
   bool get isClosed => deadline.isBefore(DateTime.now());
+
+  /// Applications are open only while the job is live and before its deadline.
+  /// When the employer extends the job, the deadline moves and this opens again.
+  bool get acceptsApplications => status == JobStatus.published && !isClosed;
   int get daysToDeadline => deadline.difference(DateTime.now()).inDays;
 
   Job withCompany(Company? c) => Job(

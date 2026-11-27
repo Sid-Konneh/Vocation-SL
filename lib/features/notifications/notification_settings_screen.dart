@@ -18,7 +18,7 @@ const _descriptions = {
   NotificationType.interview: 'Interview invitations and changes',
   NotificationType.statusChange: 'Other application status updates',
   NotificationType.message: 'Messages from employers',
-  NotificationType.deadline: 'Reminders before saved jobs close',
+  NotificationType.deadline: 'Daily reminder of jobs closing in the next 2 days',
   NotificationType.invite: 'Employers who found you in talent search',
   NotificationType.support: 'Replies from the Vocation SL team',
 };

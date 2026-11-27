@@ -71,6 +71,21 @@ class ApplyFlowScreen extends ConsumerWidget {
         ),
       );
     }
+    if (!job.value!.data.acceptsApplications) {
+      final j = job.value!.data;
+      return Scaffold(
+        appBar: AppBar(title: const Text('Apply')),
+        body: EmptyState(
+          icon: Icons.event_busy_rounded,
+          title: 'Applications closed',
+          message: j.status == JobStatus.published
+              ? 'The deadline for ${j.title} was ${Fmt.date(j.deadline)}. You can apply again only if ${j.companyName.isEmpty ? 'the employer' : j.companyName} extends it.'
+              : '${j.title} is no longer taking applications.',
+          action: 'Browse jobs',
+          onAction: () => context.go('/'),
+        ),
+      );
+    }
     if (job.value!.data.appliesExternally) {
       final j = job.value!.data;
       return Scaffold(
@@ -308,6 +323,11 @@ class _ApplyFlowState extends ConsumerState<_ApplyFlow> {
   Future<void> _submit() async {
     if (!_confirmed) {
       setState(() => _stepError = 'Confirm that your information is accurate.');
+      return;
+    }
+    // The deadline may have passed while the form was open.
+    if (!widget.job.acceptsApplications) {
+      showError(context, const ValidationException('Applications for this job have closed. The deadline has passed.'));
       return;
     }
     setState(() => _submitting = true);
